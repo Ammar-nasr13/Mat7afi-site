@@ -30,6 +30,7 @@ body {
     color: var(--text-cream);
     overflow-x: hidden;
     line-height: 1.6;
+    text-rendering: optimizeSpeed;
 }
 
 h1, h2, h3, h4, h5, .en-name {
@@ -304,6 +305,11 @@ h1, h2, h3, h4, h5, .en-name {
 }
 
 /* Museums Section */
+#museums {
+    content-visibility: auto;
+    contain-intrinsic-size: 1px 1000px;
+}
+
 .bg-navy-dark {
     background-color: var(--navy-dark);
 }
@@ -409,6 +415,11 @@ h1, h2, h3, h4, h5, .en-name {
 }
 
 /* Features Section */
+#features {
+    content-visibility: auto;
+    contain-intrinsic-size: 1px 1000px;
+}
+
 .bg-cream {
     background-color: var(--cream);
     color: var(--navy);
@@ -584,6 +595,11 @@ h1, h2, h3, h4, h5, .en-name {
 }
 
 /* Gallery Section */
+#gallery {
+    content-visibility: auto;
+    contain-intrinsic-size: 1px 800px;
+}
+
 .gallery-item {
     border: 2px solid rgba(255, 253, 208, 0.1);
     transition: var(--transition);

@@ -3,13 +3,15 @@
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Navbar Scroll Effect
     const mainNav = document.getElementById('mainNav');
-    window.addEventListener('scroll', () => {
-        if (window.scrollY > 50) {
-            mainNav.classList.add('scrolled');
-        } else {
-            mainNav.classList.remove('scrolled');
-        }
-    });
+    if (mainNav) {
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                mainNav.classList.add('scrolled');
+            } else {
+                mainNav.classList.remove('scrolled');
+            }
+        }, { passive: true });
+    }
 
     // 2. AI Chatbot Logic
     const chatMessages = document.getElementById('chat-messages');
@@ -27,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
     كن ودوداً، احترافياً، واستخدم اللغة العربية بشكل أساسي.`;
 
     const addMessage = (text, sender) => {
+        if (!chatMessages) return;
         const msgDiv = document.createElement('div');
         msgDiv.classList.add('message');
         msgDiv.classList.add(sender === 'user' ? 'user-msg' : 'system-msg');
@@ -51,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
         try {
-            if (OPENAI_API_KEY === 'YOUR_OPENAI_API_KEY_HERE') {
+            if (OPENAI_API_KEY === 'YOUR_OPENAI_API_KEY_HERE' || !OPENAI_API_KEY) {
                 setTimeout(() => {
                     thinkingDiv.remove();
                     addMessage("عذراً، يجب عليك إضافة مفتاح API الخاص بـ OpenAI في ملف script.js لكي يعمل الشات بوت بشكل حقيقي.", 'system');
