@@ -177,20 +177,51 @@ document.addEventListener('DOMContentLoaded', () => {
                     `;
                     artifactsGrid.appendChild(card);
                 });
-                if (window.AOS) AOS.refresh();
+                // Refresh AOS to detect new elements
+                setTimeout(() => {
+                    if (window.AOS) {
+                        AOS.refresh();
+                        // Additional check: If elements are still invisible on mobile, force opacity
+                        document.querySelectorAll('.artifact-card').forEach(el => {
+                            if (window.getComputedStyle(el).opacity === "0") {
+                                el.style.opacity = "1";
+                                el.style.transform = "none";
+                            }
+                        });
+                    }
+                }, 500);
             };
 
             // Initial render
             renderArtifacts(allArtifacts);
 
-            // Live Search Logic
+            // Live Search Logic with Arabic Normalization
             if (searchInput) {
+                const normalizeArabic = (text) => {
+                    if (!text) return "";
+                    return text.toString()
+                        .replace(/[أإآا]/g, "ا")
+                        .replace(/ى/g, "ي")
+                        .replace(/ة/g, "ه")
+                        .replace(/[\u064B-\u0652]/g, "") // Remove Tashkeel
+                        .toLowerCase()
+                        .trim();
+                };
+
                 searchInput.addEventListener('input', (e) => {
-                    const query = e.target.value.toLowerCase().trim();
-                    const filtered = allArtifacts.filter(art => 
-                        (art['name-ar'] && art['name-ar'].toLowerCase().includes(query)) ||
-                        (art['description-ar'] && art['description-ar'].toLowerCase().includes(query))
-                    );
+                    const query = normalizeArabic(e.target.value);
+                    console.log('Searching for:', query);
+
+                    const filtered = allArtifacts.filter(art => {
+                        const nameAr = normalizeArabic(art['name-ar']);
+                        const descAr = normalizeArabic(art['description-ar']);
+                        const nameEn = (art['name-en'] || "").toLowerCase();
+                        
+                        return nameAr.includes(query) || 
+                               descAr.includes(query) || 
+                               nameEn.includes(query);
+                    });
+                    
                     renderArtifacts(filtered);
                 });
             }

@@ -35,10 +35,11 @@ html {
 }
 
 html, body {
-    overflow-x: hidden;
+    overflow-x: hidden !important;
     width: 100%;
     margin: 0;
     padding: 0;
+    position: relative;
 }
 
 
@@ -676,7 +677,7 @@ h1, h2, h3, h4, h5, .en-name {
 
 @media (max-width: 991px) {
     .section-heading { font-size: 2.4rem; }
-    .display-2 { font-size: 3rem; }
+    .display-2 { font-size: 3rem; line-height: 1.1; }
     .hero-mockup { max-width: 220px; }
     .reset-card { padding: 30px 20px; }
 }
@@ -688,7 +689,7 @@ h1, h2, h3, h4, h5, .en-name {
     .ar-name { font-size: 0.75rem; }
     
     .section-heading { font-size: 2rem; }
-    .display-2 { font-size: 2.4rem; }
+    .display-2 { font-size: 2.4rem; line-height: 1.1; }
     .hero-section { padding-top: 100px; text-align: center; }
     .hero-mockup { max-width: 180px; margin: 20px auto; }
     
@@ -708,9 +709,11 @@ h1, h2, h3, h4, h5, .en-name {
 }
 
 @media (max-width: 480px) {
-    .display-2 { font-size: 2rem; }
+    .display-2 { font-size: 2rem; line-height: 1.1; }
     .section-heading { font-size: 1.8rem; }
-    .brand-text { display: none; } /* Hide text logo on very small screens to save space */
+    .brand-text { display: flex; } /* Ensure text is visible on small screens */
+    .en-name { font-size: 1rem; }
+    .ar-name { font-size: 0.7rem; }
     
     .feature-icon { width: 50px; height: 50px; font-size: 1.2rem; }
     .ai-box .p-5 { padding: 30px !important; }
@@ -723,8 +726,15 @@ img {
 }
 
 .row {
-    margin-right: 0;
-    margin-left: 0;
+    margin-right: -15px;
+    margin-left: -15px;
+}
+
+@media (max-width: 767px) {
+    .row {
+        margin-right: -10px;
+        margin-left: -10px;
+    }
 }
 
 .container {
