@@ -57,6 +57,17 @@ h1, h2, h3, h4, h5, .en-name {
 
 .fw-black { font-weight: 900; }
 
+/* Custom Selection & Highlight */
+::selection {
+    background-color: var(--accent);
+    color: var(--white);
+}
+
+::target-text {
+    background-color: var(--accent);
+    color: var(--white);
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
     width: 8px;
