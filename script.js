@@ -139,7 +139,22 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
-    // 4. Appwrite Integration for Artifacts Exploration
+
+    // 4. Auto-close mobile menu when a link is clicked
+    const navLinks = document.querySelectorAll('.nav-link');
+    const menuCollapse = document.getElementById('navbarNav');
+    if (navLinks && menuCollapse) {
+        navLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth < 992) {
+                    const bsCollapse = new bootstrap.Collapse(menuCollapse);
+                    bsCollapse.hide();
+                }
+            });
+        });
+    }
+
+    // 5. Appwrite Integration for Artifacts Exploration
     if (typeof Appwrite !== 'undefined' && databases) {
         window.initMuseumPage = async (collectionId, museumName) => {
         const artifactsGrid = document.getElementById('artifacts-grid');
@@ -161,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 artifactsGrid.innerHTML = '';
                 list.forEach(artifact => {
                     const bucketId = getBucketByType(collectionId);
-                    const imageUrl = artifact.image_url || getAppwriteImageUrl(artifact.image, bucketId);
+                    const imageUrl = getAppwriteImageUrl(artifact.image || artifact.image_url, bucketId);
                     
                     const card = document.createElement('div');
                     card.className = 'col-lg-3 col-md-4 col-sm-6 mb-4';
@@ -247,7 +262,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const bucketId = getBucketByType(collectionId);
             
             // Set basic info
-            document.getElementById('artifact-img').src = artifact.image_url || getAppwriteImageUrl(artifact.image, bucketId, 80);
+            const imgUrl = getAppwriteImageUrl(artifact.image || artifact.image_url, bucketId, 80);
+            document.getElementById('artifact-img').src = imgUrl;
+            
+            // Log for debugging if image is missing
+            if (!artifact.image && !artifact.image_url) {
+                console.warn('Artifact image field is missing for document:', documentId);
+            }
             document.title = `${artifact['name-ar']} | Mat7afi`;
             document.getElementById('artifact-desc').innerText = artifact['description-ar'];
 
@@ -309,12 +330,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getBucketByType(collectionId) {
-        if (collectionId.includes('science') || collectionId.includes('art')) return '69f686e9002f917ec2a2';
-        return '69f7d68c003821997d0d'; // Tourism
+        // Match Flutter logic exactly
+        if (collectionId.includes('science') || collectionId.includes('art')) {
+            return '69f686e9002f917ec2a2'; // artifactsBucketId
+        }
+        return '69f7d68c003821997d0d'; // tourismimageBucketId
     }
 
     function getAppwriteImageUrl(fileId, bucketId, quality = 60) {
-        if (!fileId) return 'assets/placeholder.png';
+        if (!fileId) return 'assets/logo.png'; // Use logo as a better fallback than non-existent placeholder
+        
+        // Handle full URLs (like Flutter implementation)
+        if (fileId.startsWith('http') || fileId.startsWith('assets/')) {
+            return fileId;
+        }
+
         return `https://appwrite.etihadalmdina.com/v1/storage/buckets/${bucketId}/files/${fileId}/preview?project=69f21c73000621939422&quality=${quality}`;
     }
 });

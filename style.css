@@ -141,6 +141,24 @@ h1, h2, h3, h4, h5, .en-name {
         border-radius: 20px;
         border: 1px solid rgba(255, 253, 208, 0.2);
         box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+        position: relative;
+    }
+    
+    .btn-close-menu {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        background: transparent;
+        border: none;
+        color: var(--cream);
+        font-size: 1.5rem;
+        transition: var(--transition);
+        z-index: 1001;
+    }
+
+    .btn-close-menu:hover {
+        color: var(--accent);
+        transform: rotate(90deg);
     }
     
     .nav-link {
