@@ -35,9 +35,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const userInput = document.getElementById('user-input');
     const sendBtn = document.getElementById('send-btn');
 
-    // OPENAI CONFIGURATION (Encrypted for enhanced security)
-    const _0x51c2 = 'c2stcHJvai0xZ1BFRU1aQmtLcE9YYjRrVUI0aGtfX2F5UGVvd2RYZUFKczA2RjVjdXFyTUZxV0ZoWGVuRWdGX1ZLSzlhSmR1Q0JNSHdpbnNSX1QzQmxia0ZKTXRqYzlid0djWFNMb0xCel9yQ1Jsdks5dE5XUnBkdXAxQmtXOUZmV3FJLVJVS1dQbmNWSzZDd2JiMktSSnR5ODZ0bWVyd01yb0E=';
-    const OPENAI_API_KEY = atob(_0x51c2); 
+    // SECURITY: API Keys are obfuscated to prevent basic scraping.
+    // In a production environment, use a backend proxy to keep keys hidden.
+    const _secKey = ['c2stcHJvai0xZ1BFRU1aQmtLcE9YYjRrVUI0aGtfX2F5UGVvd2RYZUFKczA2RjVjdXFyTUZxV0ZoWGVuRWdGX1ZLSzlhSmR1Q0JNSHdpbnNSX1QzQmxia0ZKTXRqYzlid0djWFNMb0xCel9yQ1Jsdks5dE5XUnBkdXAxQmtXOUZmV3FJLVJVS1dQbmNWSzZDd2JiMktSSnR5ODZ0bWVyd01yb0E='];
+    const OPENAI_API_KEY = atob(_secKey[0]); 
     const SYSTEM_PROMPT = `أنت المساعد الذكي Ego Pro لمتاحف جامعة المنيا (Mat7afi). 
     مهمتك هي الرد على استفسارات الزوار حول القطع الأثرية في متاحفنا الثلاثة: 
     1. متحف الفن الحديث: يضم لوحات ومنحوتات معاصرة.
@@ -142,38 +143,58 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof Appwrite !== 'undefined' && databases) {
         window.initMuseumPage = async (collectionId, museumName) => {
         const artifactsGrid = document.getElementById('artifacts-grid');
+        const searchInput = document.getElementById('artifact-search');
         if (!artifactsGrid) return;
+
+        let allArtifacts = [];
 
         try {
             const response = await databases.listDocuments(databaseId, collectionId);
-            const artifacts = response.documents;
+            allArtifacts = response.documents;
 
-            if (artifacts.length === 0) {
-                artifactsGrid.innerHTML = '<div class="col-12 text-center py-5"><h3>لا توجد قطع حالياً في هذا المتحف</h3></div>';
-                return;
+            const renderArtifacts = (list) => {
+                if (list.length === 0) {
+                    artifactsGrid.innerHTML = '<div class="col-12 text-center py-5"><h3 class="text-white-50">لم يتم العثور على نتائج تطابق بحثك</h3></div>';
+                    return;
+                }
+
+                artifactsGrid.innerHTML = '';
+                list.forEach(artifact => {
+                    const bucketId = getBucketByType(collectionId);
+                    const imageUrl = artifact.image_url || getAppwriteImageUrl(artifact.image, bucketId);
+                    
+                    const card = document.createElement('div');
+                    card.className = 'col-lg-3 col-md-4 col-sm-6 mb-4';
+                    card.innerHTML = `
+                        <div class="artifact-card" onclick="location.href='artifact.html?id=${artifact.$id}&collection=${collectionId}&museum=${encodeURIComponent(museumName)}'" data-aos="fade-up">
+                            <div class="artifact-card-img">
+                                <img src="${imageUrl}" alt="${artifact['name-ar']}" loading="lazy">
+                            </div>
+                            <div class="artifact-card-body text-center p-3">
+                                <h3 class="artifact-card-title" style="font-size: 1.1rem; color: var(--cream);">${artifact['name-ar']}</h3>
+                            </div>
+                        </div>
+                    `;
+                    artifactsGrid.appendChild(card);
+                });
+                if (window.AOS) AOS.refresh();
+            };
+
+            // Initial render
+            renderArtifacts(allArtifacts);
+
+            // Live Search Logic
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    const query = e.target.value.toLowerCase().trim();
+                    const filtered = allArtifacts.filter(art => 
+                        (art['name-ar'] && art['name-ar'].toLowerCase().includes(query)) ||
+                        (art['description-ar'] && art['description-ar'].toLowerCase().includes(query))
+                    );
+                    renderArtifacts(filtered);
+                });
             }
 
-            artifactsGrid.innerHTML = '';
-            artifacts.forEach(artifact => {
-                const bucketId = getBucketByType(collectionId);
-                const imageUrl = artifact.image_url || getAppwriteImageUrl(artifact.image, bucketId);
-                
-                const card = document.createElement('div');
-                card.className = 'col-lg-3 col-md-4 col-sm-6';
-                card.innerHTML = `
-                    <div class="artifact-card" onclick="location.href='artifact.html?id=${artifact.$id}&collection=${collectionId}&museum=${encodeURIComponent(museumName)}'" data-aos="fade-up">
-                        <div class="artifact-card-img">
-                            <img src="${imageUrl}" alt="${artifact['name-ar']}" loading="lazy">
-                        </div>
-                        <div class="artifact-card-body text-center p-3">
-                            <h3 class="artifact-card-title" style="font-size: 1.1rem; color: var(--cream);">${artifact['name-ar']}</h3>
-                        </div>
-                    </div>
-                `;
-                artifactsGrid.appendChild(card);
-            });
-
-            if (window.AOS) AOS.init();
         } catch (error) {
             console.error('Error fetching artifacts:', error);
             artifactsGrid.innerHTML = `
@@ -184,6 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         }
     };
+
 
     window.initArtifactPage = async (documentId, collectionId, museumName) => {
         const loader = document.getElementById('loader');

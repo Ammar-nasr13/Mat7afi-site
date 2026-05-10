@@ -8,6 +8,12 @@
     <meta name="keywords" content="متاحف المنيا, جامعة المنيا, تطبيق متاحف, Mat7afi, متحف الفن الحديث, متحف العلوم, متحف السياحة, آثار المنيا, ذكاء اصطناعي متاحف">
     <meta name="author" content="Ammar Nasr - Ego Pro">
     <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#0A192F">
+    <link rel="canonical" href="https://mat7afi.site/">
+    
+    <!-- Security Headers -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https://appwrite.etihadalmdina.com https://upload.wikimedia.org; connect-src 'self' https://appwrite.etihadalmdina.com https://api.openai.com; frame-ancestors 'none';">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
@@ -30,11 +36,17 @@
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
+      "@type": "WebApplication",
       "name": "Mat7afi",
+      "url": "https://mat7afi.site/",
+      "logo": "https://mat7afi.site/assets/logo.png",
       "operatingSystem": "Android, iOS",
       "applicationCategory": "TravelApplication, EducationApplication",
       "description": "تطبيق متاحف جامعة المنيا الرسمي لاستكشاف الفنون والعلوم والآثار.",
+      "author": {
+        "@type": "Person",
+        "name": "Ammar Nasr"
+      },
       "offers": {
         "@type": "Offer",
         "price": "0",
@@ -61,7 +73,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-    <link rel="stylesheet" href="style.min.css">
+    <link rel="stylesheet" href="style.css">
 
 
     <!-- Critical CSS -->
@@ -85,7 +97,7 @@
     <nav class="navbar navbar-expand-lg fixed-top" id="mainNav">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center" href="#">
-                <img src="assets/logo.png" alt="Mat7afi Logo" class="nav-logo me-2" fetchpriority="high">
+                <img src="assets/logo.png" alt="شعار متاحف جامعة المنيا - Mat7afi" class="nav-logo me-2" fetchpriority="high">
                 <div class="brand-text">
                     <span class="en-name">Mat7afi</span>
                     <span class="ar-name">متاحف جامعة المنيا</span>
@@ -215,7 +227,7 @@
             <div class="row g-3">
                 <div class="col-md-3 col-6" data-aos="zoom-in" data-aos-delay="100">
                     <div class="gallery-item shadow-2xl rounded-4 overflow-hidden">
-                        <img src="assets/Frame 1.png" alt="App Screen 1" class="img-fluid gallery-img" loading="lazy">
+                        <img src="assets/Frame 1.png" alt="لقطة شاشة من تطبيق متاحف جامعة المنيا - واجهة المستخدم" class="img-fluid gallery-img" loading="lazy">
                     </div>
                 </div>
                 <div class="col-md-3 col-6" data-aos="zoom-in" data-aos-delay="200">
@@ -286,7 +298,7 @@
                     </div>
                 </div>
                 <div class="col-lg-7 text-center" data-aos="fade-right">
-                    <img src="assets/Desktop  2.png" alt="Features Overview" class="img-fluid rounded-4 shadow-2xl" loading="lazy">
+                    <img src="assets/Desktop  2.png" alt="مميزات تطبيق متاحف جامعة المنيا - المسح الذكي والدليل الصوتي" class="img-fluid rounded-4 shadow-2xl" loading="lazy">
                 </div>
             </div>
         </div>
@@ -330,11 +342,16 @@
         <div class="container py-5">
             <div class="cta-card bg-navy-gradient text-white p-5 rounded-5 text-center shadow-2xl" data-aos="fade-up">
                 <h2 class="display-5 fw-black mb-4">احمل المتاحف في جيبك</h2>
-                <p class="lead mb-5 opacity-75">متوفر الآن لجميع أجهزة الأندرويد والـ iOS. ابدأ جولتك الآن مجاناً.</p>
-                <div class="d-flex flex-wrap justify-content-center gap-4">
-                    <a href="#" class="store-link">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Google Play">
-                    </a>
+                <p class="lead mb-5 opacity-75">احصل على التجربة الكاملة عبر التطبيق الرسمي. متوفر قريباً على المتاجر الرسمية ومتاح الآن للتحميل المباشر.</p>
+                
+                <!-- Store Badges -->
+                <div class="d-flex flex-wrap justify-content-center gap-4 mb-5">
+                    <div class="store-link-wrapper position-relative">
+                        <a href="#" class="store-link disabled-link">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Google Play">
+                        </a>
+                        <span class="coming-soon-badge">قريباً</span>
+                    </div>
                     <div class="store-link-wrapper position-relative">
                         <a href="#" class="store-link disabled-link">
                             <img src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg" alt="App Store">
@@ -342,9 +359,27 @@
                         <span class="coming-soon-badge">قريباً</span>
                     </div>
                 </div>
+
+                <!-- Direct Download Links -->
+                <div class="mt-5 pt-5 border-top border-white border-opacity-10">
+                    <h3 class="h5 text-accent mb-4">تحميل مباشر (إصدارات الأجهزة)</h3>
+                    <div class="d-flex flex-wrap justify-content-center gap-3">
+                        <a href="#" class="btn-outline-premium btn-sm">
+                            <i class="fab fa-android me-2"></i> إصدار Universal (APK)
+                        </a>
+                        <a href="#" class="btn-outline-premium btn-sm">
+                            <i class="fab fa-android me-2"></i> إصدار ARM64-v8a
+                        </a>
+                        <a href="#" class="btn-outline-premium btn-sm">
+                            <i class="fab fa-android me-2"></i> إصدار armeabi-v7a
+                        </a>
+                    </div>
+                    <p class="mt-3 text-white-50 small">يمكنك تحميل الملف المناسب لنوع جهازك وتثبيته مباشرة.</p>
+                </div>
             </div>
         </div>
     </section>
+
 
     <!-- Footer -->
     <footer class="footer py-5 bg-navy-dark text-white border-top border-secondary">
@@ -360,17 +395,16 @@
                     <ul class="list-unstyled footer-links">
                         <li><a href="#hero">الرئيسية</a></li>
                         <li><a href="#museums">متاحفنا</a></li>
-                        <li><a href="#features">المميزات</a></li>
-                        <li><a href="#ai-assistant">المساعد الذكي</a></li>
+                        <li><a href="privacy-policy.html">سياسة الخصوصية</a></li>
+                        <li><a href="terms.html">الشروط والأحكام</a></li>
                     </ul>
                 </div>
                 <div class="col-lg-4 text-center text-lg-end">
                     <h5 class="fw-bold mb-4">تابعنا</h5>
                     <div class="social-icons">
-                        <a href="#"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#"><i class="fab fa-twitter"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="https://www.facebook.com/share/14eDwjJJU6m/" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                        <a href="https://www.tiktok.com/@miniauniversitymuseumapp?_r=1&_t=ZS-96A3fQvTTl9" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+                        <a href="https://www.instagram.com/minia_university_museums?igsh=MTI3eTVxZTVsajZnbQ==" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
                     </div>
                     <p class="mt-4 text-white-50 small">© 2026 جميع الحقوق محفوظة لجامعة المنيا | تم التطوير بواسطة Ammar Nasr - Ego Pro</p>
                 </div>

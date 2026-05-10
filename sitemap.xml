@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://mat7afi.site/</loc>
+    <lastmod>2026-05-10</lastmod>
+    <priority>1.00</priority>
+  </url>
+  <url>
+    <loc>https://mat7afi.site/index.html</loc>
+    <lastmod>2026-05-10</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://mat7afi.site/museum.html</loc>
+    <lastmod>2026-05-10</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://mat7afi.site/artifact.html</loc>
+    <lastmod>2026-05-10</lastmod>
+    <priority>0.70</priority>
+  </url>
+</urlset>
