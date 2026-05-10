@@ -271,7 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (artifact['name-ar']) addInfoRow(infoCard, 'الاسم', artifact['name-ar'], 'fa-tag');
             } else if (collectionId.includes('art')) {
                 addInfoRow(infoCard, 'الفنان', artifact['author-ar'], 'fa-user-paint');
-                addInfoRow(infoCard, 'الرقم التسلسلي', artifact['serialNumber'], 'fa-qrcode');
+                addInfoRow(infoCard, 'الرقم التسلسلي', artifact['serial_number'], 'fa-qrcode');
                 addInfoRow(infoCard, 'المقاس', artifact['size-ar'], 'fa-expand');
                 addInfoRow(infoCard, 'النوع', artifact['type-ar'], 'fa-palette');
             }
@@ -305,12 +305,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getAppwriteAudioUrl(fileId) {
-        return `https://appwrite.etihadalmdina.com/v1/storage/buckets/69f7d68c003821997d0d/files/${fileId}/view?project=69f21c73000621939422`;
+        return `https://appwrite.etihadalmdina.com/v1/storage/buckets/69f870c0000eb3969260/files/${fileId}/view?project=69f21c73000621939422`;
     }
 
     function getBucketByType(collectionId) {
-        if (collectionId.includes('science')) return '69fdfa80002f0db83c67';
-        if (collectionId.includes('art')) return '69fdfa66002d1a9106f7';
+        if (collectionId.includes('science') || collectionId.includes('art')) return '69f686e9002f917ec2a2';
         return '69f7d68c003821997d0d'; // Tourism
     }
 
