@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>استكشاف المتاحف | Mat7afi</title>
+    <link rel="icon" type="image/png" href="assets/icon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-navy">
+
+    <!-- Header -->
+    <header class="py-4 bg-navy-dark border-bottom border-secondary sticky-top">
+        <div class="container d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center">
+                <a href="index.html" class="btn-close-overlay me-3"><i class="fas fa-arrow-right"></i></a>
+                <h2 id="museum-title" class="overlay-title">تحميل...</h2>
+            </div>
+            <a href="index.html">
+                <img src="assets/logo.png" alt="Logo" height="40">
+            </a>
+        </div>
+    </header>
+
+    <!-- Content -->
+    <main class="container py-5">
+        <div id="artifacts-grid" class="row g-4">
+            <!-- Skeletons initially -->
+            <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="skeleton skeleton-card"></div>
+            </div>
+            <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="skeleton skeleton-card"></div>
+            </div>
+            <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="skeleton skeleton-card"></div>
+            </div>
+            <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="skeleton skeleton-card"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Appwrite SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.0"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const collectionId = urlParams.get('id');
+            const museumName = urlParams.get('name');
+
+            if (collectionId && museumName) {
+                document.getElementById('museum-title').innerText = museumName;
+                initMuseumPage(collectionId, museumName);
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+    </script>
+</body>
+</html>

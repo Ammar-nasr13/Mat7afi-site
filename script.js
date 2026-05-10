@@ -1,5 +1,22 @@
 // Mat7afi - AI Chatbot & UI Logic
 
+window.loadMuseumArtifacts = (collectionId, museumName) => {
+    window.location.href = `museum.html?id=${collectionId}&name=${encodeURIComponent(museumName)}`;
+};
+
+// Initialize Appwrite at the top level
+let databases;
+const databaseId = '69f699480010e2feea8a';
+
+if (typeof Appwrite !== 'undefined') {
+    const { Client, Databases } = Appwrite;
+    const client = new Client();
+    client
+        .setEndpoint('https://appwrite.etihadalmdina.com/v1')
+        .setProject('69f21c73000621939422');
+    databases = new Databases(client);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Navbar Scroll Effect
     const mainNav = document.getElementById('mainNav');
@@ -121,4 +138,131 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+    // 4. Appwrite Integration for Artifacts Exploration
+    if (typeof Appwrite !== 'undefined' && databases) {
+        window.initMuseumPage = async (collectionId, museumName) => {
+        const artifactsGrid = document.getElementById('artifacts-grid');
+        if (!artifactsGrid) return;
+
+        try {
+            const response = await databases.listDocuments(databaseId, collectionId);
+            const artifacts = response.documents;
+
+            if (artifacts.length === 0) {
+                artifactsGrid.innerHTML = '<div class="col-12 text-center py-5"><h3>لا توجد قطع حالياً في هذا المتحف</h3></div>';
+                return;
+            }
+
+            artifactsGrid.innerHTML = '';
+            artifacts.forEach(artifact => {
+                const bucketId = getBucketByType(collectionId);
+                const imageUrl = artifact.image_url || getAppwriteImageUrl(artifact.image, bucketId);
+                
+                const card = document.createElement('div');
+                card.className = 'col-lg-3 col-md-4 col-sm-6';
+                card.innerHTML = `
+                    <div class="artifact-card" onclick="location.href='artifact.html?id=${artifact.$id}&collection=${collectionId}&museum=${encodeURIComponent(museumName)}'" data-aos="fade-up">
+                        <div class="artifact-card-img">
+                            <img src="${imageUrl}" alt="${artifact['name-ar']}" loading="lazy">
+                        </div>
+                        <div class="artifact-card-body text-center p-3">
+                            <h3 class="artifact-card-title" style="font-size: 1.1rem; color: var(--cream);">${artifact['name-ar']}</h3>
+                        </div>
+                    </div>
+                `;
+                artifactsGrid.appendChild(card);
+            });
+
+            if (window.AOS) AOS.init();
+        } catch (error) {
+            console.error('Error fetching artifacts:', error);
+            artifactsGrid.innerHTML = `
+                <div class="col-12 text-center py-5">
+                    <h3>حدث خطأ أثناء تحميل البيانات.</h3>
+                    <p class="text-white-50 mt-2">${error.message || 'يرجى التحقق من اتصالك بالإنترنت أو إعدادات الخادم.'}</p>
+                </div>
+            `;
+        }
+    };
+
+    window.initArtifactPage = async (documentId, collectionId, museumName) => {
+        const loader = document.getElementById('loader');
+        const content = document.getElementById('artifact-content');
+        
+        try {
+            const artifact = await databases.getDocument(databaseId, collectionId, documentId);
+            const bucketId = getBucketByType(collectionId);
+            
+            // Set basic info
+            document.getElementById('artifact-img').src = artifact.image_url || getAppwriteImageUrl(artifact.image, bucketId, 80);
+            document.title = `${artifact['name-ar']} | Mat7afi`;
+            document.getElementById('artifact-desc').innerText = artifact['description-ar'];
+
+            const infoCard = document.getElementById('info-card');
+            infoCard.innerHTML = '';
+
+            // Dynamic fields based on museum type
+            if (collectionId.includes('tourism')) {
+                addInfoRow(infoCard, 'العصر', artifact['era-ar'], 'fa-history');
+                addInfoRow(infoCard, 'المادة', artifact['material-ar'], 'fa-layer-group');
+                addInfoRow(infoCard, 'الأبعاد', artifact['dimensions-ar'], 'fa-ruler-combined');
+                addInfoRow(infoCard, 'الموقع', artifact['location-ar'], 'fa-map-marker-alt');
+                
+                if (artifact['audio-ar']) {
+                    const audioSec = document.getElementById('audio-section');
+                    audioSec.style.display = 'block';
+                    document.getElementById('artifact-audio').src = getAppwriteAudioUrl(artifact['audio-ar']);
+                }
+            } else if (collectionId.includes('science')) {
+                addInfoRow(infoCard, 'التصنيف', museumName, 'fa-microscope');
+                if (artifact['name-ar']) addInfoRow(infoCard, 'الاسم', artifact['name-ar'], 'fa-tag');
+            } else if (collectionId.includes('art')) {
+                addInfoRow(infoCard, 'الفنان', artifact['author-ar'], 'fa-user-paint');
+                addInfoRow(infoCard, 'الرقم التسلسلي', artifact['serialNumber'], 'fa-qrcode');
+                addInfoRow(infoCard, 'المقاس', artifact['size-ar'], 'fa-expand');
+                addInfoRow(infoCard, 'النوع', artifact['type-ar'], 'fa-palette');
+            }
+
+            loader.style.display = 'none';
+            content.style.display = 'block';
+        } catch (error) {
+            console.error('Error fetching artifact details:', error);
+            loader.innerHTML = `
+                <div class="text-center py-5">
+                    <h3>حدث خطأ أثناء تحميل تفاصيل القطعة.</h3>
+                    <p class="text-white-50 mt-2">${error.message || 'يرجى التحقق من اتصالك بالإنترنت.'}</p>
+                </div>
+            `;
+        }
+    };
+    } else {
+        console.warn('Appwrite SDK not loaded.');
+    }
+
+    function addInfoRow(container, label, value, icon) {
+        if (!value) return;
+        const row = document.createElement('div');
+        row.className = 'mobile-info-row';
+        row.innerHTML = `
+            <div class="mobile-icon-circle"><i class="fas ${icon}"></i></div>
+            <div class="mobile-info-label">${label}:</div>
+            <div class="mobile-info-value">${value}</div>
+        `;
+        container.appendChild(row);
+    }
+
+    function getAppwriteAudioUrl(fileId) {
+        return `https://appwrite.etihadalmdina.com/v1/storage/buckets/69f7d68c003821997d0d/files/${fileId}/view?project=69f21c73000621939422`;
+    }
+
+    function getBucketByType(collectionId) {
+        if (collectionId.includes('science')) return '69fdfa80002f0db83c67';
+        if (collectionId.includes('art')) return '69fdfa66002d1a9106f7';
+        return '69f7d68c003821997d0d'; // Tourism
+    }
+
+    function getAppwriteImageUrl(fileId, bucketId, quality = 60) {
+        if (!fileId) return 'assets/placeholder.png';
+        return `https://appwrite.etihadalmdina.com/v1/storage/buckets/${bucketId}/files/${fileId}/preview?project=69f21c73000621939422&quality=${quality}`;
+    }
 });

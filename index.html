@@ -164,7 +164,7 @@
                             <span class="museum-category">الآثار</span>
                             <h3>متحف كلية السياحة</h3>
                             <p>يعرض نماذج تحاكي العصور المصرية القديمة، من الفرعونية إلى الإسلامية.</p>
-                            <a href="#download" class="learn-more">استكشف القطع <i class="fas fa-arrow-left"></i></a>
+                            <a href="javascript:void(0)" onclick="loadMuseumArtifacts('tourism_artifacts', 'متحف كلية السياحة')" class="learn-more">استكشف القطع <i class="fas fa-arrow-left"></i></a>
                         </div>
                     </div>
                 </div>
@@ -180,7 +180,7 @@
                             <span class="museum-category">العلوم</span>
                             <h3>متحف كلية العلوم</h3>
                             <p>رحلة في عالم الطبيعة والتاريخ الجيولوجي عبر مئات العينات النادرة والفريدة.</p>
-                            <a href="#download" class="learn-more">استكشف القطع <i class="fas fa-arrow-left"></i></a>
+                            <a href="javascript:void(0)" onclick="loadMuseumArtifacts('science_atifacts', 'متحف كلية العلوم')" class="learn-more">استكشف القطع <i class="fas fa-arrow-left"></i></a>
                         </div>
                     </div>
                 </div>
@@ -196,7 +196,7 @@
                             <span class="museum-category">الفنون</span>
                             <h3>متحف الفن الحديث</h3>
                             <p>يضم مجموعة فريدة من اللوحات والمنحوتات المعاصرة التي تعكس الإبداع المصري.</p>
-                            <a href="#download" class="learn-more">استكشف القطع <i class="fas fa-arrow-left"></i></a>
+                            <a href="javascript:void(0)" onclick="loadMuseumArtifacts('art_atifacts', 'متحف الفن الحديث')" class="learn-more">استكشف القطع <i class="fas fa-arrow-left"></i></a>
                         </div>
                     </div>
                 </div>
@@ -379,9 +379,11 @@
     </footer>
 
     <!-- Scripts -->
+    <!-- Appwrite SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.0"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    <script src="script.min.js" defer></script>
+    <script src="script.js" defer></script>
     <script>
         window.addEventListener('load', function() {
             AOS.init({
