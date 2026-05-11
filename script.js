@@ -4,16 +4,33 @@ window.loadMuseumArtifacts = (collectionId, museumName) => {
     window.location.href = `museum.html?id=${collectionId}&name=${encodeURIComponent(museumName)}`;
 };
 
-// Initialize Appwrite at the top level
+// Initialize Appwrite Configuration
+const AppwriteConfig = {
+    endpoint: 'https://appwrite.etihadalmdina.com/v1',
+    projectId: '69f21c73000621939422',
+    databaseId: '69f699480010e2feea8a',
+    collections: {
+        tourism: 'tourism_artifacts',
+        science: 'science_atifacts',
+        art: 'art_atifacts'
+    },
+    buckets: {
+        tourism: '69f7d68c003821997d0d',
+        artifacts: '69f686e9002f917ec2a2',
+        audio: '69f870c0000eb3969260',
+        artImages: '69fdfa66002d1a9106f7',
+        scienceImages: '69fdfa80002f0db83c67'
+    }
+};
+
 let databases;
-const databaseId = '69f699480010e2feea8a';
 
 if (typeof Appwrite !== 'undefined') {
     const { Client, Databases } = Appwrite;
     const client = new Client();
     client
-        .setEndpoint('https://appwrite.etihadalmdina.com/v1')
-        .setProject('69f21c73000621939422');
+        .setEndpoint(AppwriteConfig.endpoint)
+        .setProject(AppwriteConfig.projectId);
     databases = new Databases(client);
 }
 
@@ -164,7 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let allArtifacts = [];
 
         try {
-            const response = await databases.listDocuments(databaseId, collectionId);
+            const response = await databases.listDocuments(AppwriteConfig.databaseId, collectionId);
             allArtifacts = response.documents;
 
             const renderArtifacts = (list) => {
@@ -259,7 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const content = document.getElementById('artifact-content');
         
         try {
-            const artifact = await databases.getDocument(databaseId, collectionId, documentId);
+            const artifact = await databases.getDocument(AppwriteConfig.databaseId, collectionId, documentId);
             // Set basic info
             const bucketId = getBucketByType(collectionId, artifact.museumType);
             const imgUrl = getAppwriteImageUrl(artifact.image || artifact.image_url, bucketId, 80);
@@ -332,27 +349,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getAppwriteAudioUrl(fileId) {
-        return `https://appwrite.etihadalmdina.com/v1/storage/buckets/69f870c0000eb3969260/files/${fileId}/view?project=69f21c73000621939422`;
+        return `${AppwriteConfig.endpoint}/storage/buckets/${AppwriteConfig.buckets.audio}/files/${fileId}/view?project=${AppwriteConfig.projectId}`;
     }
 
     function getBucketByType(collectionId, museumType) {
         // Use museumType if available, otherwise fallback to collectionId check
         const type = museumType || (collectionId.includes('science') ? 'science' : (collectionId.includes('art') ? 'art' : 'tourism'));
         
-        if (type === 'science' || type === 'art') {
-            return '69f686e9002f917ec2a2'; // artifactsBucketId
+        if (type === 'science') {
+            return AppwriteConfig.buckets.scienceImages;
         }
-        return '69f7d68c003821997d0d'; // tourismimageBucketId
+        if (type === 'art') {
+            return AppwriteConfig.buckets.artImages;
+        }
+        return AppwriteConfig.buckets.tourism;
     }
 
     function getAppwriteImageUrl(fileId, bucketId, quality = 60) {
-        if (!fileId) return ''; // Remove default logo fallback
+        if (!fileId) return ''; 
         
         // Handle full URLs (like Flutter implementation)
         if (fileId.startsWith('http') || fileId.startsWith('assets/')) {
             return fileId;
         }
 
-        return `https://appwrite.etihadalmdina.com/v1/storage/buckets/${bucketId}/files/${fileId}/preview?project=69f21c73000621939422&quality=${quality}`;
+        return `${AppwriteConfig.endpoint}/storage/buckets/${bucketId}/files/${fileId}/preview?project=${AppwriteConfig.projectId}&quality=${quality}`;
     }
 });
