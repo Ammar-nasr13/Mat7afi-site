@@ -182,9 +182,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     card.className = 'col-lg-3 col-md-4 col-sm-6 mb-4';
                     card.innerHTML = `
                         <div class="artifact-card" onclick="location.href='artifact.html?id=${artifact.$id}&collection=${collectionId}&museum=${encodeURIComponent(museumName)}'" data-aos="fade-up">
+                            ${imageUrl ? `
                             <div class="artifact-card-img">
-                                <img src="${imageUrl}" alt="${artifact['name-ar']}" loading="lazy">
-                            </div>
+                                <img src="${imageUrl}" alt="${artifact['name-ar']}" loading="lazy" onerror="this.parentElement.style.display='none'">
+                            </div>` : ''}
                             <div class="artifact-card-body text-center p-3">
                                 <h3 class="artifact-card-title" style="font-size: 1.1rem; color: var(--cream);">${artifact['name-ar']}</h3>
                             </div>
@@ -259,16 +260,21 @@ document.addEventListener('DOMContentLoaded', () => {
         
         try {
             const artifact = await databases.getDocument(databaseId, collectionId, documentId);
-            const bucketId = getBucketByType(collectionId);
-            
             // Set basic info
+            const bucketId = getBucketByType(collectionId, artifact.museumType);
             const imgUrl = getAppwriteImageUrl(artifact.image || artifact.image_url, bucketId, 80);
-            document.getElementById('artifact-img').src = imgUrl;
             
-            // Log for debugging if image is missing
-            if (!artifact.image && !artifact.image_url) {
-                console.warn('Artifact image field is missing for document:', documentId);
+            const artifactImg = document.getElementById('artifact-img');
+            if (imgUrl) {
+                artifactImg.src = imgUrl;
+                artifactImg.alt = artifact['name-ar'] || 'Artifact Image';
+                artifactImg.style.display = 'block';
+            } else {
+                artifactImg.style.display = 'none';
             }
+            
+            // Log for debugging
+            console.log('Artifact loaded:', artifact['name-ar'], 'Bucket:', bucketId, 'Image URL:', imgUrl);
             document.title = `${artifact['name-ar']} | Mat7afi`;
             document.getElementById('artifact-desc').innerText = artifact['description-ar'];
 
@@ -329,16 +335,18 @@ document.addEventListener('DOMContentLoaded', () => {
         return `https://appwrite.etihadalmdina.com/v1/storage/buckets/69f870c0000eb3969260/files/${fileId}/view?project=69f21c73000621939422`;
     }
 
-    function getBucketByType(collectionId) {
-        // Match Flutter logic exactly
-        if (collectionId.includes('science') || collectionId.includes('art')) {
+    function getBucketByType(collectionId, museumType) {
+        // Use museumType if available, otherwise fallback to collectionId check
+        const type = museumType || (collectionId.includes('science') ? 'science' : (collectionId.includes('art') ? 'art' : 'tourism'));
+        
+        if (type === 'science' || type === 'art') {
             return '69f686e9002f917ec2a2'; // artifactsBucketId
         }
         return '69f7d68c003821997d0d'; // tourismimageBucketId
     }
 
     function getAppwriteImageUrl(fileId, bucketId, quality = 60) {
-        if (!fileId) return 'assets/logo.png'; // Use logo as a better fallback than non-existent placeholder
+        if (!fileId) return ''; // Remove default logo fallback
         
         // Handle full URLs (like Flutter implementation)
         if (fileId.startsWith('http') || fileId.startsWith('assets/')) {
