@@ -5,34 +5,53 @@ const path = require('path');
 const port = 3001;
 
 const server = http.createServer((req, res) => {
+
+    // CORS مهم جدًا للصور
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', '*');
+
     let filePath = '.' + req.url;
-    if (filePath == './') filePath = './index.html';
+
+    if (filePath === './') {
+        filePath = './index.html';
+    }
 
     const extname = String(path.extname(filePath)).toLowerCase();
+
     const mimeTypes = {
         '.html': 'text/html',
         '.js': 'text/javascript',
         '.css': 'text/css',
         '.json': 'application/json',
         '.png': 'image/png',
-        '.jpg': 'image/jpg',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
         '.gif': 'image/gif',
         '.svg': 'image/svg+xml',
+        '.webp': 'image/webp'
     };
 
     const contentType = mimeTypes[extname] || 'application/octet-stream';
 
     fs.readFile(filePath, (error, content) => {
+
         if (error) {
-            if(error.code == 'ENOENT') {
+
+            if (error.code === 'ENOENT') {
                 res.writeHead(404);
                 res.end('File not found');
             } else {
                 res.writeHead(500);
-                res.end('Sorry, check with the site admin for error: '+error.code+' ..\n');
+                res.end(`Server Error: ${error.code}`);
             }
+
         } else {
-            res.writeHead(200, { 'Content-Type': contentType });
+
+            res.writeHead(200, {
+                'Content-Type': contentType
+            });
+
             res.end(content, 'utf-8');
         }
     });
