@@ -7,7 +7,10 @@
     <meta name="description" content="تعرف على تاريخ وقصة هذه القطعة من متاحف جامعة المنيا. شرح صوتي ومعلومات موثقة.">
     <meta name="keywords" content="تفاصيل الأثر, شرح صوتي, متاحف المنيا, متحفي, استكشاف رقمي, جامعة المنيا">
     <meta name="robots" content="index, follow">
-    <meta name="theme-color" content="#F8F9FA">
+    <link rel="canonical" href="https://mat7afi.site/artifact.html">
+    <meta property="og:url" content="https://mat7afi.site/artifact.html">
+    <meta property="twitter:url" content="https://mat7afi.site/artifact.html">
+    <meta name="theme-color" content="#FAFAFA">
     
     <!-- Security Headers -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https://appwrite.etihadalmdina.com https://upload.wikimedia.org; connect-src 'self' https://appwrite.etihadalmdina.com https://api.openai.com; frame-ancestors 'none';">
@@ -28,11 +31,11 @@
 </head>
 <body class="artifact-page-body">
 
-    <a href="javascript:history.back()" class="btn-back">
+    <a href="javascript:history.back()" class="btn-back" style="top: 20px; left: 20px;">
         <i class="fas fa-arrow-right"></i>
     </a>
 
-    <a href="index.html" class="btn-home">
+    <a href="index.html" class="btn-home" style="top: 20px; left: 80px;">
         <i class="fas fa-home"></i>
     </a>
 
@@ -51,25 +54,31 @@
             <div class="row justify-content-center">
                 <div class="col-lg-8">
                     <!-- Basic Info -->
-                    <h3 class="section-title-mobile">تفاصيل القطعة</h3>
+                    <h3 class="section-title-mobile mt-4">
+                        <i class="fas fa-info-circle"></i> تفاصيل القطعة
+                    </h3>
                     <div id="info-card" class="mobile-info-card">
                         <!-- Rows will be injected here -->
                     </div>
 
                     <!-- Description -->
-                    <h3 class="section-title-mobile">الوصف</h3>
+                    <h3 class="section-title-mobile">
+                        <i class="fas fa-align-right"></i> الوصف
+                    </h3>
                     <div class="description-card mb-4">
-                        <p id="artifact-desc"></p>
+                        <p id="artifact-desc" style="white-space: pre-line; color: var(--dark);"></p>
                     </div>
 
                     <!-- Audio (Optional) -->
                     <div id="audio-section" style="display: none;">
-                        <h3 class="section-title-mobile">استمع للشرح الصوتي</h3>
-                        <div class="audio-card">
+                        <h3 class="section-title-mobile">
+                            <i class="fas fa-headphones"></i> استمع للشرح الصوتي
+                        </h3>
+                        <div class="audio-card text-center">
                             <div class="mobile-icon-circle">
-                                <i class="fas fa-headphones"></i>
+                                <i class="fas fa-play"></i>
                             </div>
-                            <audio id="artifact-audio" controls class="w-100"></audio>
+                            <audio id="artifact-audio" controls class="w-100 mt-3"></audio>
                         </div>
                     </div>
                 </div>

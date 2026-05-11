@@ -90,7 +90,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const renderArtifacts = (artifacts) => {
         const artifactsGrid = document.getElementById('artifacts-grid');
-
         if (!artifactsGrid) return;
 
         artifactsGrid.innerHTML = '';
@@ -98,11 +97,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!artifacts || !artifacts.length) {
             artifactsGrid.innerHTML = `
                 <div class="col-12 text-center py-5">
-                    <h3>لا توجد نتائج للبحث.</h3>
+                    <div class="mobile-info-card">
+                        <h3>لا توجد نتائج للبحث.</h3>
+                        <p class="text-muted">جرب البحث بكلمات أخرى</p>
+                    </div>
                 </div>
             `;
             return;
         }
+
+        const fragment = document.createDocumentFragment();
 
         artifacts.forEach((artifact) => {
             const bucketId = getBucketByType(currentMuseumCollection);
@@ -114,34 +118,31 @@ document.addEventListener('DOMContentLoaded', () => {
             const artifactTitle = getArtifactTitle(artifact);
             const artifactLink = `artifact.html?id=${encodeURIComponent(artifactId)}&collection=${encodeURIComponent(currentMuseumCollection)}&museum=${encodeURIComponent(currentMuseumName)}`;
 
-            const card = document.createElement('div');
-            card.className = 'col-lg-3 col-md-4 col-sm-6 mb-4';
+            const col = document.createElement('div');
+            col.className = 'col-lg-3 col-md-4 col-sm-6 mb-4';
 
-            card.innerHTML = `
+            col.innerHTML = `
                 <a href="${artifactLink}" class="artifact-card-link">
                     <div class="artifact-card">
-                        ${imageUrl ? `
-                            <div class="artifact-card-img">
-                                <img
-                                    src="${imageUrl}"
-                                    alt="${artifactTitle}"
-                                    loading="lazy"
-                                    onerror="console.error('Image failed:', this.src)"
-                                >
-                            </div>
-                        ` : ''}
-
-                        <div class="artifact-card-body text-center p-3">
-                            <h3 class="artifact-card-title" style="font-size:1.1rem;color:var(--cream);">
-                                ${artifactTitle}
-                            </h3>
+                        <div class="artifact-card-img">
+                            <img
+                                src="${imageUrl || 'assets/placeholder.png'}"
+                                alt="${artifactTitle}"
+                                loading="lazy"
+                                onerror="this.src='assets/placeholder.png'"
+                            >
+                        </div>
+                        <div class="artifact-card-body text-center">
+                            <h3 class="artifact-card-title">${artifactTitle}</h3>
                         </div>
                     </div>
                 </a>
             `;
 
-            artifactsGrid.appendChild(card);
+            fragment.appendChild(col);
         });
+
+        artifactsGrid.appendChild(fragment);
     };
 
     const filterMuseumArtifacts = () => {

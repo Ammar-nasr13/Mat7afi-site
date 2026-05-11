@@ -7,7 +7,10 @@
     <meta name="description" content="تصفح مقتنيات متاحف جامعة المنيا. اكتشف القطع الأثرية النادرة، اللوحات الفنية، والعينات العلمية بدقة عالية.">
     <meta name="keywords" content="قطع أثرية, متاحف المنيا, متحفي, متاحف مصر, استكشاف رقمي, جامعة المنيا">
     <meta name="robots" content="index, follow">
-    <meta name="theme-color" content="#0A192F">
+    <link rel="canonical" href="https://mat7afi.site/museum.html">
+    <meta property="og:url" content="https://mat7afi.site/museum.html">
+    <meta property="twitter:url" content="https://mat7afi.site/museum.html">
+    <meta name="theme-color" content="#172554">
     
     <!-- Security Headers -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https://appwrite.etihadalmdina.com https://upload.wikimedia.org; connect-src 'self' https://appwrite.etihadalmdina.com https://api.openai.com; frame-ancestors 'none';">
@@ -33,44 +36,37 @@
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-navy">
+<body class="bg-light">
 
     <!-- Header -->
-    <header class="py-2 bg-navy-dark border-bottom border-secondary sticky-top">
+    <header class="py-3 bg-primary sticky-top shadow-sm">
         <div class="container d-flex align-items-center justify-content-between">
             <div class="d-flex align-items-center">
-                <a href="index.html" class="btn-close-overlay me-3"><i class="fas fa-arrow-right"></i></a>
+                <a href="index.html" class="btn-back-header me-3"><i class="fas fa-arrow-right"></i></a>
                 <h2 id="museum-title" class="overlay-title">تحميل...</h2>
             </div>
             <a href="index.html">
-                <img src="assets/logo.png" alt="شعار متاحف جامعة المنيا - Mat7afi" class="nav-logo">
+                <img src="assets/logo.png" alt="شعار متاحف جامعة المنيا - Mat7afi" class="nav-logo" style="background: white; padding: 5px; border-radius: 8px;">
             </a>
-
         </div>
     </header>
 
     <style>
-        .btn-close-overlay {
-            color: var(--accent) !important;
+        .btn-back-header {
+            color: white !important;
             text-decoration: none !important;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            font-size: 1.2rem;
             transition: var(--transition);
         }
-        .btn-close-overlay i {
-            color: var(--accent) !important;
-            font-size: 1.5rem;
-        }
-        .btn-close-overlay:hover {
+        .btn-back-header:hover {
             transform: scale(1.1);
-            filter: brightness(1.2);
         }
     </style>
 
 
+
     <!-- Search Section -->
-    <section class="py-4 bg-navy">
+    <section class="py-4 bg-white border-bottom">
         <div class="container">
             <div class="search-container">
                 <input type="text" id="artifact-search" class="search-input" placeholder="ابحث عن قطعة أثرية باسمها...">
