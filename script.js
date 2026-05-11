@@ -358,129 +358,148 @@ document.addEventListener('DOMContentLoaded', () => {
         ) => {
 
             const loader = document.getElementById('loader');
-            const artifactContent =
-                document.getElementById('artifact-content');
-            const artifactDesc =
-                document.getElementById('artifact-desc');
-            const infoCard =
-                document.getElementById('info-card');
-            const audioSection =
-                document.getElementById('audio-section');
-            const audioPlayer =
-                document.getElementById('artifact-audio');
-            const artifactImg =
-                document.getElementById('artifact-img');
+            const artifactContent = document.getElementById('artifact-content');
+            const artifactDesc = document.getElementById('artifact-desc');
+            const infoCard = document.getElementById('info-card');
+            const audioSection = document.getElementById('audio-section');
+            const audioPlayer = document.getElementById('artifact-audio');
+            const artifactImg = document.getElementById('artifact-img');
+            const playPauseBtn = document.getElementById('play-pause-btn');
+            const waveformContainer = document.getElementById('waveform');
+            const currentTimeEl = document.getElementById('current-time');
+            const durationTimeEl = document.getElementById('duration-time');
 
-            if (loader) {
-                loader.style.display = 'block';
-            }
-
-            if (artifactContent) {
-                artifactContent.style.display = 'none';
-            }
+            if (loader) loader.style.display = 'block';
+            if (artifactContent) artifactContent.style.display = 'none';
 
             try {
+                const artifact = await databases.getDocument(
+                    AppwriteConfig.databaseId,
+                    collectionId,
+                    documentId
+                );
 
-                const artifact =
-                    await databases.getDocument(
-                        AppwriteConfig.databaseId,
-                        collectionId,
-                        documentId
-                    );
-
-                const bucketId =
-                    getBucketByType(collectionId);
-
-                const imgUrl =
-                    getAppwriteImageUrl(
-                        artifact.image ||
-                        artifact.image_url,
-                        bucketId
-                    );
+                const bucketId = getBucketByType(collectionId);
+                const imgUrl = getAppwriteImageUrl(artifact.image || artifact.image_url, bucketId);
 
                 if (artifactImg && imgUrl) {
-
                     artifactImg.src = imgUrl;
-
                     artifactImg.onerror = function () {
-
-                        console.error(
-                            'Artifact image failed:',
-                            this.src
-                        );
                         this.style.display = 'none';
                     };
                 }
 
                 if (artifactDesc) {
-                    artifactDesc.innerText =
-                        getArtifactDescription(artifact) ||
-                        'لا يوجد وصف متاح لهذه القطعة.';
+                    artifactDesc.innerText = getArtifactDescription(artifact) || 'لا يوجد وصف متاح لهذه القطعة.';
                 }
 
                 if (infoCard) {
-
                     const rows = [];
-
-                    const addRow = (label, value) => {
+                    const addRow = (label, value, icon) => {
                         if (!value) return;
-
                         rows.push(`
-                            <div class="info-row">
-                                <span class="info-label">${label}</span>
-                                <span class="info-value">${value}</span>
+                            <div class="mobile-info-row">
+                                <div class="mobile-icon-circle">
+                                    <i class="fas ${icon}"></i>
+                                </div>
+                                <div class="mobile-info-label">${label}:</div>
+                                <div class="mobile-info-value">${value}</div>
                             </div>
                         `);
                     };
 
-                    addRow('الاسم', getArtifactTitle(artifact));
-                    addRow('المتحف', museumName || '');
-                    addRow('الفئة', artifact['category-ar'] || artifact.category || artifact.type);
-                    addRow('العصر', artifact['era-ar'] || artifact.era || artifact.period);
-                    addRow('المادة', artifact['material-ar'] || artifact.material);
-                    addRow('الأصل', artifact['origin-ar'] || artifact.origin);
-                    addRow('الرقم التعريفي', artifact.$id || artifact.id);
+                    const type = artifact['category-ar'] || artifact.category || artifact.type;
+                    const era = artifact['era-ar'] || artifact.era || artifact.period;
+                    const material = artifact['material-ar'] || artifact.material;
+                    const origin = artifact['origin-ar'] || artifact.origin;
+                    const dimensions = artifact['dimensions-ar'] || artifact.dimensions;
+                    const location = artifact['location-ar'] || artifact.location;
+                    const author = artifact['author-ar'] || artifact.author;
+                    const size = artifact['size-ar'] || artifact.size;
+
+                    if (era) addRow('العصر', era, 'fa-history');
+                    if (material) addRow('المادة', material, 'fa-layer-group');
+                    if (dimensions) addRow('المقاسات', dimensions, 'fa-ruler-combined');
+                    if (location) addRow('الموقع', location, 'fa-map-marker-alt');
+                    if (author) addRow('الفنان', author, 'fa-user');
+                    if (size) addRow('الحجم', size, 'fa-expand');
+                    if (type) addRow('النوع', type, 'fa-tags');
+                    
+                    addRow('الرقم التعريفي', artifact.$id || artifact.id, 'fa-qrcode');
 
                     infoCard.innerHTML = rows.join('');
                 }
 
-                const audioFileId =
-                    artifact.audio ||
-                    artifact.audio_url ||
-                    artifact.audioUrl;
+                const audioFileId = artifact.audio || artifact.audio_url || artifact.audioUrl;
 
-                if (audioSection && audioPlayer) {
+                if (audioSection && audioPlayer && audioFileId) {
+                    const audioUrl = getAppwriteImageUrl(audioFileId, AppwriteConfig.buckets.audio);
+                    audioPlayer.src = audioUrl;
+                    audioSection.style.display = 'block';
 
-                    if (audioFileId) {
+                    // Audio Player Logic
+                    if (playPauseBtn && waveformContainer) {
+                        // Generate Waveform bars
+                        waveformContainer.innerHTML = '';
+                        const barsCount = 30;
+                        for (let i = 0; i < barsCount; i++) {
+                            const bar = document.createElement('div');
+                            bar.className = 'waveform-bar';
+                            const height = Math.floor(Math.random() * 25) + 5;
+                            bar.style.height = `${height}px`;
+                            waveformContainer.appendChild(bar);
+                        }
 
-                        const audioUrl =
-                            getAppwriteImageUrl(
-                                audioFileId,
-                                AppwriteConfig.buckets.audio
-                            );
+                        const bars = waveformContainer.querySelectorAll('.waveform-bar');
 
-                        audioPlayer.src = audioUrl;
-                        audioSection.style.display = 'block';
-                    } else {
-                        audioSection.style.display = 'none';
+                        playPauseBtn.onclick = () => {
+                            if (audioPlayer.paused) {
+                                audioPlayer.play();
+                                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                            } else {
+                                audioPlayer.pause();
+                                playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                            }
+                        };
+
+                        audioPlayer.ontimeupdate = () => {
+                            const progress = audioPlayer.currentTime / audioPlayer.duration;
+                            const activeBarsCount = Math.floor(progress * barsCount);
+                            
+                            bars.forEach((bar, index) => {
+                                if (index < activeBarsCount) {
+                                    bar.classList.add('active');
+                                } else {
+                                    bar.classList.remove('active');
+                                }
+                            });
+
+                            currentTimeEl.innerText = formatTime(audioPlayer.currentTime);
+                            if (!isNaN(audioPlayer.duration)) {
+                                durationTimeEl.innerText = formatTime(audioPlayer.duration);
+                            }
+                        };
+
+                        audioPlayer.onended = () => {
+                            playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                            bars.forEach(bar => bar.classList.remove('active'));
+                        };
+
+                        function formatTime(seconds) {
+                            const min = Math.floor(seconds / 60);
+                            const sec = Math.floor(seconds % 60);
+                            return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+                        }
                     }
+                } else if (audioSection) {
+                    audioSection.style.display = 'none';
                 }
 
             } catch (error) {
-
-                console.error(
-                    'Error loading artifact:',
-                    error
-                );
+                console.error('Error loading artifact:', error);
             } finally {
-
-                if (loader) {
-                    loader.style.display = 'none';
-                }
-
-                if (artifactContent) {
-                    artifactContent.style.display = 'block';
-                }
+                if (loader) loader.style.display = 'none';
+                if (artifactContent) artifactContent.style.display = 'block';
             }
         };
     }

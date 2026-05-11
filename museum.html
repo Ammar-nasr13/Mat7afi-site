@@ -36,14 +36,14 @@
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-light">
+<body class="bg-navy">
 
     <!-- Header -->
-    <header class="py-3 bg-primary sticky-top shadow-sm">
+    <header class="py-3 bg-navy sticky-top shadow-sm border-bottom border-white border-opacity-10">
         <div class="container d-flex align-items-center justify-content-between">
             <div class="d-flex align-items-center">
                 <a href="index.html" class="btn-back-header me-3"><i class="fas fa-arrow-right"></i></a>
-                <h2 id="museum-title" class="overlay-title">تحميل...</h2>
+                <h2 id="museum-title" class="overlay-title text-white">تحميل...</h2>
             </div>
             <a href="index.html">
                 <img src="assets/logo.png" alt="شعار متاحف جامعة المنيا - Mat7afi" class="nav-logo" style="background: white; padding: 5px; border-radius: 8px;">
@@ -61,12 +61,20 @@
         .btn-back-header:hover {
             transform: scale(1.1);
         }
+        .bg-navy {
+            background-color: var(--navy) !important;
+        }
+        .overlay-title {
+            font-weight: 800;
+            margin: 0;
+            font-size: 1.25rem;
+        }
     </style>
 
 
 
     <!-- Search Section -->
-    <section class="py-4 bg-white border-bottom">
+    <section class="py-4 bg-navy-dark border-bottom border-white border-opacity-10">
         <div class="container">
             <div class="search-container">
                 <input type="text" id="artifact-search" class="search-input" placeholder="ابحث عن قطعة أثرية باسمها...">
