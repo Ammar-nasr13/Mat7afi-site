@@ -541,31 +541,39 @@ document.addEventListener('DOMContentLoaded', () => {
     function getAppwriteImageUrl(fileId, bucketId) {
 
         if (!fileId) {
-
             console.error('No fileId provided');
-
             return '';
+        }
+
+        // Handle Array if Appwrite returns it
+        if (Array.isArray(fileId) && fileId.length > 0) {
+            fileId = fileId[0];
         }
 
         // لو رابط مباشر
         if (
-            fileId.startsWith('http://') ||
-            fileId.startsWith('https://') ||
-            fileId.startsWith('assets/')
+            typeof fileId === 'string' && (
+                fileId.startsWith('http://') ||
+                fileId.startsWith('https://') ||
+                fileId.startsWith('assets/')
+            )
         ) {
-
             return fileId;
         }
 
         // تنظيف الـ fileId
         fileId = fileId.toString().trim();
 
+        // Use preview for images, view for other files
+        const isAudio = bucketId === AppwriteConfig.buckets.audio;
+        const action = isAudio ? 'view' : 'preview';
+
         // رابط الصورة النهائي
         const imageUrl =
-            `${AppwriteConfig.endpoint}/storage/buckets/${bucketId}/files/${fileId}/view?project=${AppwriteConfig.projectId}`;
+            `${AppwriteConfig.endpoint}/storage/buckets/${bucketId}/files/${fileId}/${action}?project=${AppwriteConfig.projectId}`;
 
         console.log(
-            'Generated Image URL:',
+            'Generated URL:',
             imageUrl
         );
 
