@@ -345,7 +345,15 @@ h1, h2, h3, h4, h5, .en-name {
 
 /* Museums Section */
 .bg-navy-dark {
-    background-color: var(--navy-dark);
+    background-color: var(--navy-dark) !important;
+}
+
+.bg-navy {
+    background-color: var(--navy) !important;
+}
+
+.text-cream {
+    color: var(--cream) !important;
 }
 
 .section-heading {
@@ -625,18 +633,28 @@ h1, h2, h3, h4, h5, .en-name {
 
 /* Gallery Section */
 .gallery-item {
-    border: 2px solid rgba(255, 253, 208, 0.1);
+    background: #ffffff;
+    padding: 15px;
+    border-radius: 25px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
     transition: var(--transition);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .gallery-item:hover {
-    transform: scale(1.05);
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 0 30px 60px rgba(0,0,0,0.5);
     border-color: var(--accent);
 }
 
 .gallery-img {
     width: 100%;
-    transition: var(--transition);
+    border-radius: 15px;
+    object-fit: contain;
 }
 
 /* Coming Soon & Disabled Styles */
@@ -728,8 +746,53 @@ img {
 }
 
 .container {
-    padding-right: 15px;
-    padding-left: 15px;
+    padding-right: 20px;
+    padding-left: 20px;
+}
+
+/* Enhanced Responsiveness */
+@media (max-width: 991px) {
+    .navbar-collapse {
+        background: rgba(10, 25, 47, 0.98); /* Match Navy theme */
+        border: 1px solid rgba(217, 119, 6, 0.2);
+    }
+    .section-heading { font-size: 2.5rem; }
+    .hero-section { text-align: center; }
+    .hero-mockup { max-width: 200px; margin: 40px auto; }
+}
+
+@media (max-width: 767px) {
+    .section-heading { font-size: 2rem; }
+    .section-subheading { font-size: 0.9rem; letter-spacing: 1px; }
+    .display-2 { font-size: 2.2rem; }
+    .hero-section { padding-top: 80px; }
+    
+    .museum-card { margin-bottom: 10px; }
+    .card-content { padding: 20px; }
+    
+    .artifact-header { min-height: 250px; padding: 20px 0; }
+    .artifact-header-img { width: 95%; }
+    .artifact-content-wrap { margin-top: -30px; }
+    
+    .feature-item { text-align: right; }
+    .feature-icon { margin-left: 15px; width: 45px; height: 45px; font-size: 1.2rem; }
+    
+    .ai-box .p-5 { padding: 25px !important; }
+}
+
+@media (max-width: 576px) {
+    .display-2 { font-size: 1.8rem; }
+    .section-heading { font-size: 1.7rem; }
+    .btn-premium, .btn-outline-premium { padding: 12px 20px; font-size: 0.9rem; }
+    
+    .artifact-card-title { font-size: 0.95rem; }
+    .artifact-card-body { padding: 10px; }
+    
+    .mobile-info-card { padding: 15px; border-radius: 15px; }
+    .mobile-icon-circle { width: 35px; height: 35px; margin-left: 10px; }
+    
+    .audio-card { padding: 15px; gap: 10px; }
+    .mobile-play-btn { width: 50px; height: 50px; font-size: 1.5rem; }
 }
 /* Reset Password Page */
 .reset-section {
@@ -910,15 +973,26 @@ img {
 }
 
 .artifact-header {
-    height: 400px;
+    min-height: 300px;
+    height: auto;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
+    background-color: var(--navy);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 0;
 }
 
 .artifact-header-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+    max-width: 600px;
+    width: 90%;
+    height: auto;
+    object-fit: contain;
+    border-radius: 20px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+    margin: 20px auto;
+    display: block;
 }
 
 .artifact-header-overlay {
@@ -1034,6 +1108,19 @@ img {
     background: var(--mobile-text);
 }
 
+.audio-waveform-container.playing .waveform-bar {
+    animation: waveform-animation 1s ease-in-out infinite alternate;
+}
+
+.audio-waveform-container.playing .waveform-bar:nth-child(even) {
+    animation-duration: 0.7s;
+}
+
+@keyframes waveform-animation {
+    from { transform: scaleY(1); }
+    to { transform: scaleY(1.3); }
+}
+
 .audio-time {
     font-size: 0.75rem;
     color: #999;
@@ -1140,4 +1227,27 @@ img {
 
 .artifact-card:hover .artifact-card-img img {
     transform: scale(1.1);
+}
+
+.artifact-card-link {
+    text-decoration: none !important;
+    display: block;
+    height: 100%;
+}
+
+.artifact-card-title {
+    color: var(--cream);
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0;
+    transition: var(--transition);
+    text-decoration: none !important;
+}
+
+.artifact-card:hover .artifact-card-title {
+    color: var(--accent);
+}
+
+.artifact-card-body {
+    padding: 15px;
 }

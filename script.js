@@ -119,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const artifactLink = `artifact.html?id=${encodeURIComponent(artifactId)}&collection=${encodeURIComponent(currentMuseumCollection)}&museum=${encodeURIComponent(currentMuseumName)}`;
 
             const col = document.createElement('div');
-            col.className = 'col-lg-3 col-md-4 col-sm-6 mb-4';
+            col.className = 'col-lg-3 col-md-4 col-6 mb-4';
 
             col.innerHTML = `
                 <a href="${artifactLink}" class="artifact-card-link">
@@ -425,44 +425,56 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (size) addRow('الحجم', size, 'fa-expand');
                     if (type) addRow('النوع', type, 'fa-tags');
                     
-                    addRow('الرقم التعريفي', artifact.$id || artifact.id, 'fa-qrcode');
 
                     infoCard.innerHTML = rows.join('');
                 }
 
                 const audioFileId = artifact.audio || artifact.audio_url || artifact.audioUrl;
 
-                if (audioSection && audioPlayer && audioFileId) {
+                if (audioSection && audioPlayer && audioFileId && audioFileId !== 'none' && audioFileId !== 'null') {
                     const audioUrl = getAppwriteImageUrl(audioFileId, AppwriteConfig.buckets.audio);
                     audioPlayer.src = audioUrl;
                     audioSection.style.display = 'block';
 
                     // Audio Player Logic
                     if (playPauseBtn && waveformContainer) {
-                        // Generate Waveform bars
+                        // Generate Waveform bars with more natural heights
                         waveformContainer.innerHTML = '';
-                        const barsCount = 30;
+                        const barsCount = 35;
                         for (let i = 0; i < barsCount; i++) {
                             const bar = document.createElement('div');
                             bar.className = 'waveform-bar';
-                            const height = Math.floor(Math.random() * 25) + 5;
+                            // Create a more realistic wave pattern
+                            const height = Math.floor(Math.sin(i * 0.5) * 15) + 20 + Math.floor(Math.random() * 10);
                             bar.style.height = `${height}px`;
                             waveformContainer.appendChild(bar);
                         }
 
                         const bars = waveformContainer.querySelectorAll('.waveform-bar');
 
+                        playPauseBtn.disabled = true;
+                        playPauseBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+                        audioPlayer.oncanplay = () => {
+                            playPauseBtn.disabled = false;
+                            playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                        };
+
                         playPauseBtn.onclick = () => {
                             if (audioPlayer.paused) {
                                 audioPlayer.play();
                                 playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                                waveformContainer.classList.add('playing');
                             } else {
                                 audioPlayer.pause();
                                 playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                                waveformContainer.classList.remove('playing');
                             }
                         };
 
                         audioPlayer.ontimeupdate = () => {
+                            if (isNaN(audioPlayer.duration)) return;
+                            
                             const progress = audioPlayer.currentTime / audioPlayer.duration;
                             const activeBarsCount = Math.floor(progress * barsCount);
                             
@@ -475,17 +487,17 @@ document.addEventListener('DOMContentLoaded', () => {
                             });
 
                             currentTimeEl.innerText = formatTime(audioPlayer.currentTime);
-                            if (!isNaN(audioPlayer.duration)) {
-                                durationTimeEl.innerText = formatTime(audioPlayer.duration);
-                            }
+                            durationTimeEl.innerText = formatTime(audioPlayer.duration);
                         };
 
                         audioPlayer.onended = () => {
                             playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
                             bars.forEach(bar => bar.classList.remove('active'));
+                            waveformContainer.classList.remove('playing');
                         };
 
                         function formatTime(seconds) {
+                            if (isNaN(seconds)) return '00:00';
                             const min = Math.floor(seconds / 60);
                             const sec = Math.floor(seconds % 60);
                             return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
