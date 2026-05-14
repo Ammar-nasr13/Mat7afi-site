@@ -70,10 +70,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentMuseumName = '';
 
     const _secKey = [
-        'c2stcHJvai0xZ1BFRU1aQmtLcE9YYjRrVUI0aGtfX2F5UGVvd2RYZUFKczA2RjVjdXFyTUZxV0ZoWGVuRWdGX1ZLSzlhSmR1Q0JNSHdpbnNSX1QzQmxia0ZKTXRqYzlid0djWFNMb0xCel9yQ1Jsdks5dE5XUnBkdXAxQmtXOUZmV3FJLVJVS1dQbmNWSzZDd2JiMktSSnR5ODZ0bWVyd01yb0E='
+        'QUl6YVN5QzQ5emVWWlVZY1h5YVY3TkFNSGtwNS04clZQWVNDN0VZ'
     ];
 
-    const OPENAI_API_KEY = atob(_secKey[0]);
+    const GEMINI_API_KEY = atob(_secKey[0]);
 
     const SYSTEM_PROMPT = `
     أنت المساعد الذكي Ego Pro لمتاحف جامعة المنيا (Mat7afi).
@@ -199,11 +199,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
 
-            if (!OPENAI_API_KEY) {
+            if (!GEMINI_API_KEY) {
                 thinkingDiv.remove();
 
                 addMessage(
-                    'مفتاح OpenAI غير مضبوط. الرجاء تحديث ملف script.js.',
+                    'مفتاح Gemini غير مضبوط. الرجاء تحديث ملف script.js.',
                     'system'
                 );
 
@@ -211,26 +211,21 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const response = await fetch(
-                'https://api.openai.com/v1/chat/completions',
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
                 {
                     method: 'POST',
 
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${OPENAI_API_KEY}`
+                        'Content-Type': 'application/json'
                     },
 
                     body: JSON.stringify({
-                        model: 'gpt-3.5-turbo',
-
-                        messages: [
+                        system_instruction: {
+                            parts: [{ text: SYSTEM_PROMPT }]
+                        },
+                        contents: [
                             {
-                                role: 'system',
-                                content: SYSTEM_PROMPT
-                            },
-                            {
-                                role: 'user',
-                                content: text
+                                parts: [{ text: text }]
                             }
                         ]
                     })
@@ -248,10 +243,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            if (data.choices && data.choices[0]) {
+            if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts[0]) {
 
                 addMessage(
-                    data.choices[0].message.content,
+                    data.candidates[0].content.parts[0].text,
                     'system'
                 );
 
