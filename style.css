@@ -596,6 +596,12 @@ h1, h2, h3, h4, h5, .en-name {
     height: 70px;
 }
 
+.footer-links {
+    text-align: right;
+    display: inline-block;
+    margin: 0 auto;
+}
+
 .footer-links li {
     margin-bottom: 12px;
 }
@@ -604,11 +610,12 @@ h1, h2, h3, h4, h5, .en-name {
     color: rgba(255, 253, 208, 0.6);
     text-decoration: none;
     transition: var(--transition);
+    padding-right: 10px;
+    display: inline-block;
 }
 
 .footer-links a:hover {
     color: var(--accent);
-    padding-right: 10px;
 }
 
 .footer-credit {
@@ -1039,6 +1046,8 @@ img {
 .mobile-info-row {
     display: flex;
     align-items: center;
+    width: 100%;
+    box-sizing: border-box;
     padding: 12px 0;
     border-bottom: 1px solid var(--mobile-divider);
 }
