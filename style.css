@@ -623,6 +623,7 @@ h1, h2, h3, h4, h5, .en-name {
     margin-right: 10px;
     transition: var(--transition);
     border: 1px solid rgba(255, 253, 208, 0.1);
+    text-decoration: none;
 }
 
 .social-icons a:hover {
