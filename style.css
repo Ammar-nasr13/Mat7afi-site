@@ -611,6 +611,15 @@ h1, h2, h3, h4, h5, .en-name {
     padding-right: 10px;
 }
 
+.footer-credit {
+    font-size: 0.92rem;
+    line-height: 1.8;
+}
+
+.footer-credit-list li {
+    margin-bottom: 0.25rem;
+}
+
 .social-icons a {
     width: 45px;
     height: 45px;
