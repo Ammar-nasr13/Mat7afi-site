@@ -215,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const response = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
                 {
                     method: 'POST',
 
@@ -378,6 +378,26 @@ document.addEventListener('DOMContentLoaded', () => {
                     documentId
                 );
 
+                // Smart Buttons Setup
+                const chatBtn = document.getElementById('btn-chat-with-art');
+                const arBtn = document.getElementById('btn-view-ar');
+                
+                if (chatBtn) {
+                    chatBtn.href = `artifact-chat.html?id=${documentId}&collection=${collectionId}`;
+                }
+                
+                if (arBtn) {
+                    const arModelId = artifact.ar_model || artifact.arModel;
+                    if (arModelId && arModelId !== 'none') {
+                        const arUrl = getAppwriteImageUrl(arModelId, AppwriteConfig.buckets.arModels);
+                        // Using Model Viewer or Scene Viewer link
+                        arBtn.href = `https://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(arUrl)}&mode=ar_only`;
+                        arBtn.target = "_blank";
+                    } else {
+                        arBtn.onclick = () => alert('عذراً، نسخة الواقع المعزز لهذه القطعة غير متوفرة حالياً.');
+                    }
+                }
+
                 const bucketId = getBucketByType(collectionId);
                 const imgUrl = getAppwriteImageUrl(artifact.image || artifact.image_url, bucketId);
 
@@ -395,14 +415,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (infoCard) {
                     const rows = [];
                     const addRow = (label, value, icon) => {
-                        if (!value) return;
+                        if (!value || value === 'none' || value === 'null') return;
                         rows.push(`
-                            <div class="mobile-info-row">
-                                <div class="mobile-icon-circle">
+                            <div class="info-row">
+                                <div class="icon-box">
                                     <i class="fas ${icon}"></i>
                                 </div>
-                                <div class="mobile-info-label">${label}:</div>
-                                <div class="mobile-info-value">${value}</div>
+                                <div class="info-label">${label}:</div>
+                                <div class="info-value text-end flex-grow-1">${value}</div>
                             </div>
                         `);
                     };
@@ -410,19 +430,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     const type = artifact['category-ar'] || artifact.category || artifact.type;
                     const era = artifact['era-ar'] || artifact.era || artifact.period;
                     const material = artifact['material-ar'] || artifact.material;
-                    const origin = artifact['origin-ar'] || artifact.origin;
                     const dimensions = artifact['dimensions-ar'] || artifact.dimensions;
                     const location = artifact['location-ar'] || artifact.location;
                     const author = artifact['author-ar'] || artifact.author;
                     const size = artifact['size-ar'] || artifact.size;
 
-                    if (era) addRow('العصر', era, 'fa-history');
-                    if (material) addRow('المادة', material, 'fa-layer-group');
-                    if (dimensions) addRow('المقاسات', dimensions, 'fa-ruler-combined');
-                    if (location) addRow('الموقع', location, 'fa-map-marker-alt');
-                    if (author) addRow('الفنان', author, 'fa-user');
-                    if (size) addRow('الحجم', size, 'fa-expand');
-                    if (type) addRow('النوع', type, 'fa-tags');
+                    if (era && era !== 'none') addRow('العصر', era, 'fa-history');
+                    if (material && material !== 'none') addRow('المادة', material, 'fa-layer-group');
+                    if (dimensions && dimensions !== 'none') addRow('المقاسات', dimensions, 'fa-ruler-combined');
+                    if (location && location !== 'none') addRow('الموقع', location, 'fa-map-marker-alt');
+                    if (author && author !== 'none') addRow('الفنان', author, 'fa-user');
+                    if (size && size !== 'none') addRow('الحجم', size, 'fa-expand');
+                    if (type && type !== 'none') addRow('النوع', type, 'fa-tags');
                     
 
                     infoCard.innerHTML = rows.join('');
@@ -517,20 +536,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Helpers
     function getBucketByType(collectionId) {
-        if (!collectionId) {
-            return AppwriteConfig.buckets.tourism;
-        }
+        if (!collectionId) return AppwriteConfig.buckets.tourism;
 
-        if (collectionId === AppwriteConfig.collections.science || collectionId.includes('science')) {
-            return AppwriteConfig.buckets.scienceImages;
+        // Matching Flutter's getBucketByType logic
+        if (collectionId.includes('science') || collectionId.includes('art')) {
+            return AppwriteConfig.buckets.artifacts; // 69f686e9002f917ec2a2
         }
-
-        if (collectionId === AppwriteConfig.collections.art || collectionId.includes('art_atifacts')) {
-            return AppwriteConfig.buckets.artImages;
-        }
-
-        if (collectionId === AppwriteConfig.collections.tourism || collectionId.includes('tourism')) {
-            return AppwriteConfig.buckets.tourism;
+        
+        if (collectionId.includes('tourism')) {
+            return AppwriteConfig.buckets.tourism; // 69f7d68c003821997d0d
         }
 
         return AppwriteConfig.buckets.tourism;
@@ -582,20 +596,39 @@ document.addEventListener('DOMContentLoaded', () => {
     // Smart Services & Activation Logic
     const updateActivationUI = () => {
         const isPremium = localStorage.getItem('mat7afi_premium') === 'true';
+        const isLifetime = localStorage.getItem('mat7afi_is_lifetime') === 'true';
+        const expiryDateStr = localStorage.getItem('mat7afi_expiry_date');
+        
+        let shouldBePremium = isPremium;
+        if (isPremium && !isLifetime && expiryDateStr) {
+            const expiryDate = new Date(expiryDateStr);
+            if (new Date() > expiryDate) {
+                shouldBePremium = false;
+                localStorage.setItem('mat7afi_premium', 'false');
+            }
+        }
+
         const statusCard = document.querySelector('.status-card');
         if (!statusCard) return;
 
-        if (isPremium) {
+        if (shouldBePremium) {
             statusCard.classList.add('premium');
             const h3 = statusCard.querySelector('h3');
             const p = statusCard.querySelector('p');
             const icon = statusCard.querySelector('i');
-            const btn = statusCard.querySelector('.btn-activate');
+            const inputGroup = statusCard.querySelector('.activation-input-group');
             
             if (h3) h3.innerText = 'الخدمات الذكية مفعلة';
-            if (p) p.innerText = 'تفعيل مدى الحياة ✨ استمتع بكافة التقنيات الذكية.';
-            if (icon) icon.className = 'fas fa-check-circle';
-            if (btn) btn.style.display = 'none';
+            if (p) {
+                if (isLifetime) {
+                    p.innerText = 'تفعيل مدى الحياة ✨ استمتع بكافة التقنيات الذكية.';
+                } else if (expiryDateStr) {
+                    const date = new Date(expiryDateStr).toLocaleDateString('ar-EG');
+                    p.innerText = `تفعيل مؤقت - ينتهي في ${date}. استمتع بالخدمات الآن.`;
+                }
+            }
+            if (icon) icon.className = 'fas fa-check-circle text-success';
+            if (inputGroup) inputGroup.style.display = 'none';
         }
     };
 
@@ -612,9 +645,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof Appwrite !== 'undefined' && databases) {
             // Show loading state
             const btn = document.querySelector('.btn-activate-v2');
-            const originalContent = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحقق...';
-            btn.disabled = true;
+            const originalContent = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحقق...';
+                btn.disabled = true;
+            }
 
             try {
                 // Query activation_codes collection
@@ -631,7 +666,30 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (doc.is_used) {
                         alert('هذا الكود تم استخدامه من قبل.');
                     } else {
+                        const isLifetime = doc.isLifetime ?? true;
+                        const durationDays = doc.durationDays ?? 30;
+                        
+                        let expiryDate = null;
+                        if (!isLifetime) {
+                            const date = new Date();
+                            date.setDate(date.getDate() + durationDays);
+                            expiryDate = date.toISOString();
+                        }
+
                         localStorage.setItem('mat7afi_premium', 'true');
+                        localStorage.setItem('mat7afi_is_lifetime', isLifetime.toString());
+                        if (expiryDate) {
+                            localStorage.setItem('mat7afi_expiry_date', expiryDate);
+                        }
+
+                        // Mark code as used
+                        await databases.updateDocument(
+                            AppwriteConfig.databaseId,
+                            AppwriteConfig.collections.activation,
+                            doc.$id,
+                            { is_used: true }
+                        );
+
                         alert('تم تفعيل الخدمات الذكية بنجاح! ✨');
                         updateActivationUI();
                     }
@@ -642,8 +700,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('Activation error:', error);
                 alert('حدث خطأ أثناء الاتصال بالخادم.');
             } finally {
-                btn.innerHTML = originalContent;
-                btn.disabled = false;
+                if (btn) {
+                    btn.innerHTML = originalContent;
+                    btn.disabled = false;
+                }
             }
         } else {
             alert('نظام قاعدة البيانات غير جاهز حالياً.');
@@ -743,7 +803,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const base64Data = imageData.split(',')[1];
             const response = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
                 {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -794,7 +854,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Ask Gemini
             try {
                 const response = await fetch(
-                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
                     {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },

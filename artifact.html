@@ -3,97 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تفاصيل القطعة | متحفي (Mat7afi)</title>
-    <meta name="description" content="تعرف على تاريخ وقصة هذه القطعة من متاحف جامعة المنيا. شرح صوتي ومعلومات موثقة.">
-    <meta name="keywords" content="تفاصيل الأثر, شرح صوتي, متاحف المنيا, متحفي, استكشاف رقمي, جامعة المنيا">
-    <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://mat7afi.site/artifact.html">
-    <meta property="og:url" content="https://mat7afi.site/artifact.html">
-    <meta property="twitter:url" content="https://mat7afi.site/artifact.html">
-    <meta name="theme-color" content="#FAFAFA">
-    
-    <!-- Security Headers -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https://appwrite.etihadalmdina.com https://upload.wikimedia.org; connect-src 'self' https://appwrite.etihadalmdina.com https://api.openai.com; frame-ancestors 'none';">
-    <meta http-equiv="X-Content-Type-Options" content="nosniff">
-    
-    <!-- Open Graph -->
-    <meta property="og:type" content="website">
-    <meta property="og:site_name" content="متحفي - Mat7afi">
-    <meta property="og:title" content="تفاصيل القطعة | متحفي">
-    <meta property="og:description" content="تعرف على تاريخ وقصة هذه القطعة من متاحف جامعة المنيا.">
-    <meta property="og:image" content="https://mat7afi.site/assets/Cover.png">
-
-    <link rel="icon" type="image/png" href="assets/icon.png">
+    <title>تفاصيل القطعة | Mat7afi</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    <style>
+        body { background-color: #F8F9FA; color: #1A2E45; }
+        .mobile-container { max-width: 600px; margin: 0 auto; min-height: 100vh; background: white; padding-bottom: 50px; }
+        .artifact-header-wrap { position: relative; height: 350px; overflow: hidden; }
+        .artifact-full-img { width: 100%; height: 100%; object-fit: cover; }
+        .header-controls { position: absolute; top: 20px; left: 0; right: 0; padding: 0 20px; display: flex; justify-content: space-between; z-index: 10; }
+        .btn-circle { width: 45px; height: 45px; border-radius: 50%; background: rgba(0,0,0,0.3); backdrop-filter: blur(10px); color: white; border: 1px solid rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; text-decoration: none; transition: 0.3s; }
+        .btn-circle:hover { background: #D4AF37; color: white; transform: scale(1.1); }
+        .content-body { padding: 30px 20px; margin-top: -30px; background: white; border-top-left-radius: 35px; border-top-right-radius: 35px; position: relative; z-index: 5; box-shadow: 0 -15px 40px rgba(0,0,0,0.05); }
+        .section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; color: #422006; font-weight: 800; border-right: 4px solid #D4AF37; padding-right: 15px; }
+        .info-card-wrap { background: #FFFFFF; border: 1px solid #E9ECEF; border-radius: 20px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); margin-bottom: 25px; }
+        .info-row { display: flex; align-items: center; gap: 15px; padding: 12px 0; border-bottom: 1px solid #F1F3F5; }
+        .info-row:last-child { border-bottom: none; }
+        .icon-box { width: 32px; height: 32px; background: #FFF9E7; color: #D4AF37; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; }
+        .info-label { font-size: 0.85rem; color: #6C757D; flex-shrink: 0; }
+        .info-value { font-size: 0.95rem; font-weight: 600; color: #1A2E45; }
+        .desc-text { color: #4A5568; line-height: 1.8; font-size: 0.95rem; text-align: justify; }
+        .smart-btns-grid { display: grid; gap: 15px; margin-top: 30px; }
+        .btn-smart-v3 { display: flex; align-items: center; gap: 15px; padding: 18px 25px; border-radius: 18px; text-decoration: none !important; color: white; font-weight: 700; transition: 0.3s; border: none; box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
+        .btn-smart-v3 i { font-size: 1.3rem; }
+        .bg-indigo { background: linear-gradient(135deg, #6366F1, #4F46E5); }
+        .bg-pink { background: linear-gradient(135deg, #EC4899, #DB2777); }
+        .bg-gold { background: linear-gradient(135deg, #D4AF37, #B8860B); }
+        .btn-smart-v3:active { transform: scale(0.98); }
+    </style>
 </head>
-<body class="artifact-page-body">
+<body>
 
-    <a href="javascript:history.back()" class="btn-back" style="top: 20px; left: 20px;">
-        <i class="fas fa-arrow-right"></i>
-    </a>
-
-    <a href="index.html" class="btn-home" style="top: 20px; left: 80px;">
-        <i class="fas fa-home"></i>
-    </a>
-
-    <div id="loader" class="text-center py-5">
-        <div class="spinner-border text-accent" role="status"></div>
-        <p class="mt-3">جاري تحميل التفاصيل...</p>
-    </div>
-
-    <div id="artifact-content" style="display: none;">
-        <div class="artifact-header">
-            <img id="artifact-img" src="" alt="" class="artifact-header-img" onerror="this.style.display='none'">
+    <div class="mobile-container">
+        <!-- Header Image -->
+        <div class="artifact-header-wrap">
+            <div class="header-controls">
+                <a href="javascript:history.back()" class="btn-circle"><i class="fas fa-chevron-right"></i></a>
+                <a href="index.html" class="btn-circle"><i class="fas fa-home"></i></a>
+            </div>
+            <img id="artifact-img" src="assets/placeholder.png" alt="Artifact" class="artifact-full-img">
         </div>
 
-        <main class="container artifact-content-wrap">
-            <div class="row justify-content-center">
-                <div class="col-lg-8">
-                    <!-- Basic Info -->
-                    <h3 class="section-title-mobile mt-4">
-                        تفاصيل القطعة
-                    </h3>
-                    <div id="info-card" class="mobile-info-card">
-                        <!-- Rows will be injected here via script.js -->
-                    </div>
+        <!-- Content -->
+        <div class="content-body">
+            <div id="loader" class="text-center py-4">
+                <div class="spinner-border text-accent"></div>
+            </div>
 
-                    <!-- Description -->
-                    <h3 class="section-title-mobile">
-                        الوصف
-                    </h3>
-                    <div class="description-card mb-4">
-                        <p id="artifact-desc" style="white-space: pre-line; color: #444;"></p>
-                    </div>
+            <div id="artifact-content" style="display: none;">
+                <!-- Artifact Details Section -->
+                <div class="section-header">
+                    <h3 class="h5 mb-0">تفاصيل القطعة</h3>
+                </div>
+                <div class="info-card-wrap" id="info-card">
+                    <!-- Injected rows -->
+                </div>
 
-                    <!-- Audio Section -->
-                    <div id="audio-section" style="display: none;">
-                        <h3 class="section-title-mobile">
-                            استمع للشرح الصوتي
-                        </h3>
-                        <div class="audio-card">
-                            <button id="play-pause-btn" class="mobile-play-btn">
-                                <i class="fas fa-play"></i>
-                            </button>
-                            <div class="audio-info">
-                                <div id="waveform" class="audio-waveform-container">
-                                    <!-- Waveform bars generated by JS -->
-                                </div>
-                                <div class="audio-time">
-                                    <span id="current-time">00:00</span> / <span id="duration-time">00:00</span>
+                <!-- Description -->
+                <div class="section-header">
+                    <h3 class="h5 mb-0">وصف القطعة</h3>
+                </div>
+                <div class="info-card-wrap mb-4">
+                    <p id="artifact-desc" class="desc-text mb-0"></p>
+                </div>
+
+                <!-- Audio -->
+                <div id="audio-section" style="display: none;">
+                    <div class="section-header">
+                        <h3 class="h5 mb-0">استمع للشرح الصوتي</h3>
+                    </div>
+                    <div class="audio-card shadow-sm border p-3 rounded-4 mb-4">
+                        <div class="d-flex align-items-center gap-3">
+                            <button id="play-pause-btn" class="mobile-play-btn"><i class="fas fa-play"></i></button>
+                            <div class="flex-grow-1">
+                                <div id="waveform" class="audio-waveform-container"></div>
+                                <div class="d-flex justify-content-between mt-2" style="font-size: 0.75rem; color: #888;">
+                                    <span id="current-time">00:00</span>
+                                    <span id="duration-time">00:00</span>
                                 </div>
                             </div>
-                            <audio id="artifact-audio" style="display: none;"></audio>
                         </div>
+                        <audio id="artifact-audio" style="display: none;"></audio>
                     </div>
                 </div>
+
+                <!-- Smart Services -->
+                <div class="section-header">
+                    <h3 class="h5 mb-0">الخدمات التفاعلية</h3>
+                </div>
+                <div class="smart-btns-grid">
+                    <a id="btn-view-ar" href="#" class="btn-smart-v3 bg-gold">
+                        <i class="fas fa-cube"></i>
+                        <span>عرض ثلاثي الأبعاد و واقع معزز (AR)</span>
+                    </a>
+                    <a id="btn-chat-with-art" href="#" class="btn-smart-v3 bg-indigo">
+                        <i class="fas fa-comment-dots"></i>
+                        <span>تحدث مع القطعة الأثرية</span>
+                    </a>
+                    <button onclick="startQuiz()" class="btn-smart-v3 bg-pink">
+                        <i class="fas fa-gamepad"></i>
+                        <span>تحدي القطعة (لعبة ذكية)</span>
+                    </button>
+                </div>
             </div>
-        </main>
+        </div>
     </div>
 
-    <!-- Appwrite SDK -->
+    <!-- SDK & Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.0"></script>
     <script src="script.js"></script>
     <script>
