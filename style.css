@@ -15,7 +15,7 @@
     --white: #ffffff;
     --text-cream: #FFFDD0;
     --text-navy: #0A192F;
-    --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     
     /* Mobile App Design Tokens */
     --mobile-bg: #F8F9FA;
@@ -23,6 +23,10 @@
     --mobile-text: #422006;
     --mobile-divider: rgba(66, 32, 6, 0.1);
 }
+
+.text-accent { color: var(--accent) !important; }
+.text-cream { color: var(--cream) !important; }
+.text-navy { color: var(--navy) !important; }
 
 * {
     margin: 0;
@@ -1277,4 +1281,358 @@ img {
 
 .artifact-card-body {
     padding: 15px;
+}
+/* Smart Services Section */
+.smart-services-section {
+    padding: 100px 0;
+    background-color: var(--navy);
+}
+
+.status-card {
+    border-radius: 25px;
+    padding: 30px;
+    margin-bottom: 40px;
+    color: white;
+    background: linear-gradient(135deg, #1e1b4b 0%, #311042 100%); /* Trial theme by default */
+    box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.status-card.premium {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+}
+
+.status-card i {
+    font-size: 2rem;
+    color: #fbbf24;
+}
+
+.status-card h3 {
+    margin: 0;
+    font-weight: 800;
+}
+
+.status-card p {
+    margin-top: 10px;
+    opacity: 0.8;
+}
+
+.btn-activate {
+    background: #fbbf24;
+    color: #1e1b4b !important;
+    font-weight: 800;
+    padding: 12px 25px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 20px;
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+.btn-activate:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(251, 191, 36, 0.3);
+}
+
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+}
+
+.smart-feature-card {
+    border-radius: 25px;
+    padding: 30px;
+    color: white;
+    transition: var(--transition);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.smart-feature-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+}
+
+.card-blue {
+    background: linear-gradient(135deg, #172554 0%, #0f172a 100%);
+}
+
+.card-brown {
+    background: linear-gradient(135deg, #422006 0%, #854d0e 100%);
+}
+
+.feature-icon-wrap {
+    width: 55px;
+    height: 55px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 25px;
+}
+
+.smart-feature-card h4 {
+    font-weight: 800;
+    margin-bottom: 12px;
+}
+
+.smart-feature-card p {
+    font-size: 0.95rem;
+    opacity: 0.8;
+    line-height: 1.5;
+    margin-bottom: 20px;
+}
+
+.card-badge {
+    position: absolute;
+    top: 30px;
+    left: 30px; /* Reversed for RTL since parent is RTL */
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 5px 12px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 800;
+}
+
+.feature-footer {
+    margin-top: auto;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.feature-footer i {
+    opacity: 0.5;
+    font-size: 1.2rem;
+}
+
+@media (max-width: 767px) {
+    .feature-grid {
+        grid-template-columns: 1fr;
+    }
+    .smart-services-section {
+        padding: 60px 0;
+    }
+}
+
+.activation-input-group {
+    display: flex;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 8px;
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    margin-top: 15px;
+}
+
+.activation-input {
+    background: transparent !important;
+    border: none !important;
+    color: white !important;
+    padding: 10px 15px !important;
+    box-shadow: none !important;
+    font-weight: 700;
+    font-family: 'Cairo', sans-serif;
+    letter-spacing: 1px;
+}
+
+.activation-input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.btn-activate-v2 {
+    background: #fbbf24;
+    color: #1e1b4b;
+    border: none;
+    padding: 8px 25px;
+    border-radius: 12px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: var(--transition);
+}
+
+.btn-activate-v2:hover {
+    transform: scale(1.05);
+    background: white;
+}
+
+@media (max-width: 576px) {
+    .activation-input-group {
+        flex-direction: column;
+    }
+    .btn-activate-v2 {
+        width: 100%;
+        justify-content: center;
+    }
+}
+/* AI Feature Modals Styling */
+.border-accent {
+    border: 2px solid var(--accent) !important;
+}
+
+.camera-wrapper {
+    overflow: hidden;
+    background: #000;
+}
+
+.scan-line-animate {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: var(--accent);
+    box-shadow: 0 0 15px var(--accent);
+    animation: scanMove 3s linear infinite;
+    z-index: 10;
+}
+
+@keyframes scanMove {
+    0% { top: 0%; }
+    100% { top: 100%; }
+}
+
+.ai-analysis-box {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 20px;
+    border-radius: 15px;
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+}
+
+/* Voice Animation */
+.voice-wave-container {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.voice-wave-container .wave {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border: 2px solid var(--accent);
+    border-radius: 50%;
+    animation: voiceWave 2s linear infinite;
+    opacity: 0;
+}
+
+.voice-wave-container .wave:nth-child(2) { animation-delay: 0.6s; }
+.voice-wave-container .wave:nth-child(3) { animation-delay: 1.2s; }
+
+@keyframes voiceWave {
+    0% { transform: scale(0.5); opacity: 0; }
+    50% { opacity: 0.5; }
+    100% { transform: scale(1.5); opacity: 0; }
+}
+
+#ai-result.analyzing {
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: 700;
+}
+/* Enhanced Responsiveness for Smart Services */
+@media (max-width: 1200px) {
+    .feature-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 991px) {
+    .smart-services-section {
+        padding: 80px 0;
+    }
+    .status-card {
+        padding: 30px;
+        text-align: center;
+    }
+    .status-card .row {
+        flex-direction: column;
+        gap: 20px;
+    }
+    .smart-feature-card {
+        min-height: 340px;
+        padding: 25px;
+    }
+}
+
+@media (max-width: 767px) {
+    .feature-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    .smart-services-section h2 {
+        font-size: 2rem;
+    }
+    .activation-input-group {
+        flex-direction: column;
+        padding: 15px;
+    }
+    .btn-activate-v2 {
+        width: 100%;
+        justify-content: center;
+    }
+    .card-badge {
+        top: 20px;
+        left: 20px;
+    }
+    /* Modals responsive adjustments */
+    .modal-dialog {
+        margin: 10px;
+    }
+    .camera-wrapper {
+        border-radius: 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    .smart-services-section {
+        padding: 60px 0;
+    }
+    .smart-feature-card {
+        padding: 20px;
+        min-height: auto;
+    }
+    .feature-icon-wrap {
+        width: 50px;
+        height: 50px;
+        font-size: 1.4rem;
+    }
+    .smart-feature-card h4 {
+        font-size: 1.2rem;
+    }
+}
+
+/* Modal UI Fixes */
+.modal-content {
+    border-radius: 30px !important;
+}
+
+#webcam {
+    object-fit: cover;
+    max-height: 60vh;
+}
+
+.voice-wave-container {
+    transform: scale(0.8);
 }

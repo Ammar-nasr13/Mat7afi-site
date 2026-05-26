@@ -147,6 +147,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 <ul class="navbar-nav ms-auto align-items-center">
                     <li class="nav-item"><a class="nav-link" href="#hero">الرئيسية</a></li>
                     <li class="nav-item"><a class="nav-link" href="#museums">متاحفنا</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#smart-services">الخدمات الذكية</a></li>
                     <li class="nav-item"><a class="nav-link" href="#features">المميزات</a></li>
                     <li class="nav-item"><a class="nav-link" href="#ai-assistant">المساعد الذكي</a></li>
                     <li class="nav-item ms-lg-3"><a class="btn-download" href="#download">تحميل التطبيق</a></li>
@@ -341,6 +342,104 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         </div>
     </section>
 
+    <!-- Smart Services Section (New: From Mobile App) -->
+    <section id="smart-services" class="smart-services-section">
+        <div class="container">
+            <div class="section-title-wrap text-center mb-5" data-aos="fade-up">
+                <h2 class="section-heading text-cream">الخدمات الذكية</h2>
+                <div class="heading-underline"></div>
+                <p class="text-accent fw-bold mt-3">تقنيات رؤية 2030 والمتاحف الذكية</p>
+            </div>
+
+            <!-- Activation Status Card -->
+            <div class="status-card" data-aos="fade-up">
+                <div class="row align-items-center">
+                    <div class="col-md-auto text-center text-md-start mb-3 mb-md-0">
+                        <i class="fas fa-star-half-alt"></i>
+                    </div>
+                    <div class="col-md">
+                        <h3 class="h4">تفعيل الخدمات الذكية</h3>
+                        <p class="mb-0">متبقي لديك 3 محاولات مجانية. قم بتفعيل النسخة الكاملة للاستمتاع بكافة الميزات مدى الحياة.</p>
+                    </div>
+                    <div class="col-md-auto text-center">
+                        <div class="activation-input-group">
+                            <input type="text" id="activation-code-input" placeholder="ادخل كود التفعيل" class="form-control activation-input">
+                            <button onclick="handleCodeActivation()" class="btn-activate-v2">
+                                <i class="fas fa-magic"></i>
+                                تفعيل
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features Grid -->
+            <div class="feature-grid">
+                <!-- Feature 1: AI Visual Guide -->
+                <div class="smart-feature-card card-blue" data-aos="fade-up" data-aos-delay="100">
+                    <div class="feature-icon-wrap">
+                        <i class="fas fa-camera-retro"></i>
+                    </div>
+                    <h4>الدليل المرئي الذكي</h4>
+                    <p>وجه الكاميرا، وسيقوم الذكاء الاصطناعي بتحليل القطعة وسرد قصتها التاريخية فوراً.</p>
+                    <div class="feature-footer">
+                        <i class="fas fa-arrow-left"></i>
+                    </div>
+                </div>
+
+                <!-- Feature 2: AR Showcase -->
+                <div class="smart-feature-card card-brown" data-aos="fade-up" data-aos-delay="200">
+                    <div class="feature-icon-wrap">
+                        <i class="fas fa-cube"></i>
+                    </div>
+                    <h4>استعراض الواقع المعزز</h4>
+                    <p>استعرض المجسمات الأثرية في بيئتك عبر تقنية الواقع المعزز (AR) بتفاصيل دقيقة.</p>
+                    <div class="feature-footer">
+                        <i class="fas fa-arrow-left"></i>
+                    </div>
+                </div>
+
+                <!-- Feature 3: AI Voice Guide -->
+                <div class="smart-feature-card card-blue" data-aos="fade-up" data-aos-delay="300">
+                    <div class="feature-icon-wrap">
+                        <i class="fas fa-microphone-alt"></i>
+                    </div>
+                    <h4>الدليل الصوتي الذكي</h4>
+                    <p>مرشدك السياحي الشخصي، اسأله صوتياً عن أي حضارة وسيجيبك بطلاقة.</p>
+                    <div class="feature-footer">
+                        <i class="fas fa-arrow-left"></i>
+                    </div>
+                </div>
+
+                <!-- Feature 4: Chat with Artifact -->
+                <div class="smart-feature-card card-brown" data-aos="fade-up" data-aos-delay="400">
+                    <span class="card-badge">✨ حصري</span>
+                    <div class="feature-icon-wrap">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <h4>الحوار المباشر مع القطعة</h4>
+                    <p>تحدث مباشرة مع الآثار وكأنها حية! محادثات تفاعلية مليئة بالأسرار التاريخية.</p>
+                    <div class="feature-footer">
+                        <i class="fas fa-arrow-left"></i>
+                    </div>
+                </div>
+
+                <!-- Feature 5: Knowledge Quiz -->
+                <div class="smart-feature-card card-blue" data-aos="fade-up" data-aos-delay="500">
+                    <span class="card-badge">🎯 تحدٍّ</span>
+                    <div class="feature-icon-wrap">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <h4>تحدي المعرفة</h4>
+                    <p>اختبر معلوماتك في تحديات ممتعة، وتعرف على مدى خبرتك في تاريخ الحضارات.</p>
+                    <div class="feature-footer">
+                        <i class="fas fa-arrow-left"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- AI Chatbot Section -->
     <section id="ai-assistant" class="py-5 bg-navy position-relative overflow-hidden">
         <div class="abstract-circles"></div>
@@ -417,6 +516,54 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         </div>
     </section>
 
+
+    <!-- AI Features Modals -->
+    <!-- AI Camera Modal -->
+    <div class="modal fade" id="cameraModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content bg-navy border-accent shadow-2xl rounded-5 overflow-hidden">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title text-cream fw-bold">الدليل المرئي الذكي</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center p-4">
+                    <div class="camera-wrapper position-relative mb-4">
+                        <video id="webcam" autoplay playsinline class="rounded-4 w-100 shadow-lg border border-white border-opacity-10"></video>
+                        <canvas id="camera-canvas" style="display:none;"></canvas>
+                        <div class="scan-line-animate"></div>
+                    </div>
+                    <div id="ai-result" class="ai-analysis-box mb-4">
+                        <p class="text-white-50 small mb-0">وجه الكاميرا نحو القطعة الأثرية واضغط على الزر لبدء التحليل</p>
+                    </div>
+                    <button id="capture-btn" class="btn-premium w-100 justify-content-center py-3">
+                        <i class="fas fa-search-location me-2"></i> بدء الفحص الذكي
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Voice Modal -->
+    <div class="modal fade" id="voiceModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-navy border-accent rounded-5 shadow-2xl">
+                <div class="modal-body text-center py-5">
+                    <div class="voice-wave-container mb-4">
+                        <div class="wave"></div>
+                        <div class="wave"></div>
+                        <div class="wave"></div>
+                        <i class="fas fa-microphone-alt fa-3x text-accent position-relative"></i>
+                    </div>
+                    <h3 class="text-cream mb-2" id="voice-status">أنا أسمعك...</h3>
+                    <p class="text-white-50" id="voice-transcript">اسألني عن تاريخ أي قطعة أثرية</p>
+                    <div id="voice-response-box" class="mt-4 p-3 bg-white bg-opacity-5 rounded-4 d-none">
+                        <p id="voice-response" class="text-accent mb-0 fw-bold"></p>
+                    </div>
+                    <button type="button" class="btn btn-outline-premium mt-4 border-0" data-bs-dismiss="modal">إنهاء المحادثة</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Footer -->
     <footer class="footer py-5 bg-navy-dark text-white border-top border-secondary">

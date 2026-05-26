@@ -14,7 +14,8 @@ const AppwriteConfig = {
     collections: {
         tourism: 'tourism_artifacts',
         science: 'science_atifacts',
-        art: 'art_atifacts'
+        art: 'art_atifacts',
+        activation: 'activation_codes'
     },
 
     buckets: {
@@ -22,7 +23,8 @@ const AppwriteConfig = {
         artifacts: '69f686e9002f917ec2a2',
         audio: '69f870c0000eb3969260',
         artImages: '69fdfa66002d1a9106f7',
-        scienceImages: '69fdfa80002f0db83c67'
+        scienceImages: '69fdfa80002f0db83c67',
+        arModels: '6a13cf370017d4ff7006'
     }
 };
 
@@ -69,16 +71,18 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentMuseumCollection = '';
     let currentMuseumName = '';
 
-    const _secKey = [
-        'QUl6YVN5QzQ5emVWWlVZY1h5YVY3TkFNSGtwNS04clZQWVNDN0VZ'
-    ];
+    const GEMINI_API_KEY = 'AIzaSyCrTSLql-6iD0V4FhgKN3dTLnGJb9ln8eE';
 
-    const GEMINI_API_KEY = atob(_secKey[0]);
+    const SYSTEM_PROMPT = `أنت مساعد ذكي متخصص في متاحف جامعة المنيا. اسمك 'Ego Pro'.
+وظيفتك الأساسية هي إفادة الزوار وتقديم معلومات غنية عن القطع الأثرية والمعروضات المتواجدة في متاحف جامعة المنيا الثلاثة:
+1. متحف كلية السياحة والفنادق (معروضات سياحية وتاريخية).
+2. متحف كلية الفنون الجميلة (لوحات وأعمال فنية وتماثيل).
+3. متحف كلية العلوم (قطع وأدوات علمية وعينات مجهرية).
 
-    const SYSTEM_PROMPT = `
-    أنت المساعد الذكي Ego Pro لمتاحف جامعة المنيا (Mat7afi).
-    استخدم اللغة العربية بشكل أساسي وكن احترافياً.
-    `;
+⚠️ شروط هامة جداً:
+1. يجب أن تكون إجاباتك ذكية وموجزة وباللغة العربية الفصحى البسيطة والودودة.
+2. إذا سألك المستخدم عن أي موضوع خارج نطاق متاحف جامعة المنيا (مثلاً: الطبخ، البرمجة، أخبار العالم، الرياضة، الترجمة العامة)، يجب عليك الاعتذار بلباقة تامة وإخباره بأنك متخصص فقط في متاحف جامعة المنيا وتاريخها.
+3. استند دائماً للبيانات المتاحة لتقديم إجابة حقيقية وموثوقة ولا تخترع معلومات غير موجودة.`;
 
     const getArtifactTitle = (artifact) => {
         return artifact['name-ar'] || artifact.name || artifact.title || 'قطعة أثرية';
@@ -211,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const response = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
                 {
                     method: 'POST',
 
@@ -220,7 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     },
 
                     body: JSON.stringify({
-                        system_instruction: {
+                        systemInstruction: {
                             parts: [{ text: SYSTEM_PROMPT }]
                         },
                         contents: [
@@ -574,5 +578,271 @@ document.addEventListener('DOMContentLoaded', () => {
 
         return imageUrl;
     }
+
+    // Smart Services & Activation Logic
+    const updateActivationUI = () => {
+        const isPremium = localStorage.getItem('mat7afi_premium') === 'true';
+        const statusCard = document.querySelector('.status-card');
+        if (!statusCard) return;
+
+        if (isPremium) {
+            statusCard.classList.add('premium');
+            const h3 = statusCard.querySelector('h3');
+            const p = statusCard.querySelector('p');
+            const icon = statusCard.querySelector('i');
+            const btn = statusCard.querySelector('.btn-activate');
+            
+            if (h3) h3.innerText = 'الخدمات الذكية مفعلة';
+            if (p) p.innerText = 'تفعيل مدى الحياة ✨ استمتع بكافة التقنيات الذكية.';
+            if (icon) icon.className = 'fas fa-check-circle';
+            if (btn) btn.style.display = 'none';
+        }
+    };
+
+    window.handleCodeActivation = async () => {
+        const input = document.getElementById('activation-code-input');
+        if (!input) return;
+        
+        const code = input.value.trim();
+        if (!code) {
+            alert('الرجاء إدخال كود التفعيل أولاً.');
+            return;
+        }
+
+        if (typeof Appwrite !== 'undefined' && databases) {
+            // Show loading state
+            const btn = document.querySelector('.btn-activate-v2');
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحقق...';
+            btn.disabled = true;
+
+            try {
+                // Query activation_codes collection
+                const response = await databases.listDocuments(
+                    AppwriteConfig.databaseId,
+                    AppwriteConfig.collections.activation,
+                    [
+                        Appwrite.Query.equal('code', code.toUpperCase())
+                    ]
+                );
+
+                if (response.documents.length > 0) {
+                    const doc = response.documents[0];
+                    if (doc.is_used) {
+                        alert('هذا الكود تم استخدامه من قبل.');
+                    } else {
+                        localStorage.setItem('mat7afi_premium', 'true');
+                        alert('تم تفعيل الخدمات الذكية بنجاح! ✨');
+                        updateActivationUI();
+                    }
+                } else {
+                    alert('كود تفعيل غير صحيح. يرجى التأكد من الكود والمحاولة مرة أخرى.');
+                }
+            } catch (error) {
+                console.error('Activation error:', error);
+                alert('حدث خطأ أثناء الاتصال بالخادم.');
+            } finally {
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+            }
+        } else {
+            alert('نظام قاعدة البيانات غير جاهز حالياً.');
+        }
+    };
+
+    // Feature Card Click Handlers
+    document.querySelectorAll('.smart-feature-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const isPremium = localStorage.getItem('mat7afi_premium') === 'true';
+            const h4 = card.querySelector('h4');
+            const title = h4 ? h4.innerText : 'الخدمة';
+            
+            if (!isPremium) {
+                let trials = parseInt(localStorage.getItem('mat7afi_trials') || '3');
+                if (trials > 0) {
+                    trials--;
+                    localStorage.setItem('mat7afi_trials', trials.toString());
+                    alert(`أنت تستخدم محاولة مجانية لخدمة: ${title}. متبقي لك ${trials} محاولات.`);
+                    handleFeatureAction(title);
+                } else {
+                    alert('لقد استنفدت محاولاتك المجانية. يرجى إدخال كود التفعيل في البطاقة أعلاه لتنشيط كافة الميزات.');
+                    const input = document.getElementById('activation-code-input');
+                    if (input) {
+                        input.focus();
+                        input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+            } else {
+                handleFeatureAction(title);
+            }
+        });
+    });
+
+    const handleFeatureAction = (featureTitle) => {
+        if (featureTitle.includes('المرئي')) {
+            const cameraModal = new bootstrap.Modal(document.getElementById('cameraModal'));
+            cameraModal.show();
+            startWebcam();
+        } else if (featureTitle.includes('الواقع المعزز')) {
+            alert('سيتم فتح مستعرض الـ AR للقطع المختارة. تأكد أن متصفحك يدعم WebXR.');
+            window.location.href = '#museums';
+        } else if (featureTitle.includes('الصوتي')) {
+            const voiceModal = new bootstrap.Modal(document.getElementById('voiceModal'));
+            voiceModal.show();
+            startVoiceAssistant();
+        } else if (featureTitle.includes('الحوار')) {
+            alert('اختر أي قطعة أثرية من المتاحف أدناه لبدء الحوار المباشر معها.');
+            window.location.href = '#museums';
+        } else if (featureTitle.includes('المعرفة')) {
+            startQuiz();
+        }
+    };
+
+    // --- AI Camera Logic ---
+    let stream = null;
+    const startWebcam = async () => {
+        const video = document.getElementById('webcam');
+        const resultBox = document.getElementById('ai-result');
+        resultBox.innerHTML = '<p class="text-white-50 small mb-0">وجه الكاميرا نحو القطعة الأثرية واضغط على الزر لبدء التحليل</p>';
+        
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+            video.srcObject = stream;
+        } catch (err) {
+            console.error("Camera error:", err);
+            resultBox.innerHTML = '<span class="text-danger">فشل الوصول للكاميرا. تأكد من إعطاء الصلاحيات.</span>';
+        }
+    };
+
+    document.getElementById('cameraModal')?.addEventListener('hidden.bs.modal', () => {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+    });
+
+    document.getElementById('capture-btn')?.addEventListener('click', async () => {
+        const video = document.getElementById('webcam');
+        const canvas = document.getElementById('camera-canvas');
+        const resultBox = document.getElementById('ai-result');
+        const btn = document.getElementById('capture-btn');
+
+        if (!video.srcObject) return;
+
+        // Capture frame
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        const imageData = canvas.toDataURL('image/jpeg');
+
+        // Analysis UI
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحليل...';
+        resultBox.classList.add('analyzing');
+        resultBox.innerText = 'جاري التعرف على القطعة وتحليل تاريخها...';
+
+        try {
+            const base64Data = imageData.split(',')[1];
+            const response = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        systemInstruction: {
+                            parts: [{ text: SYSTEM_PROMPT }]
+                        },
+                        contents: [
+                            {
+                                parts: [
+                                    { text: "أنت مرشد سياحي خبير في متاحف جامعة المنيا. قم بتحليل هذه الصورة وأخبرني باسم القطعة وتاريخها وأهميتها باختصار وباللغة العربية." },
+                                    { inline_data: { mime_type: "image/jpeg", data: base64Data } }
+                                ]
+                            }
+                        ]
+                    })
+                }
+            );
+
+            const data = await response.json();
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "لم أتمكن من التعرف على هذه القطعة بدقة. حاول مرة أخرى.";
+            resultBox.classList.remove('analyzing');
+            resultBox.innerText = text;
+        } catch (error) {
+            resultBox.innerText = 'حدث خطأ في الاتصال بالذكاء الاصطناعي.';
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-search-location me-2"></i> بدء الفحص الذكي';
+        }
+    });
+
+    // --- AI Voice Logic ---
+    const startVoiceAssistant = () => {
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.lang = 'ar-SA';
+        recognition.start();
+
+        const status = document.getElementById('voice-status');
+        const transcript = document.getElementById('voice-transcript');
+        const responseBox = document.getElementById('voice-response-box');
+        const responseText = document.getElementById('voice-response');
+
+        recognition.onresult = async (event) => {
+            const userText = event.results[0][0].transcript;
+            transcript.innerText = userText;
+            status.innerText = 'جاري التفكير...';
+
+            // Ask Gemini
+            try {
+                const response = await fetch(
+                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            systemInstruction: {
+                                parts: [{ text: SYSTEM_PROMPT }]
+                            },
+                            contents: [{ parts: [{ text: `أجب عن هذا السؤال المتعلق بمتاحف جامعة المنيا باختصار كمرشد سياحي: ${userText}` }] }]
+                        })
+                    }
+                );
+                const data = await response.json();
+                const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "عذراً، لم أفهم ذلك.";
+                
+                status.innerText = 'الإجابة:';
+                responseBox.classList.remove('d-none');
+                responseText.innerText = aiText;
+
+                // Speech Synthesis
+                const utterance = new SpeechSynthesisUtterance(aiText);
+                utterance.lang = 'ar-SA';
+                window.speechSynthesis.speak(utterance);
+            } catch (err) {
+                status.innerText = 'حدث خطأ.';
+            }
+        };
+
+        recognition.onerror = () => {
+            status.innerText = 'فشل الاستماع.';
+        };
+    };
+
+    // --- Knowledge Quiz Logic ---
+    const startQuiz = () => {
+        const questions = [
+            { q: "في أي عصر تم بناء أهرامات الجيزة؟", a: "الدولة القديمة" },
+            { q: "ما هي عاصمة مصر في عهد إخناتون؟", a: "تل العمارنة" },
+            { q: "من هو الإله الذي كان يرمز له بالصقر؟", a: "حورس" }
+        ];
+        const randomQ = questions[Math.floor(Math.random() * questions.length)];
+        const reply = prompt(`تحدي المعرفة:\n${randomQ.q}`);
+        if (reply && reply.includes(randomQ.a)) {
+            alert('أحسنت! إجابة صحيحة عبقرية. 🎯');
+        } else {
+            alert(`للأسف إجابة خاطئة. الإجابة الصحيحة هي: ${randomQ.a}`);
+        }
+    };
+
+    updateActivationUI();
 
 });
