@@ -211,10 +211,21 @@
             const urlParams = new URLSearchParams(window.location.search);
             const collectionId = urlParams.get('id');
             const museumName = urlParams.get('name');
+            const museumImg = urlParams.get('img');
 
             if (collectionId && museumName) {
-                document.getElementById('museum-title').innerText = museumName;
-                initMuseumPage(collectionId, museumName);
+                // Correct ID is museum-title-hero
+                const titleHero = document.getElementById('museum-title-hero');
+                if (titleHero) titleHero.innerText = museumName;
+
+                // Sync image immediately from URL
+                const heroImg = document.getElementById('museum-hero-img');
+                if (heroImg && museumImg) heroImg.src = museumImg;
+                
+                // Call global init function
+                if (typeof initMuseumPage === 'function') {
+                    initMuseumPage(collectionId, museumName, museumImg);
+                }
             } else {
                 window.location.href = 'index.html';
             }

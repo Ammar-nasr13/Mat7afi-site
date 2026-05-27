@@ -205,7 +205,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             <div class="row g-4">
                 <!-- Tourism Museum -->
                 <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
-                    <div class="museum-card" onclick="loadMuseumArtifacts('tourism_artifacts', 'متحف كلية السياحة')">
+                    <div class="museum-card" onclick="loadMuseumArtifacts('tourism_artifacts', 'متحف كلية السياحة', 'assets/tourism-museum.jpg')">
                         <div class="card-img-wrap">
                             <img src="assets/tourism-museum.jpg" alt="متحف كلية السياحة والفنادق" class="card-img" loading="lazy">
                             <div class="card-grey-overlay"></div>
@@ -219,7 +219,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 
                 <!-- Science Museum -->
                 <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
-                    <div class="museum-card" onclick="loadMuseumArtifacts('science_atifacts', 'متحف كلية العلوم')">
+                    <div class="museum-card" onclick="loadMuseumArtifacts('science_atifacts', 'متحف كلية العلوم', 'assets/science-museum.png')">
                         <div class="card-img-wrap">
                             <img src="assets/science-museum.png" alt="متحف كلية العلوم" class="card-img" loading="lazy">
                             <div class="card-grey-overlay"></div>
@@ -233,7 +233,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 
                 <!-- Modern Art Museum -->
                 <div class="col-lg-4 col-md-6 mx-auto" data-aos="fade-up" data-aos-delay="300">
-                    <div class="museum-card" onclick="loadMuseumArtifacts('art_atifacts', 'متحف الفن الحديث')">
+                    <div class="museum-card" onclick="loadMuseumArtifacts('art_atifacts', 'متحف الفن الحديث', 'assets/artt-museum.jpg')">
                         <div class="card-img-wrap">
                             <img src="assets/artt-museum.jpg" alt="متحف الفن الحديث" class="card-img" loading="lazy">
                             <div class="card-grey-overlay"></div>
@@ -604,6 +604,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script src="script.js" defer></script>
     <script>
+        window.loadMuseumArtifacts = (collectionId, museumName, museumImg) => {
+            window.location.href =
+                `museum.html?id=${collectionId}&name=${encodeURIComponent(museumName)}&img=${encodeURIComponent(museumImg)}`;
+        };
         window.addEventListener('load', function() {
             AOS.init({
                 duration: 1000,

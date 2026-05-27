@@ -156,7 +156,7 @@ const renderArtifacts = (artifacts) => {
 };
 
 // Global Page Initializers
-window.initMuseumPage = async (collectionId, museumName) => {
+window.initMuseumPage = async (collectionId, museumName, museumImg) => {
     const artifactsGrid = document.getElementById('artifacts-grid');
     const museumTitleHero = document.getElementById('museum-title-hero');
     const museumHeroImg = document.getElementById('museum-hero-img');
@@ -169,10 +169,16 @@ window.initMuseumPage = async (collectionId, museumName) => {
 
     if (museumTitleHero) museumTitleHero.innerText = museumName;
     
+    // Set Hero Image
     if (museumHeroImg) {
-        if (collectionId.includes('tourism')) museumHeroImg.src = 'assets/tourism-museum.jpg';
-        else if (collectionId.includes('art')) museumHeroImg.src = 'assets/artt-museum.jpg';
-        else if (collectionId.includes('science')) museumHeroImg.src = 'assets/science-museum.png';
+        if (museumImg) {
+            museumHeroImg.src = museumImg;
+        } else {
+            // Fallback sync logic
+            if (collectionId.includes('tourism')) museumHeroImg.src = 'assets/tourism-museum.jpg';
+            else if (collectionId.includes('art')) museumHeroImg.src = 'assets/artt-museum.jpg';
+            else if (collectionId.includes('science')) museumHeroImg.src = 'assets/science-museum.png';
+        }
     }
 
     try {
