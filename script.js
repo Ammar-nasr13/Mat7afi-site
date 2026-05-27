@@ -141,7 +141,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                 src="${imageUrl || 'assets/placeholder.png'}"
                                 alt="${artifactTitle}"
                                 loading="lazy"
-                                onerror="this.onerror=null; this.src='${AppwriteConfig.endpoint}/storage/buckets/${AppwriteConfig.buckets.artifacts}/files/${artifact.image || artifact.image_url}/preview?project=${AppwriteConfig.projectId}';"
                             >
                         </div>
                         <div class="artifact-card-overlay"></div>
@@ -154,6 +153,10 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
 
             fragment.appendChild(col);
+            
+            // Attach fallback
+            const img = col.querySelector('img');
+            setupImageFallback(img, artifact.image || artifact.image_url);
         });
 
         artifactsGrid.appendChild(fragment);
@@ -406,15 +409,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (artifactImg && imgUrl) {
                     artifactImg.src = imgUrl;
                     if (artifactHeroBg) artifactHeroBg.src = imgUrl;
-
-                    // Fallback Logic
-                    artifactImg.onerror = function() {
-                        const fallbackUrl = `${AppwriteConfig.endpoint}/storage/buckets/${AppwriteConfig.buckets.artifacts}/files/${imgId}/preview?project=${AppwriteConfig.projectId}`;
-                        if (this.src !== fallbackUrl) {
-                            this.src = fallbackUrl;
-                            if (artifactHeroBg) artifactHeroBg.src = fallbackUrl;
-                        }
-                    };
+                    setupImageFallback(artifactImg, imgId);
                 }
 
                 if (artifactDesc) {
@@ -453,22 +448,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     infoGrid.innerHTML = items.length ? items.join('') : '<p class="text-muted">لا توجد تفاصيل إضافية متاحة.</p>';
                 }
 
-                const audioFileId = artifact.audio || artifact.audio_url || artifact.audioUrl;
+                const audioFileId = artifact['audio-ar'] || artifact.audio_ar || artifact.audio || artifact['audio-en'] || artifact.audio_en || artifact.audio_url || artifact.audioUrl || artifact.audio_guide || artifact.audio_id;
 
-                if (audioSection && audioPlayer && audioFileId && audioFileId !== 'none' && audioFileId !== 'null') {
+                if (audioSection && audioPlayer && audioFileId && audioFileId !== 'none' && audioFileId !== 'null' && String(audioFileId).trim() !== '') {
                     const audioUrl = getAppwriteImageUrl(audioFileId, AppwriteConfig.buckets.audio);
-                    audioPlayer.src = audioUrl;
-                    audioSection.style.display = 'block';
-
-                    // Audio Player Logic
+                    
+                    // Audio Player Logic - Set handlers BEFORE src to avoid race conditions
                     if (playPauseBtn && waveformContainer) {
-                        // Generate Waveform bars with more natural heights
                         waveformContainer.innerHTML = '';
                         const barsCount = 35;
                         for (let i = 0; i < barsCount; i++) {
                             const bar = document.createElement('div');
                             bar.className = 'waveform-bar';
-                            // Create a more realistic wave pattern
                             const height = Math.floor(Math.sin(i * 0.5) * 15) + 20 + Math.floor(Math.random() * 10);
                             bar.style.height = `${height}px`;
                             waveformContainer.appendChild(bar);
@@ -479,14 +470,28 @@ document.addEventListener('DOMContentLoaded', () => {
                         playPauseBtn.disabled = true;
                         playPauseBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
+                        // Reset progress
+                        currentTimeEl.innerText = '00:00';
+                        durationTimeEl.innerText = '00:00';
+
                         audioPlayer.oncanplay = () => {
                             playPauseBtn.disabled = false;
                             playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
                         };
 
+                        audioPlayer.onerror = () => {
+                            playPauseBtn.disabled = true;
+                            playPauseBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+                            console.error("Audio failed to load from ID:", audioFileId);
+                            // Hide section if it fails completely? Maybe just show error icon.
+                        };
+
                         playPauseBtn.onclick = () => {
                             if (audioPlayer.paused) {
-                                audioPlayer.play();
+                                audioPlayer.play().catch(err => {
+                                    console.error("Playback failed:", err);
+                                    playPauseBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+                                });
                                 playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
                                 waveformContainer.classList.add('playing');
                             } else {
@@ -497,7 +502,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         };
 
                         audioPlayer.ontimeupdate = () => {
-                            if (isNaN(audioPlayer.duration)) return;
+                            if (isNaN(audioPlayer.duration) || audioPlayer.duration === 0) return;
                             
                             const progress = audioPlayer.currentTime / audioPlayer.duration;
                             const activeBarsCount = Math.floor(progress * barsCount);
@@ -526,6 +531,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             const sec = Math.floor(seconds % 60);
                             return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
                         }
+
+                        // Now set the source
+                        audioPlayer.src = audioUrl;
+                        audioPlayer.load(); // Force load
+                        audioSection.style.display = 'block';
                     }
                 } else if (audioSection) {
                     audioSection.style.display = 'none';
@@ -559,22 +569,42 @@ document.addEventListener('DOMContentLoaded', () => {
     // FIXED IMAGE URL with Fallback
     function getAppwriteImageUrl(fileId, bucketId) {
         if (!fileId) return 'assets/placeholder.png';
-
         if (Array.isArray(fileId)) fileId = fileId[0];
-
-        // Direct URLs
         if (typeof fileId === 'string' && (fileId.startsWith('http') || fileId.startsWith('assets/'))) {
             return fileId;
         }
-
         fileId = fileId.toString().trim();
         const action = bucketId === AppwriteConfig.buckets.audio ? 'view' : 'preview';
+        return `${AppwriteConfig.endpoint}/storage/buckets/${bucketId}/files/${fileId}/${action}?project=${AppwriteConfig.projectId}`;
+    }
 
-        // Helper to build URL
-        const buildUrl = (bid) => `${AppwriteConfig.endpoint}/storage/buckets/${bid}/files/${fileId}/${action}?project=${AppwriteConfig.projectId}`;
-
-        // Return URL (We use the primary bucket, but in CSS we could technically have a fallback)
-        return buildUrl(bucketId);
+    // Advanced Fallback System for Images
+    function setupImageFallback(imgEl, fileId) {
+        if (!imgEl || !fileId) return;
+        
+        const buckets = [
+            AppwriteConfig.buckets.tourism,
+            AppwriteConfig.buckets.artifacts,
+            AppwriteConfig.buckets.scienceImages,
+            AppwriteConfig.buckets.artImages
+        ];
+        
+        let currentTry = 0;
+        
+        imgEl.onerror = () => {
+            if (currentTry < buckets.length) {
+                const nextBucket = buckets[currentTry++];
+                const nextUrl = `${AppwriteConfig.endpoint}/storage/buckets/${nextBucket}/files/${fileId}/preview?project=${AppwriteConfig.projectId}`;
+                if (imgEl.src !== nextUrl) {
+                    imgEl.src = nextUrl;
+                    const heroBg = document.getElementById('artifact-hero-bg');
+                    if (heroBg && imgEl.id === 'artifact-img') heroBg.src = nextUrl;
+                }
+            } else {
+                imgEl.src = 'assets/placeholder.png';
+                imgEl.onerror = null;
+            }
+        };
     }
 
     // Smart Services & Activation Logic
