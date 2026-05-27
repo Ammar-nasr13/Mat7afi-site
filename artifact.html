@@ -13,28 +13,57 @@
 <body>
 
     <header class="artifact-hero">
-        <img id="artifact-hero-bg" src="" class="hero-img-bg">
         <div class="back-nav">
             <a href="javascript:history.back()" class="btn-premium-back">
                 <i class="fas fa-arrow-right"></i>
-                <span>العودة للمتحف</span>
             </a>
         </div>
-        <img id="artifact-img" src="assets/placeholder.png" alt="Artifact" class="artifact-main-img shadow-lg" onerror="this.src='assets/placeholder.png'">
+        
+        <img id="artifact-img" src="assets/placeholder.png" alt="Artifact" class="artifact-main-img" onerror="this.src='assets/placeholder.png'">
+        
+        <!-- 360 Button center bottom -->
+        <div class="btn-360-wrap">
+            <button class="btn-360" onclick="alert('خاصية العرض ثلاثي الأبعاد ستكون متاحة قريباً في نسخة الويب ✨')">
+                <i class="fas fa-sync-alt"></i>
+                <span>عـرض 360°</span>
+            </button>
+        </div>
+
+        <!-- Hero Info Bottom Right -->
+        <div class="hero-title-info">
+            <h1 id="artifact-name-hero">جاري التحميل...</h1>
+            <p id="artifact-subtitle-hero"></p>
+        </div>
     </header>
 
     <div class="details-container">
         <main class="main-card">
             <div id="loader" class="text-center py-5">
-                <div class="spinner-border text-gold" style="width: 3rem; height: 3rem; color: #D4AF37;"></div>
-                <p class="mt-3 fw-bold">جاري استحضار التاريخ...</p>
+                <div class="spinner-border text-gold" style="width: 3rem; height: 3rem; color: #3B2403;"></div>
+                <p class="mt-3 fw-bold" style="color: #3B2403;">جاري استحضار التاريخ...</p>
             </div>
 
             <div id="artifact-content" style="display: none;">
-                <!-- Header Info -->
-                <div class="artifact-title-box">
-                    <span id="artifact-category" class="artifact-badge mb-2">أثر تاريخي</span>
-                    <h1 id="artifact-name" class="artifact-name">جاري التحميل...</h1>
+                <!-- Audio Guide - Moved up like mobile might prefer or keep structure -->
+                <div id="audio-section" class="mb-5" style="display: none;">
+                    <div class="mobile-audio-box">
+                        <div class="audio-controls">
+                            <button id="play-pause-btn" class="audio-play-btn">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <div class="wave-player">
+                                <div id="waveform" class="wave-bars">
+                                    <!-- Bars injected -->
+                                </div>
+                                <div class="audio-timers">
+                                    <span id="current-time">00:00</span>
+                                    <span class="mx-1">/</span>
+                                    <span id="duration-time">00:00</span>
+                                </div>
+                            </div>
+                        </div>
+                        <audio id="artifact-audio" style="display: none;"></audio>
+                    </div>
                 </div>
 
                 <!-- Info Grid -->
@@ -47,28 +76,6 @@
                 <h3 class="section-title">عن هذه القطعة</h3>
                 <div class="description-text" id="artifact-desc">
                     تحميل القصة التاريخية...
-                </div>
-
-                <!-- Audio Guide -->
-                <div id="audio-section" style="display: none;">
-                    <h3 class="section-title">الدليل الصوتي</h3>
-                    <div class="premium-audio-box">
-                        <div class="audio-controls">
-                            <button id="play-pause-btn" class="audio-play-btn">
-                                <i class="fas fa-play"></i>
-                            </button>
-                            <div class="wave-player">
-                                <div id="waveform" class="wave-bars">
-                                    <!-- Bars injected -->
-                                </div>
-                                <div class="audio-timers">
-                                    <span id="current-time">00:00</span>
-                                    <span id="duration-time">00:00</span>
-                                </div>
-                            </div>
-                        </div>
-                        <audio id="artifact-audio" style="display: none;"></audio>
-                    </div>
                 </div>
             </div>
         </main>

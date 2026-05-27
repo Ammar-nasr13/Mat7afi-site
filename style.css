@@ -381,23 +381,24 @@ h1, h2, h3, h4, h5, .en-name {
 
 .museum-card {
     background: var(--navy-light);
-    border-radius: 20px;
+    border-radius: 0; /* Match mobile's zero radius */
     overflow: hidden;
-    height: 100%;
+    height: 180px;
     transition: var(--transition);
-    border: 1px solid rgba(255, 253, 208, 0.05);
+    border: none;
+    position: relative;
+    box-shadow: 0 8px 15px rgba(0,0,0,0.2);
 }
 
 .museum-card:hover {
-    transform: translateY(-15px);
-    border-color: var(--accent);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    transform: scale(1.02);
+    box-shadow: 0 12px 25px rgba(0,0,0,0.4);
 }
 
 .card-img-wrap {
-    position: relative;
-    height: 250px;
-    overflow: hidden;
+    position: absolute;
+    inset: 0;
+    height: 100%;
 }
 
 .card-img {
@@ -407,52 +408,40 @@ h1, h2, h3, h4, h5, .en-name {
     transition: var(--transition);
 }
 
-.museum-card:hover .card-img {
-    transform: scale(1.1);
+/* Mobile-style overlays */
+.card-grey-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(217, 217, 217, 0.4); /* Color(0x66D9D9D9) */
+    z-index: 1;
 }
 
-.card-overlay {
+.card-gradient-overlay {
     position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 50%;
-    background: linear-gradient(to top, var(--navy-light), transparent);
+    inset: 0;
+    background: linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.1) 60%, rgba(0,0,0,0.85) 100%);
+    z-index: 2;
 }
 
 .card-content {
-    padding: 30px;
-}
-
-.museum-category {
-    color: var(--accent);
-    font-size: 0.8rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    display: block;
-    margin-bottom: 10px;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    padding: 20px;
+    z-index: 3;
 }
 
 .card-content h3 {
-    color: var(--cream);
-    margin-bottom: 15px;
+    color: var(--white);
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 800;
+    text-align: right;
 }
 
-.card-content p {
-    color: rgba(255, 253, 208, 0.6);
-    font-size: 0.95rem;
-    margin-bottom: 25px;
-}
-
-.learn-more {
-    color: var(--accent);
-    text-decoration: none;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    transition: var(--transition);
+.card-content p, .museum-category, .learn-more {
+    display: none; /* Simplify like mobile card */
 }
 
 .learn-more:hover {
@@ -1227,23 +1216,26 @@ img {
     transition: var(--transition);
     cursor: pointer;
     border: 1px solid rgba(255, 253, 208, 0.05);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
 }
 
 .artifact-card:hover {
     transform: translateY(-10px);
     border-color: var(--accent);
-    box-shadow: 0 15px 30px rgba(0,0,0,0.5);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.5);
 }
 
 .artifact-card-img {
-    height: 220px;
+    height: 250px;
     overflow: hidden;
     position: relative;
-    background: #060D1A;
+    background: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 10px;
+    padding: 25px;
 }
 
 .artifact-card-img img {
@@ -1253,11 +1245,11 @@ img {
     height: auto;
     object-fit: contain;
     transition: var(--transition);
-    border-radius: 8px;
+    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.4));
 }
 
 .artifact-card:hover .artifact-card-img img {
-    transform: scale(1.05);
+    transform: scale(1.08);
 }
 
 .artifact-card-link {

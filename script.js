@@ -317,12 +317,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const artifactsGrid =
                 document.getElementById('artifacts-grid');
+            const museumTitleHero = document.getElementById('museum-title-hero');
+            const museumHeroImg = document.getElementById('museum-hero-img');
 
             if (!artifactsGrid) return;
 
             currentMuseumCollection = collectionId;
             currentMuseumName = museumName;
             museumArtifactsCache = [];
+
+            if (museumTitleHero) museumTitleHero.innerText = museumName;
+            
+            // Set Hero Image based on museum type
+            if (museumHeroImg) {
+                if (collectionId.includes('tourism')) museumHeroImg.src = 'assets/tourism.png';
+                else if (collectionId.includes('art')) museumHeroImg.src = 'assets/art.png';
+                else if (collectionId.includes('science')) museumHeroImg.src = 'assets/science.png';
+            }
 
             try {
 
@@ -391,16 +402,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     documentId
                 );
 
-                const artifactNameEl = document.getElementById('artifact-name');
-                const artifactCategoryEl = document.getElementById('artifact-category');
-                const artifactHeroBg = document.getElementById('artifact-hero-bg');
+                const artifactNameHero = document.getElementById('artifact-name-hero');
+                const artifactSubtitleHero = document.getElementById('artifact-subtitle-hero');
                 const infoGrid = document.getElementById('info-grid');
 
                 const name = getArtifactTitle(artifact);
-                if (artifactNameEl) artifactNameEl.innerText = name;
+                if (artifactNameHero) artifactNameHero.innerText = name;
                 
-                const category = artifact['category-ar'] || artifact.category || museumName || 'قطعة أثرية';
-                if (artifactCategoryEl) artifactCategoryEl.innerText = category;
+                let subtitle = '';
+                if (collectionId.includes('tourism')) {
+                    subtitle = artifact['era-ar'] || artifact.era || 'عصر غير محدد';
+                    if (subtitle && !subtitle.includes('عصر')) subtitle = `العصر: ${subtitle}`;
+                } else if (collectionId.includes('art')) {
+                    subtitle = artifact['author-ar'] || artifact.author || 'فنان غير معروف';
+                } else if (collectionId.includes('science')) {
+                    subtitle = artifact['category-ar'] || artifact.category || 'تصنيف علمي';
+                }
+                if (artifactSubtitleHero) artifactSubtitleHero.innerText = subtitle;
 
                 const bucketId = getBucketByType(collectionId);
                 const imgId = artifact.image || artifact.image_url;
@@ -408,7 +426,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (artifactImg && imgUrl) {
                     artifactImg.src = imgUrl;
-                    if (artifactHeroBg) artifactHeroBg.src = imgUrl;
                     setupImageFallback(artifactImg, imgId);
                 }
 
