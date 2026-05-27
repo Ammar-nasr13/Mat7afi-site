@@ -141,7 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 src="${imageUrl || 'assets/placeholder.png'}"
                                 alt="${artifactTitle}"
                                 loading="lazy"
-                                onerror="this.src='assets/placeholder.png'"
+                                onerror="this.onerror=null; this.src='${AppwriteConfig.endpoint}/storage/buckets/${AppwriteConfig.buckets.artifacts}/files/${artifact.image || artifact.image_url}/preview?project=${AppwriteConfig.projectId}';"
                             >
                         </div>
                         <div class="artifact-card-overlay"></div>
@@ -388,33 +388,32 @@ document.addEventListener('DOMContentLoaded', () => {
                     documentId
                 );
 
-                // Smart Buttons Setup
-                const chatBtn = document.getElementById('btn-chat-with-art');
-                const arBtn = document.getElementById('btn-view-ar');
+                const artifactNameEl = document.getElementById('artifact-name');
+                const artifactCategoryEl = document.getElementById('artifact-category');
+                const artifactHeroBg = document.getElementById('artifact-hero-bg');
+                const infoGrid = document.getElementById('info-grid');
+
+                const name = getArtifactTitle(artifact);
+                if (artifactNameEl) artifactNameEl.innerText = name;
                 
-                if (chatBtn) {
-                    chatBtn.href = `artifact-chat.html?id=${documentId}&collection=${collectionId}`;
-                }
-                
-                if (arBtn) {
-                    const arModelId = artifact.ar_model || artifact.arModel;
-                    if (arModelId && arModelId !== 'none') {
-                        const arUrl = getAppwriteImageUrl(arModelId, AppwriteConfig.buckets.arModels);
-                        // Using Model Viewer or Scene Viewer link
-                        arBtn.href = `https://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(arUrl)}&mode=ar_only`;
-                        arBtn.target = "_blank";
-                    } else {
-                        arBtn.onclick = () => alert('عذراً، نسخة الواقع المعزز لهذه القطعة غير متوفرة حالياً.');
-                    }
-                }
+                const category = artifact['category-ar'] || artifact.category || museumName || 'قطعة أثرية';
+                if (artifactCategoryEl) artifactCategoryEl.innerText = category;
 
                 const bucketId = getBucketByType(collectionId);
-                const imgUrl = getAppwriteImageUrl(artifact.image || artifact.image_url, bucketId);
+                const imgId = artifact.image || artifact.image_url;
+                const imgUrl = getAppwriteImageUrl(imgId, bucketId);
 
                 if (artifactImg && imgUrl) {
                     artifactImg.src = imgUrl;
-                    artifactImg.onerror = function () {
-                        this.style.display = 'none';
+                    if (artifactHeroBg) artifactHeroBg.src = imgUrl;
+
+                    // Fallback Logic
+                    artifactImg.onerror = function() {
+                        const fallbackUrl = `${AppwriteConfig.endpoint}/storage/buckets/${AppwriteConfig.buckets.artifacts}/files/${imgId}/preview?project=${AppwriteConfig.projectId}`;
+                        if (this.src !== fallbackUrl) {
+                            this.src = fallbackUrl;
+                            if (artifactHeroBg) artifactHeroBg.src = fallbackUrl;
+                        }
                     };
                 }
 
@@ -422,22 +421,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     artifactDesc.innerText = getArtifactDescription(artifact) || 'لا يوجد وصف متاح لهذه القطعة.';
                 }
 
-                if (infoCard) {
-                    const rows = [];
-                    const addRow = (label, value, icon) => {
+                if (infoGrid) {
+                    const items = [];
+                    const addItem = (label, value, icon) => {
                         if (!value || value === 'none' || value === 'null') return;
-                        rows.push(`
-                            <div class="info-row">
-                                <div class="icon-box">
-                                    <i class="fas ${icon}"></i>
+                        items.push(`
+                            <div class="info-item">
+                                <div class="info-icon"><i class="fas ${icon}"></i></div>
+                                <div class="info-content">
+                                    <span class="label">${label}</span>
+                                    <span class="value">${value}</span>
                                 </div>
-                                <div class="info-label">${label}:</div>
-                                <div class="info-value text-end flex-grow-1">${value}</div>
                             </div>
                         `);
                     };
 
-                    const type = artifact['category-ar'] || artifact.category || artifact.type;
                     const era = artifact['era-ar'] || artifact.era || artifact.period;
                     const material = artifact['material-ar'] || artifact.material;
                     const dimensions = artifact['dimensions-ar'] || artifact.dimensions;
@@ -445,16 +443,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     const author = artifact['author-ar'] || artifact.author;
                     const size = artifact['size-ar'] || artifact.size;
 
-                    if (era && era !== 'none') addRow('العصر', era, 'fa-history');
-                    if (material && material !== 'none') addRow('المادة', material, 'fa-layer-group');
-                    if (dimensions && dimensions !== 'none') addRow('المقاسات', dimensions, 'fa-ruler-combined');
-                    if (location && location !== 'none') addRow('الموقع', location, 'fa-map-marker-alt');
-                    if (author && author !== 'none') addRow('الفنان', author, 'fa-user');
-                    if (size && size !== 'none') addRow('الحجم', size, 'fa-expand');
-                    if (type && type !== 'none') addRow('النوع', type, 'fa-tags');
-                    
+                    if (era && era !== 'none') addItem('العصر التاريخي', era, 'fa-landmark');
+                    if (material && material !== 'none') addItem('مادة الصنع', material, 'fa-gem');
+                    if (dimensions && dimensions !== 'none') addItem('القياسات', dimensions, 'fa-ruler-combined');
+                    if (author && author !== 'none') addItem('الفنان/المبدع', author, 'fa-user-edit');
+                    if (location && location !== 'none') addItem('موقع الاكتشاف', location, 'fa-map-marked-alt');
+                    if (size && size !== 'none') addItem('الحجم', size, 'fa-expand-arrows-alt');
 
-                    infoCard.innerHTML = rows.join('');
+                    infoGrid.innerHTML = items.length ? items.join('') : '<p class="text-muted">لا توجد تفاصيل إضافية متاحة.</p>';
                 }
 
                 const audioFileId = artifact.audio || artifact.audio_url || artifact.audioUrl;
@@ -560,47 +556,25 @@ document.addEventListener('DOMContentLoaded', () => {
         return AppwriteConfig.buckets.tourism;
     }
 
-    // FIXED IMAGE URL
+    // FIXED IMAGE URL with Fallback
     function getAppwriteImageUrl(fileId, bucketId) {
+        if (!fileId) return 'assets/placeholder.png';
 
-        if (!fileId) {
-            console.error('No fileId provided');
-            return '';
-        }
+        if (Array.isArray(fileId)) fileId = fileId[0];
 
-        // Handle Array if Appwrite returns it
-        if (Array.isArray(fileId) && fileId.length > 0) {
-            fileId = fileId[0];
-        }
-
-        // لو رابط مباشر
-        if (
-            typeof fileId === 'string' && (
-                fileId.startsWith('http://') ||
-                fileId.startsWith('https://') ||
-                fileId.startsWith('assets/')
-            )
-        ) {
+        // Direct URLs
+        if (typeof fileId === 'string' && (fileId.startsWith('http') || fileId.startsWith('assets/'))) {
             return fileId;
         }
 
-        // تنظيف الـ fileId
         fileId = fileId.toString().trim();
+        const action = bucketId === AppwriteConfig.buckets.audio ? 'view' : 'preview';
 
-        // Use preview for images, view for other files
-        const isAudio = bucketId === AppwriteConfig.buckets.audio;
-        const action = isAudio ? 'view' : 'preview';
+        // Helper to build URL
+        const buildUrl = (bid) => `${AppwriteConfig.endpoint}/storage/buckets/${bid}/files/${fileId}/${action}?project=${AppwriteConfig.projectId}`;
 
-        // رابط الصورة النهائي
-        const imageUrl =
-            `${AppwriteConfig.endpoint}/storage/buckets/${bucketId}/files/${fileId}/${action}?project=${AppwriteConfig.projectId}`;
-
-        console.log(
-            'Generated URL:',
-            imageUrl
-        );
-
-        return imageUrl;
+        // Return URL (We use the primary bucket, but in CSS we could technically have a fallback)
+        return buildUrl(bucketId);
     }
 
     // Smart Services & Activation Logic
