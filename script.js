@@ -114,12 +114,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         artifacts.forEach((artifact) => {
             const bucketId = getBucketByType(currentMuseumCollection);
-            const imageUrl = getAppwriteImageUrl(
-                artifact.image || artifact.image_url,
-                bucketId
-            );
+            const imageUrl = getAppwriteImageUrl(artifact.image || artifact.image_url, bucketId);
             const artifactId = artifact.$id || artifact.id || '';
             const artifactTitle = getArtifactTitle(artifact);
+            
+            // Subtitle logic like Flutter app
+            let subtitle = '';
+            if (currentMuseumCollection.includes('tourism')) {
+                subtitle = artifact['era-ar'] || artifact.era || '';
+            } else if (currentMuseumCollection.includes('art')) {
+                subtitle = artifact['author-ar'] || artifact.author || '';
+            } else if (currentMuseumCollection.includes('science')) {
+                subtitle = artifact['category-ar'] || artifact.category || '';
+            }
+
             const artifactLink = `artifact.html?id=${encodeURIComponent(artifactId)}&collection=${encodeURIComponent(currentMuseumCollection)}&museum=${encodeURIComponent(currentMuseumName)}`;
 
             const col = document.createElement('div');
@@ -136,8 +144,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                 onerror="this.src='assets/placeholder.png'"
                             >
                         </div>
-                        <div class="artifact-card-body text-center">
+                        <div class="artifact-card-overlay"></div>
+                        <div class="artifact-card-body">
                             <h3 class="artifact-card-title">${artifactTitle}</h3>
+                            <p class="artifact-card-subtitle">${subtitle}</p>
                         </div>
                     </div>
                 </a>
