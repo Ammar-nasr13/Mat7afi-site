@@ -130,7 +130,7 @@ const renderArtifacts = (artifacts) => {
         const artifactLink = `artifact.html?id=${encodeURIComponent(artifactId)}&collection=${encodeURIComponent(currentMuseumCollection)}&museum=${encodeURIComponent(currentMuseumName)}`;
 
         const col = document.createElement('div');
-        col.className = 'col-lg-3 col-md-4 col-6 mb-4';
+        col.className = 'col-lg-3 col-md-4 col-6 mb-5';
 
         col.innerHTML = `
             <a href="${artifactLink}" class="artifact-card-link" style="text-decoration:none;">
@@ -330,6 +330,16 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
+    // Navbar Scroll Effect
+    const navbar = document.querySelector('.navbar');
+    window.addEventListener('scroll', () => {
+        if (window.scrollY > 50) {
+            navbar.classList.add('scrolled');
+        } else {
+            navbar.classList.remove('scrolled');
+        }
+    });
+
     const userInput = document.getElementById('user-input');
     const sendBtn = document.getElementById('send-btn');
     if (sendBtn && userInput) {
@@ -341,6 +351,8 @@ document.addEventListener('DOMContentLoaded', () => {
 async function handleChat() {
     const userInput = document.getElementById('user-input');
     const chatMessages = document.getElementById('chat-messages');
+    if (!userInput || !chatMessages) return;
+
     const text = userInput.value.trim();
     if (!text) return;
     
@@ -354,23 +366,40 @@ async function handleChat() {
 
     addMsg(text, 'user');
     userInput.value = '';
+    
     const thinking = document.createElement('div');
     thinking.className = 'message system-msg thinking';
     thinking.innerText = 'جاري التفكير...';
     chatMessages.appendChild(thinking);
 
-    const SYSTEM_PROMPT = `أنت Ego Pro مساعد متاحف جامعة المنيا...`;
     const API_KEY = 'AIzaSyCrTSLql-6iD0V4FhgKN3dTLnGJb9ln8eE';
+    const SYSTEM_PROMPT = "أنت Ego Pro، مساعد ذكي خبير في متاحف جامعة المنيا. أجب باحترافية وبشكل مفصل باللغة العربية.";
 
     try {
         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: text }] }] })
+            body: JSON.stringify({ 
+                contents: [{ 
+                    parts: [
+                        { text: SYSTEM_PROMPT },
+                        { text: text }
+                    ] 
+                }] 
+            })
         });
+        
         const data = await res.json();
         thinking.remove();
-        const responseText = data.candidates[0].content.parts[0].text;
-        addMsg(responseText, 'system');
-    } catch (e) { thinking.remove(); addMsg('خطأ في الاتصال', 'system'); }
+        
+        if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts) {
+            const responseText = data.candidates[0].content.parts[0].text;
+            addMsg(responseText, 'system');
+        } else {
+            addMsg('عذراً، لم أستطع معالجة طلبك حالياً.', 'system');
+        }
+    } catch (e) { 
+        thinking.remove(); 
+        addMsg('خطأ في الاتصال بالذكاء الاصطناعي.', 'system'); 
+    }
 }

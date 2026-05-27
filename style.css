@@ -24,6 +24,13 @@
     --mobile-divider: rgba(66, 32, 6, 0.1);
 }
 
+/* Background Utilities */
+.bg-navy { background-color: var(--navy) !important; }
+.bg-navy-dark { background-color: var(--navy-dark) !important; }
+.bg-navy-light { background-color: var(--navy-light) !important; }
+.bg-brown-gradient { background: linear-gradient(135deg, var(--brown) 0%, var(--brown-light) 100%) !important; }
+
+
 .text-accent { color: var(--accent) !important; }
 .text-cream { color: var(--cream) !important; }
 .text-navy { color: var(--navy) !important; }
@@ -80,10 +87,11 @@ h1, h2, h3, h4, h5, .en-name {
 }
 
 .navbar.scrolled {
-    background: rgba(10, 25, 47, 0.85);
+    background: #0A192F !important;
     backdrop-filter: blur(15px);
     padding: 12px 0;
     border-bottom: 1px solid rgba(255, 253, 208, 0.1);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
 }
 
 .nav-logo {
@@ -1744,6 +1752,62 @@ img {
     }
 }
 
+/* Museum Page Premium Header */
+.museum-hero-premium {
+    position: relative;
+    height: 450px;
+    width: 100%;
+    overflow: hidden;
+    background: #000;
+}
+
+.museum-hero-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.6;
+    transition: transform 0.5s ease;
+}
+
+.museum-hero-premium:hover .museum-hero-img {
+    transform: scale(1.05);
+}
+
+.museum-hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgba(10, 25, 47, 0.4) 0%, rgba(10, 25, 47, 1) 100%);
+    z-index: 2;
+}
+
+.museum-header-nav {
+    position: absolute;
+    top: 30px;
+    left: 40px;
+    right: 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 10;
+}
+
+.museum-hero-content {
+    position: absolute;
+    bottom: 50px;
+    right: 40px;
+    left: 40px;
+    z-index: 5;
+    color: var(--cream);
+}
+
+.museum-title-main {
+    font-size: 3.5rem;
+    font-weight: 900;
+    margin-bottom: 15px;
+    text-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
+
+
 /* Modal UI Fixes */
 .modal-content {
     border-radius: 30px !important;
@@ -1859,4 +1923,5 @@ img {
 @keyframes skeleton-loading {
     0% { background-position: 200% 0; }
     100% { background-position: -200% 0; }
+}
 }
