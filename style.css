@@ -388,14 +388,17 @@ h1, h2, h3, h4, h5, .en-name {
 }
 
 .museum-card {
-    background: var(--navy-light);
-    border-radius: 0; /* Match mobile's zero radius */
+    background: #1e293b;
+    border-radius: 16px;
     overflow: hidden;
-    height: 180px;
+    height: 420px;
     transition: var(--transition);
-    border: none;
+    border: 1px solid rgba(255, 255, 255, 0.05);
     position: relative;
     box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
 }
 
 .museum-card:hover {
@@ -405,8 +408,10 @@ h1, h2, h3, h4, h5, .en-name {
 
 .card-img-wrap {
     position: absolute;
-    inset: 0;
-    height: 100%;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
 }
 
 .card-img {
