@@ -44,8 +44,21 @@
             </div>
 
             <div id="artifact-content" style="display: none;">
-                <!-- Audio Guide - Moved up like mobile might prefer or keep structure -->
-                <div id="audio-section" class="mb-5" style="display: none;">
+                <!-- Info Grid -->
+                <h3 class="section-title">بطاقة التعريف</h3>
+                <div class="info-grid" id="info-grid">
+                    <!-- Items will be injected -->
+                </div>
+
+                <!-- Description -->
+                <h3 class="section-title">عن هذه القطعة</h3>
+                <div class="description-text" id="artifact-desc">
+                    تحميل القصة التاريخية...
+                </div>
+
+                <!-- Audio Guide - Moved to bottom -->
+                <div id="audio-section" class="mt-5 mb-5" style="display: none;">
+                    <h3 style="color: var(--brown); font-weight: 800; font-size: 1.5rem; margin-bottom: 20px; text-align: center;">استمع الي الوصف الصوتي</h3>
                     <div class="mobile-audio-box">
                         <div class="audio-controls">
                             <button id="play-pause-btn" class="audio-play-btn">
@@ -64,18 +77,6 @@
                         </div>
                         <audio id="artifact-audio" style="display: none;"></audio>
                     </div>
-                </div>
-
-                <!-- Info Grid -->
-                <h3 class="section-title">بطاقة التعريف</h3>
-                <div class="info-grid" id="info-grid">
-                    <!-- Items will be injected -->
-                </div>
-
-                <!-- Description -->
-                <h3 class="section-title">عن هذه القطعة</h3>
-                <div class="description-text" id="artifact-desc">
-                    تحميل القصة التاريخية...
                 </div>
             </div>
         </main>

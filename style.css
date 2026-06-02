@@ -1931,7 +1931,7 @@ img {
 }
 
 .artifact-card {
-    height: 300px;
+    height: 350px;
     position: relative;
     border-radius: 20px;
     overflow: hidden;
@@ -2015,7 +2015,7 @@ img {
 }
 
 .skeleton-card {
-    height: 300px;
+    height: 350px;
     width: 100%;
 }
 

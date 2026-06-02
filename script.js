@@ -194,15 +194,6 @@ window.initMuseumPage = async (collectionId, museumName, museumImg) => {
             return;
         }
         renderArtifacts(museumArtifactsCache);
-        
-        const audioGuide = document.getElementById('museum-audio-guide');
-        if (audioGuide) {
-            if (collectionId.includes('tourism')) {
-                audioGuide.style.display = 'block';
-            } else {
-                audioGuide.style.display = 'none';
-            }
-        }
     } catch (error) {
         console.error('Error fetching artifacts:', error);
         artifactsGrid.innerHTML = `<div class="col-12 text-center py-5"><h3 class="text-danger">حدث خطأ أثناء تحميل البيانات.</h3></div>`;
