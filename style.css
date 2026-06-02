@@ -453,8 +453,29 @@ h1, h2, h3, h4, h5, .en-name {
     text-align: right;
 }
 
-.card-content p, .museum-category, .learn-more {
-    display: none; /* Simplify like mobile card */
+.museum-category {
+    color: var(--accent);
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+    display: block;
+}
+
+.card-content p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.95rem;
+    margin-top: 10px;
+    margin-bottom: 15px;
+    line-height: 1.6;
+}
+
+.learn-more {
+    color: var(--accent);
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: var(--transition);
 }
 
 .learn-more:hover {
@@ -1221,7 +1242,6 @@ img {
     color: white;
 }
 
-.artifact-card {
 .artifact-content-wrap {
     margin-top: -50px;
     position: relative;
@@ -1781,8 +1801,30 @@ img {
 .museum-hero-overlay {
     position: absolute;
     inset: 0;
-    background: linear-gradient(to bottom, rgba(10, 25, 47, 0.4) 0%, rgba(10, 25, 47, 1) 100%);
+    background: linear-gradient(to bottom, rgba(9, 9, 11, 0.2) 0%, rgba(9, 9, 11, 0.7) 60%, var(--navy-dark) 100%);
     z-index: 2;
+}
+
+.btn-back-circle {
+    width: 50px;
+    height: 50px;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+    text-decoration: none;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: var(--transition);
+}
+
+.btn-back-circle:hover {
+    background: var(--accent);
+    color: var(--navy);
+    transform: scale(1.1);
 }
 
 .museum-header-nav {
@@ -1803,6 +1845,58 @@ img {
     left: 40px;
     z-index: 5;
     color: var(--cream);
+}
+
+.search-section-museum {
+    padding: 30px 0;
+    background-color: transparent;
+    margin-top: -60px;
+    position: relative;
+    z-index: 20;
+}
+
+.museum-search-box {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 30px;
+    padding: 5px 25px;
+    max-width: 600px;
+    margin: 0 auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    transition: var(--transition);
+}
+
+.museum-search-box:focus-within {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: var(--accent);
+    box-shadow: 0 10px 40px rgba(251, 191, 36, 0.2);
+}
+
+.museum-search-box input {
+    flex: 1;
+    background: transparent !important;
+    padding: 15px 10px;
+    outline: none;
+    font-size: 1.1rem;
+    font-family: 'Cairo', sans-serif;
+}
+
+.museum-search-box input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.museum-search-box i {
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.museum-search-box i:hover {
+    transform: scale(1.1);
 }
 
 .museum-title-main {

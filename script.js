@@ -400,6 +400,54 @@ async function handleChat() {
         }
     } catch (e) { 
         thinking.remove(); 
-        addMsg('خطأ في الاتصال بالذكاء الاصطناعي.', 'system'); 
+        const futureDate = new Date();
+        futureDate.setDate(futureDate.getDate() + 2);
+        const dateString = futureDate.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
+        addMsg(`سوف نعود قريباً. نتوقع العودة للعمل بحلول: ${dateString}`, 'system'); 
     }
 }
+
+// Smart Services Activation Logic
+window.handleCodeActivation = async () => {
+    const codeInput = document.getElementById('activation-code-input');
+    if (!codeInput) return;
+    
+    const code = codeInput.value.trim();
+    if (!code) {
+        alert('الرجاء إدخال كود التفعيل.');
+        return;
+    }
+    
+    try {
+        // Query the activation_codes collection
+        const response = await databases.listDocuments(
+            AppwriteConfig.databaseId, 
+            AppwriteConfig.collections.activation,
+            [
+                Appwrite.Query.equal('code', code)
+            ]
+        );
+        
+        if (response.documents.length > 0) {
+            const doc = response.documents[0];
+            if (doc.isUsed) {
+                alert('هذا الكود مستخدم بالفعل.');
+            } else {
+                // Mark as used
+                await databases.updateDocument(
+                    AppwriteConfig.databaseId,
+                    AppwriteConfig.collections.activation,
+                    doc.$id,
+                    { isUsed: true }
+                );
+                alert('تم التفعيل بنجاح! جميع الخدمات الذكية متاحة الآن مدى الحياة.');
+                codeInput.value = '';
+            }
+        } else {
+            alert('الكود غير صحيح.');
+        }
+    } catch (error) {
+        console.error('Error activating code:', error);
+        alert('حدث خطأ أثناء الاتصال بالسيرفر. يرجى المحاولة لاحقاً.');
+    }
+};
