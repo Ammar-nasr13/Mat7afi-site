@@ -1931,7 +1931,7 @@ img {
 }
 
 .artifact-card {
-    height: 220px;
+    height: 300px;
     position: relative;
     border-radius: 20px;
     overflow: hidden;
@@ -1947,7 +1947,7 @@ img {
     top: 20px;
     left: 10px;
     right: 10px;
-    bottom: 60px;
+    bottom: 80px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1970,14 +1970,14 @@ img {
     bottom: 0;
     left: 0;
     right: 0;
-    height: 100px;
+    height: 140px;
     background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.9) 100%);
     z-index: 2;
 }
 
 .artifact-card-body {
     position: absolute;
-    bottom: 15px;
+    bottom: 20px;
     left: 15px;
     right: 15px;
     z-index: 3;
@@ -1985,10 +1985,10 @@ img {
 }
 
 .artifact-card-title {
-    font-size: 0.9rem;
-    font-weight: 700;
+    font-size: 1.1rem;
+    font-weight: 800;
     color: white;
-    margin-bottom: 2px;
+    margin-bottom: 5px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1996,9 +1996,9 @@ img {
 }
 
 .artifact-card-subtitle {
-    font-size: 0.7rem;
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -2015,7 +2015,7 @@ img {
 }
 
 .skeleton-card {
-    height: 220px;
+    height: 300px;
     width: 100%;
 }
 
