@@ -559,38 +559,47 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
         // Populate Info Grid
         if (infoGrid) {
             infoGrid.innerHTML = '';
+            
+            const getVal = (key) => artifact[`${key}_${lang}`] || artifact[`${key}${lang.charAt(0).toUpperCase() + lang.slice(1)}`] || artifact[`${key}-${lang}`] || artifact[`${key}_ar`] || artifact[`${key}Ar`] || artifact[`${key}-ar`] || artifact[key];
+
             const fields = [
                 { label: l.museum, value: museumName, icon: 'fas fa-museum' },
                 { label: l.category, value: collectionId.includes('tourism') ? (lang==='en'?'Antiquities':(lang==='fr'?'Antiquités':'آثار')) : (collectionId.includes('art') ? (lang==='en'?'Art':(lang==='fr'?'Art':'فن')) : (lang==='en'?'Science':(lang==='fr'?'Science':'علوم'))), icon: 'fas fa-tags' }
             ];
+
             if (collectionId.includes('tourism')) {
-                const eraVal = artifact[`era-${lang}`] || artifact['era-ar'];
+                const eraVal = getVal('era');
                 if (eraVal) fields.push({ label: l.era, value: eraVal, icon: 'fas fa-history' });
                 
-                const locVal = artifact[`location-${lang}`] || artifact['location-ar'];
+                const locVal = getVal('location');
                 if (locVal) fields.push({ label: l.location, value: locVal, icon: 'fas fa-map-marker-alt' });
 
-                const matVal = artifact[`material-${lang}`] || artifact['material-ar'];
+                const matVal = getVal('material');
                 if (matVal) fields.push({ label: l.material, value: matVal, icon: 'fas fa-cube' });
 
-                const dimVal = artifact[`dimensions-${lang}`] || artifact['dimensions-ar'];
+                const dimVal = getVal('dimensions');
                 if (dimVal) fields.push({ label: l.dimensions, value: dimVal, icon: 'fas fa-ruler-combined' });
+                
             } else if (collectionId.includes('art')) {
-                const authorVal = artifact[`author-${lang}`] || artifact['author-ar'];
+                const authorVal = getVal('author');
                 if (authorVal) fields.push({ label: l.author, value: authorVal, icon: 'fas fa-palette' });
 
-                const typeVal = artifact[`type-${lang}`] || artifact['type-ar'];
+                const typeVal = getVal('type');
                 if (typeVal) fields.push({ label: l.type, value: typeVal, icon: 'fas fa-paint-brush' });
 
-                const sizeVal = artifact[`size-${lang}`] || artifact['size-ar'];
+                const sizeVal = getVal('size');
                 if (sizeVal) fields.push({ label: l.size, value: sizeVal, icon: 'fas fa-ruler-combined' });
 
-                const hallVal = artifact[`nameh-${lang}`] || artifact['nameh-ar'] || artifact.nameh || artifact['art-id'];
+                const hallVal = getVal('nameh') || artifact.nameh || artifact['art-id'];
                 if (hallVal) fields.push({ label: l.hall, value: hallVal, icon: 'fas fa-door-open' });
 
-                const serialVal = artifact.serial_number;
+                const serialVal = artifact.serial_number || artifact.serialNumber || artifact['serial-number'];
+                if (serialVal) fields.push({ label: l.serial, value: serialVal, icon: 'fas fa-hashtag' });
+            } else if (collectionId.includes('science')) {
+                const serialVal = artifact.serial_number || artifact.serialNumber || artifact['serial-number'];
                 if (serialVal) fields.push({ label: l.serial, value: serialVal, icon: 'fas fa-hashtag' });
             }
+            
             fields.forEach(f => {
                 infoGrid.innerHTML += `
                     <div class="info-item">
