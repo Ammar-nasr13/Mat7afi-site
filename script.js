@@ -161,7 +161,7 @@ const renderArtifacts = (artifacts) => {
         const artifactLink = `artifact.html?id=${encodeURIComponent(artifactId)}&collection=${encodeURIComponent(currentMuseumCollection)}&museum=${encodeURIComponent(currentMuseumName)}`;
 
         const col = document.createElement('div');
-        col.className = 'col-lg-3 col-md-4 col-6 mb-5';
+        col.className = 'col-lg-4 col-md-6 col-6 mb-5';
 
         const btn360Text = lang === 'en' ? '360° View' : (lang === 'fr' ? 'Vue 360°' : 'عرض 360°');
         const btn360Html = artifact.glbFileId ? `
@@ -292,7 +292,7 @@ window.renderArtHalls = () => {
     halls.forEach(hall => {
         const title = hall[lang] || hall.ar;
         const col = document.createElement('div');
-        col.className = 'col-lg-3 col-md-4 col-6 mb-5';
+        col.className = 'col-lg-4 col-md-6 col-6 mb-5';
         
         col.innerHTML = `
             <a href="javascript:void(0)" onclick="filterArtByHall(${hall.id}, '${title}')" class="artifact-card-link" style="text-decoration:none;">
