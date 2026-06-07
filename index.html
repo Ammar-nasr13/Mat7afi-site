@@ -420,11 +420,11 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                         <div class="row g-0">
                             <div class="col-md-5 bg-brown-gradient p-5 text-white d-flex flex-column justify-content-center align-items-center text-center">
                                 <div class="ai-icon-large mb-4"><i class="fas fa-robot"></i></div>
-                                <h2 class="fw-bold mb-3" data-i18n="ai_status">Ego Pro متصل الآن</h2>
-                                <p class="mb-4 text-white-50" data-i18n="ai_desc">تحدث مع المساعد الذكي المدعوم بـ OpenAI للحصول على معلومات دقيقة وحصرية عن أي مقتنيات أثرية.</p>
+                                <h2 class="fw-bold mb-3" data-i18n="ai_status">Ego Pro</h2>
+                                <p class="mb-4 text-white-50" data-i18n="ai_desc">تحدث الان مع الشات بوت واعرف معلومات وتفاصيل عن المتاحف</p>
                                 <div class="ai-status justify-content-center">
                                     <span class="status-pulse"></span>
-                                    <span data-i18n="ai_active">نظام نشط بالذكاء الاصطناعي</span>
+                                    <span data-i18n="ai_active">متصل الان</span>
                                 </div>
                             </div>
                             <div class="col-md-7 bg-white p-4 d-flex flex-column">
@@ -432,8 +432,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                                     <div class="message system-msg" data-i18n="ai_welcome">مرحباً بك! أنا Ego Pro مرشدك الذكي في متاحف جامعة المنيا. كيف يمكنني مساعدتك اليوم؟</div>
                                 </div>
                                 <div class="chat-input-wrap mt-0">
-                                    <input type="text" id="user-input" data-i18n-placeholder="ai_placeholder" placeholder="اسألني عن أي قطعة أثرية..." class="form-control">
-                                    <button id="send-btn" class="btn-send"><i class="fas fa-paper-plane"></i></button>
+                                    <input type="text" id="user-input" onkeypress="if(event.key === 'Enter') handleChat()" data-i18n-placeholder="ai_placeholder" placeholder="اسألني عن أي قطعة أثرية..." class="form-control">
+                                    <button id="send-btn" onclick="handleChat()" class="btn-send"><i class="fas fa-paper-plane"></i></button>
                                 </div>
                             </div>
                         </div>
@@ -540,7 +540,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         <div class="container">
             <div class="row gy-4">
                 <div class="col-lg-4 text-center text-lg-start">
-                    <img src="assets/logo.png" alt="Mat7afi Logo" class="footer-logo mb-3">
+                    <img src="assets/logo.png" alt="Mat7afi Logo" class="footer-logo mb-3" loading="lazy">
                     <h4 class="fw-bold mb-3 text-accent">Mat7afi | متاحف جامعة المنيا</h4>
                     <p class="text-white-50" data-i18n="footer_desc">المشروع الرقمي الرسمي لتوثيق وعرض كنوز متاحف جامعة المنيا باستخدام أحدث التقنيات.</p>
                 </div>

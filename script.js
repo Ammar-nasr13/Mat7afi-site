@@ -6,28 +6,9 @@ window.loadMuseumArtifacts = (collectionId, museumName) => {
         `museum.html?id=${collectionId}&name=${encodeURIComponent(museumName)}`;
 };
 
-// Initialize Appwrite Configuration
-const AppwriteConfig = {
-    endpoint: 'https://appwrite.etihadalmdina.com/v1',
-    projectId: '69f21c73000621939422',
-    databaseId: '69f699480010e2feea8a',
-
-    collections: {
-        tourism: 'tourism_artifacts',
-        science: 'science_atifacts',
-        art: 'art_atifacts',
-        activation: 'activation_codes'
-    },
-
-    buckets: {
-        tourism: '69f7d68c003821997d0d',
-        artifacts: '69f686e9002f917ec2a2',
-        audio: '69f870c0000eb3969260',
-        artImages: '69fdfa66002d1a9106f7',
-        scienceImages: '69fdfa80002f0db83c67',
-        arModels: '6a13cf370017d4ff7006'
-    }
-};
+// Protected Configuration (Obfuscated to prevent automated GitHub key scraping)
+const _aw_key = "eyJlbmRwb2ludCI6Imh0dHBzOi8vYXBwd3JpdGUuZXRpaGFkYWxtZGluYS5jb20vdjEiLCJwcm9qZWN0SWQiOiI2OWYyMWM3MzAwMDYyMTkzOTQyMiIsImRhdGFiYXNlSWQiOiI2OWY2OTk0ODAwMTBlMmZlZWE4YSIsImNvbGxlY3Rpb25zIjp7InRvdXJpc20iOiJ0b3VyaXNtX2FydGlmYWN0cyIsInNjaWVuY2UiOiJzY2llbmNlX2F0aWZhY3RzIiwiYXJ0IjoiYXJ0X2F0aWZhY3RzIiwiYWN0aXZhdGlvbiI6ImFjdGl2YXRpb25fY29kZXMifSwiYnVja2V0cyI6eyJ0b3VyaXNtIjoiNjlmN2Q2OGMwMDM4MjE5OTdkMGQiLCJhcnRpZmFjdHMiOiI2OWY2ODZlOTAwMmY5MTdlYzJhMiIsImF1ZGlvIjoiNjlmODcwYzAwMDBlYjM5NjkyNjAiLCJhcnRJbWFnZXMiOiI2OWZkZmE2NjAwMmQxYTkxMDZmNyIsInNjaWVuY2VJbWFnZXMiOiI2OWZkZmE4MDAwMmYwZGI4M2M2NyIsImFyTW9kZWxzIjoiNmExM2NmMzcwMDE3ZDRmZjcwMDYifX0=";
+const AppwriteConfig = JSON.parse(atob(_aw_key));
 
 let databases;
 let museumArtifactsCache = [];
@@ -636,7 +617,6 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
                 if (currentTimeEl) currentTimeEl.innerText = formatTime(audioPlayer.currentTime);
                 if (durationTimeEl) durationTimeEl.innerText = formatTime(audioPlayer.duration);
             };
-            };
         }
 
         // 360 GLB Model Logic
@@ -937,9 +917,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 "feat_ar": "واقع معزز (AR)",
                 "feat_ar_desc": "مشاهدة ثلاثية الأبعاد للقطع الأثرية والعينات العلمية في بيئتك الخاصة.",
                 "soon": "قريباً",
-                "ai_status": "Ego Pro متصل الآن",
-                "ai_desc": "تحدث مع المساعد الذكي المدعوم بـ OpenAI للحصول على معلومات دقيقة وحصرية عن أي مقتنيات أثرية.",
-                "ai_active": "نظام نشط بالذكاء الاصطناعي",
+                "ai_status": "Ego Pro",
+                "ai_desc": "تحدث الان مع الشات بوت واعرف معلومات وتفاصيل عن المتاحف",
+                "ai_active": "متصل الان",
                 "ai_welcome": "مرحباً بك! أنا Ego Pro مرشدك الذكي في متاحف جامعة المنيا. كيف يمكنني مساعدتك اليوم؟",
                 "ai_placeholder": "اسألني عن أي قطعة أثرية...",
                 "download_title": "احمل المتاحف في جيبك",
@@ -1147,6 +1127,17 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (typeof renderArtHalls === 'function' && typeof currentMuseumCollection !== 'undefined' && currentMuseumCollection.includes('art_')) {
                 renderArtHalls();
+            }
+            
+            // If we are on artifact page, we need to re-render info grid
+            if (window.location.pathname.includes('artifact.html')) {
+                const urlParams = new URLSearchParams(window.location.search);
+                const documentId = urlParams.get('id');
+                const collectionId = urlParams.get('collection');
+                const museumName = urlParams.get('museum');
+                if (window.initArtifactPage) {
+                    window.initArtifactPage(documentId, collectionId, museumName);
+                }
             }
         };
 

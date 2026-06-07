@@ -38,6 +38,15 @@
 
 .text-accent { color: var(--accent) !important; }
 .text-cream { color: var(--cream) !important; }
+
+/* Performance Optimization */
+section:not(#home) {
+    content-visibility: auto;
+    contain-intrinsic-size: 1000px;
+}
+.museum-card, .btn-premium, .btn-download, .item-btn, .store-link img {
+    will-change: transform;
+}
 .text-navy { color: var(--navy) !important; }
 
 * {
@@ -213,8 +222,13 @@ h1, h2, h3, h4, h5, .en-name {
 }
 
 @media (max-width: 991px) {
+    .navbar {
+        background: var(--navy-dark) !important;
+        padding: 12px 0;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
     .navbar-collapse {
-        background: rgba(91, 58, 27, 0.95); /* Brown with transparency */
+        background: rgba(10, 25, 47, 0.98); /* Navy with transparency */
         backdrop-filter: blur(10px);
         margin-top: 15px;
         padding: 30px;

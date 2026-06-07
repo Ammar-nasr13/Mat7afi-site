@@ -101,11 +101,11 @@ function renderGrid() {
         const museumName = museumNames[item.museum] || item.museum;
         const isFav = isFavorite(item.$id);
         
-        let title = item.titleAr;
+        let title = item.titleAr || item.title || 'مجهول';
         if(lang === 'en' && item.titleEn) title = item.titleEn;
         if(lang === 'fr' && item.titleFr) title = item.titleFr;
         
-        let desc = item.shortDescriptionAr || '';
+        let desc = item.shortDescriptionAr || item.description || '';
         if(lang === 'en' && item.shortDescriptionEn) desc = item.shortDescriptionEn;
         if(lang === 'fr' && item.shortDescriptionFr) desc = item.shortDescriptionFr;
         
