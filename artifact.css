@@ -38,7 +38,7 @@ body { background-color: var(--premium-bg); color: var(--premium-text); font-fam
 .back-nav {
     position: absolute;
     top: 30px;
-    right: 30px;
+    inset-inline-start: 30px;
     z-index: 10;
 }
 
@@ -99,8 +99,8 @@ body { background-color: var(--premium-bg); color: var(--premium-text); font-fam
 .hero-title-info {
     position: absolute;
     bottom: 30px;
-    right: 25px;
-    text-align: right;
+    inset-inline-end: 25px;
+    text-align: start;
     color: white;
     z-index: 3;
 }
@@ -141,8 +141,8 @@ body { background-color: var(--premium-bg); color: var(--premium-text); font-fam
     font-weight: 800;
     color: var(--mobile-text);
     margin-bottom: 25px;
-    padding-right: 15px;
-    border-right: 4px solid var(--premium-brown);
+    padding-inline-start: 15px;
+    border-inline-start: 4px solid var(--premium-brown);
 }
 
 /* Info Grid */
@@ -255,7 +255,7 @@ body { background-color: var(--premium-bg); color: var(--premium-text); font-fam
 @media (max-width: 768px) {
     .artifact-hero { height: 300px; padding-top: 50px; }
     .artifact-main-img { max-height: 200px; }
-    .hero-title-info { bottom: 15px; right: 15px; }
+    .hero-title-info { bottom: 15px; inset-inline-end: 15px; }
     .hero-title-info h1 { font-size: 1.2rem; }
     .hero-title-info p { font-size: 0.8rem; }
     .main-card { padding: 25px 20px; border-radius: 25px; }

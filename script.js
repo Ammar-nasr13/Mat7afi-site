@@ -175,7 +175,7 @@ const renderArtifacts = (artifacts) => {
                 <div class="artifact-card position-relative">
                     ${btn360Html}
                     <div class="artifact-card-img">
-                        <img src="${imageUrl}" alt="${artifactTitle}" loading="lazy">
+                        <img src="${imageUrl}" alt="${artifactTitle}" loading="eager" fetchpriority="high">
                     </div>
                     <div class="artifact-card-overlay"></div>
                     <div class="artifact-card-body">
@@ -241,6 +241,20 @@ window.initMuseumPage = async (collectionId, museumName, museumImg) => {
             sessionStorage.setItem(cacheKey, JSON.stringify(museumArtifactsCache));
         }
         
+        // Background Preloading of Images
+        if (museumArtifactsCache.length > 0) {
+            const bucketId = getBucketByType(collectionId);
+            setTimeout(() => {
+                museumArtifactsCache.forEach(artifact => {
+                    const imgUrl = getAppwriteImageUrl(artifact.image || artifact.image_url, bucketId);
+                    if (imgUrl) {
+                        const img = new Image();
+                        img.src = imgUrl;
+                    }
+                });
+            }, 100);
+        }
+        
         if (!museumArtifactsCache.length && !collectionId.includes('art_')) {
             artifactsGrid.innerHTML = `
                 <div class="col-12 text-center py-5">
@@ -283,27 +297,23 @@ window.renderArtHalls = () => {
     const fragment = document.createDocumentFragment();
 
     const halls = [
-        { id: 1, img: 'assets/artt-museum.jpg', ar: 'القاعة الأولى', en: 'Hall 1', fr: 'Salle 1' },
-        { id: 2, img: 'assets/artt-museum.jpg', ar: 'القاعة الثانية', en: 'Hall 2', fr: 'Salle 2' },
-        { id: 3, img: 'assets/artt-museum.jpg', ar: 'القاعة الثالثة', en: 'Hall 3', fr: 'Salle 3' },
-        { id: 4, img: 'assets/artt-museum.jpg', ar: 'القاعة الرابعة', en: 'Hall 4', fr: 'Salle 4' }
+        { id: 1, color: '#0a192f', ar: 'القاعة الأولى', en: 'First Hall', fr: 'Première Salle' },
+        { id: 2, color: '#5c3a21', ar: 'القاعة الثانية', en: 'Second Hall', fr: 'Deuxième Salle' },
+        { id: 3, color: '#0a192f', ar: 'القاعة الثالثة', en: 'Third Hall', fr: 'Troisième Salle' },
+        { id: 4, color: '#5c3a21', ar: 'القاعة الرابعة', en: 'Fourth Hall', fr: 'Quatrième Salle' }
     ];
 
     halls.forEach(hall => {
         const title = hall[lang] || hall.ar;
         const col = document.createElement('div');
-        col.className = 'col-lg-4 col-md-6 col-6 mb-5';
+        col.className = 'col-md-6 col-12 mb-4';
         
         col.innerHTML = `
-            <a href="javascript:void(0)" onclick="filterArtByHall(${hall.id}, '${title}')" class="artifact-card-link" style="text-decoration:none;">
-                <div class="artifact-card position-relative">
-                    <div class="artifact-card-img">
-                        <img src="${hall.img}" alt="${title}" loading="lazy" style="filter: brightness(0.8);">
-                    </div>
-                    <div class="artifact-card-overlay"></div>
-                    <div class="artifact-card-body text-center">
-                        <h3 class="artifact-card-title w-100" style="font-size: 1.5rem;">${title}</h3>
-                    </div>
+            <a href="javascript:void(0)" onclick="filterArtByHall(${hall.id}, '${title}')" style="text-decoration:none; display: block;">
+                <div style="background-color: ${hall.color}; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; height: 160px; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.2);" 
+                     onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 10px 25px rgba(0,0,0,0.3)'; this.style.borderColor='rgba(217, 119, 6, 0.5)';" 
+                     onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 15px rgba(0,0,0,0.2)'; this.style.borderColor='rgba(255,255,255,0.1)';">
+                    <h3 style="color: #ffffff; font-size: 2rem; font-weight: 800; margin: 0; font-family: 'Cairo', sans-serif;">${title}</h3>
                 </div>
             </a>
         `;
@@ -361,7 +371,7 @@ window.renderScienceMuseums = () => {
         col.innerHTML = `
             <div class="museum-card" onclick="showScienceComingSoon('${title}')" style="min-height: 450px; height: 100%; background: #1e293b; border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease;" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 12px 25px rgba(0,0,0,0.4)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 8px 15px rgba(0,0,0,0.2)';">
                 <div style="width: 100%; height: 250px; overflow: hidden; flex-shrink: 0;">
-                    <img src="${museum.img}" alt="${title}" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease;" loading="lazy" onmouseover="this.style.transform='scale(1.05)';" onmouseout="this.style.transform='scale(1)';">
+                    <img src="${museum.img}" alt="${title}" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease;" loading="eager" fetchpriority="high" onmouseover="this.style.transform='scale(1.05)';" onmouseout="this.style.transform='scale(1)';">
                 </div>
                 <div style="padding: 20px 25px; flex-grow: 1; display: flex; flex-direction: column; justify-content: center; text-align: right;">
                     <span style="color: #d4af37; font-size: 0.9rem; font-weight: 700; display: block; margin-bottom: 8px;">${cat}</span>
@@ -542,7 +552,13 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
         // Translate section titles if they exist
         const sectionTitles = document.querySelectorAll('.section-title');
         if (sectionTitles.length >= 2) {
-            sectionTitles[0].innerText = lang === 'en' ? 'Identification Card' : (lang === 'fr' ? 'Carte d\'identité' : 'بطاقة التعريف');
+            if (collectionId.includes('tourism')) {
+                sectionTitles[0].innerText = lang === 'en' ? 'Artifact Details' : (lang === 'fr' ? 'Détails de l\'artefact' : 'تفاصيل الأثر');
+            } else if (collectionId.includes('art_')) {
+                sectionTitles[0].innerText = lang === 'en' ? 'Painting Details' : (lang === 'fr' ? 'Détails du tableau' : 'تفاصيل اللوحة');
+            } else {
+                sectionTitles[0].innerText = lang === 'en' ? 'Identification Card' : (lang === 'fr' ? 'Carte d\'identité' : 'بطاقة التعريف');
+            }
             sectionTitles[1].innerText = lang === 'en' ? 'About this piece' : (lang === 'fr' ? 'À propos de cette pièce' : 'عن هذه القطعة');
         }
         const audioTitle = document.querySelector('#audio-section h3');
@@ -566,17 +582,11 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
             
             const getVal = (key) => artifact[`${key}_${lang}`] || artifact[`${key}${lang.charAt(0).toUpperCase() + lang.slice(1)}`] || artifact[`${key}-${lang}`] || artifact[`${key}_ar`] || artifact[`${key}Ar`] || artifact[`${key}-ar`] || artifact[key];
 
-            const fields = [
-                { label: l.museum, value: museumName, icon: 'fas fa-museum' },
-                { label: l.category, value: collectionId.includes('tourism') ? (lang==='en'?'Antiquities':(lang==='fr'?'Antiquités':'آثار')) : (collectionId.includes('art_') ? (lang==='en'?'Art':(lang==='fr'?'Art':'فن')) : (lang==='en'?'Science':(lang==='fr'?'Science':'علوم'))), icon: 'fas fa-tags' }
-            ];
+            const fields = [];
 
             if (collectionId.includes('tourism')) {
                 const eraVal = getVal('era');
                 if (eraVal) fields.push({ label: l.era, value: eraVal, icon: 'fas fa-history' });
-                
-                const locVal = getVal('location');
-                if (locVal) fields.push({ label: l.location, value: locVal, icon: 'fas fa-map-marker-alt' });
 
                 const matVal = getVal('material');
                 if (matVal) fields.push({ label: l.material, value: matVal, icon: 'fas fa-cube' });
@@ -584,22 +594,24 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
                 const dimVal = getVal('dimensions');
                 if (dimVal) fields.push({ label: l.dimensions, value: dimVal, icon: 'fas fa-ruler-combined' });
                 
+                const locVal = getVal('location');
+                if (locVal) fields.push({ label: l.location, value: locVal, icon: 'fas fa-map-marker-alt' });
             } else if (collectionId.includes('art_')) {
                 const authorVal = getVal('author');
                 if (authorVal) fields.push({ label: l.author, value: authorVal, icon: 'fas fa-palette' });
 
-                const typeVal = getVal('type');
-                if (typeVal) fields.push({ label: l.type, value: typeVal, icon: 'fas fa-paint-brush' });
+                const serialVal = artifact.serial_number || artifact.serialNumber || artifact['serial-number'];
+                if (serialVal) fields.push({ label: l.serial, value: serialVal, icon: 'fas fa-hashtag' });
 
                 const sizeVal = getVal('size');
                 if (sizeVal) fields.push({ label: l.size, value: sizeVal, icon: 'fas fa-ruler-combined' });
 
-                const hallVal = getVal('nameh') || artifact.nameh || artifact['art-id'];
-                if (hallVal) fields.push({ label: l.hall, value: hallVal, icon: 'fas fa-door-open' });
-
-                const serialVal = artifact.serial_number || artifact.serialNumber || artifact['serial-number'];
-                if (serialVal) fields.push({ label: l.serial, value: serialVal, icon: 'fas fa-hashtag' });
+                const typeVal = getVal('type');
+                if (typeVal) fields.push({ label: l.type, value: typeVal, icon: 'fas fa-paint-brush' });
             } else if (collectionId.includes('science')) {
+                fields.push({ label: l.museum, value: museumName, icon: 'fas fa-museum' });
+                fields.push({ label: l.category, value: lang==='en'?'Science':(lang==='fr'?'Science':'علوم'), icon: 'fas fa-tags' });
+
                 const serialVal = artifact.serial_number || artifact.serialNumber || artifact['serial-number'];
                 if (serialVal) fields.push({ label: l.serial, value: serialVal, icon: 'fas fa-hashtag' });
             }
@@ -672,11 +684,24 @@ function formatTime(s) {
 
 // DOM Dependent Events
 document.addEventListener('DOMContentLoaded', () => {
+    const normalizeArabic = (text) => {
+        if (!text) return '';
+        return text.replace(/[أإآ]/g, 'ا')
+                   .replace(/ة/g, 'ه')
+                   .replace(/ى/g, 'ي')
+                   .replace(/ؤ/g, 'و')
+                   .replace(/ئ/g, 'ي')
+                   .replace(/َ|ً|ُ|ٌ|ِ|ٍ|ْ|ّ/g, ''); // Remove tashkeel
+    };
+
     const artifactSearchInput = document.getElementById('artifact-search');
     if (artifactSearchInput) {
         artifactSearchInput.oninput = () => {
-            const q = artifactSearchInput.value.toLowerCase();
-            renderArtifacts(museumArtifactsCache.filter(a => getArtifactTitle(a).toLowerCase().includes(q)));
+            const q = normalizeArabic(artifactSearchInput.value.toLowerCase());
+            renderArtifacts(museumArtifactsCache.filter(a => {
+                const title = normalizeArabic(getArtifactTitle(a).toLowerCase());
+                return title.includes(q);
+            }));
         };
     }
 
