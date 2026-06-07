@@ -83,7 +83,7 @@ const getArtifactDescription = (artifact) => {
 // Helpers
 function getBucketByType(collectionId) {
     if (!collectionId) return AppwriteConfig.buckets.tourism;
-    if (collectionId.includes('science') || collectionId.includes('art')) {
+    if (collectionId.includes('science') || collectionId.includes('art_')) {
         return AppwriteConfig.buckets.artifacts; 
     }
     return AppwriteConfig.buckets.tourism;
@@ -149,7 +149,7 @@ const renderArtifacts = (artifacts) => {
         const lang = getCurrentLang();
         if (currentMuseumCollection.includes('tourism')) {
             subtitle = artifact[`era-${lang}`] || artifact['era-ar'] || artifact.era || '';
-        } else if (currentMuseumCollection.includes('art')) {
+        } else if (currentMuseumCollection.includes('art_')) {
             const author = artifact[`author-${lang}`] || artifact['author-ar'] || artifact.author || (lang === 'en' ? 'Unknown Artist' : (lang === 'fr' ? 'Artiste inconnu' : 'فنان غير معروف'));
             const serial = artifact.serial_number ? `#${artifact.serial_number}` : '';
             artifactTitle = author;
@@ -215,7 +215,7 @@ window.initMuseumPage = async (collectionId, museumName, museumImg) => {
         } else {
             // Fallback sync logic
             if (collectionId.includes('tourism')) museumHeroImg.src = 'assets/tourism-museum.jpg';
-            else if (collectionId.includes('art')) museumHeroImg.src = 'assets/artt-museum.jpg';
+            else if (collectionId.includes('art_')) museumHeroImg.src = 'assets/artt-museum.jpg';
             else if (collectionId.includes('science')) museumHeroImg.src = 'assets/science-museum.png';
         }
     }
@@ -241,7 +241,7 @@ window.initMuseumPage = async (collectionId, museumName, museumImg) => {
             sessionStorage.setItem(cacheKey, JSON.stringify(museumArtifactsCache));
         }
         
-        if (!museumArtifactsCache.length && !collectionId.includes('art')) {
+        if (!museumArtifactsCache.length && !collectionId.includes('art_')) {
             artifactsGrid.innerHTML = `
                 <div class="col-12 text-center py-5">
                     <h3 class="text-dark">لا توجد قطع أثرية متاحة حالياً في هذا المتحف.</h3>
@@ -260,7 +260,7 @@ window.initMuseumPage = async (collectionId, museumName, museumImg) => {
             artifactsGrid.parentNode.insertBefore(backToHallsBtn, artifactsGrid);
         }
 
-        if (collectionId.includes('art')) {
+        if (collectionId.includes('art_')) {
             renderArtHalls();
         } else {
             renderArtifacts(museumArtifactsCache);
@@ -517,7 +517,7 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
 
         if (collectionId.includes('tourism')) {
             subtitle = artifact[`era-${lang}`] || artifact['era-ar'] || artifact.era || 'عصر غير محدد';
-        } else if (collectionId.includes('art')) {
+        } else if (collectionId.includes('art_')) {
             const hallName = artifact[`nameh-${lang}`] || artifact['nameh-ar'] || artifact.nameh || (lang === 'en' ? `Hall ${artifact['art-id']}` : `القاعة ${artifact['art-id']}`);
             const author = artifact[`author-${lang}`] || artifact['author-ar'] || artifact.author || (lang === 'en' ? 'Unknown Artist' : (lang === 'fr' ? 'Artiste inconnu' : 'فنان غير معروف'));
             name = hallName;
@@ -568,7 +568,7 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
 
             const fields = [
                 { label: l.museum, value: museumName, icon: 'fas fa-museum' },
-                { label: l.category, value: collectionId.includes('tourism') ? (lang==='en'?'Antiquities':(lang==='fr'?'Antiquités':'آثار')) : (collectionId.includes('art') ? (lang==='en'?'Art':(lang==='fr'?'Art':'فن')) : (lang==='en'?'Science':(lang==='fr'?'Science':'علوم'))), icon: 'fas fa-tags' }
+                { label: l.category, value: collectionId.includes('tourism') ? (lang==='en'?'Antiquities':(lang==='fr'?'Antiquités':'آثار')) : (collectionId.includes('art_') ? (lang==='en'?'Art':(lang==='fr'?'Art':'فن')) : (lang==='en'?'Science':(lang==='fr'?'Science':'علوم'))), icon: 'fas fa-tags' }
             ];
 
             if (collectionId.includes('tourism')) {
@@ -584,7 +584,7 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
                 const dimVal = getVal('dimensions');
                 if (dimVal) fields.push({ label: l.dimensions, value: dimVal, icon: 'fas fa-ruler-combined' });
                 
-            } else if (collectionId.includes('art')) {
+            } else if (collectionId.includes('art_')) {
                 const authorVal = getVal('author');
                 if (authorVal) fields.push({ label: l.author, value: authorVal, icon: 'fas fa-palette' });
 
@@ -1123,4 +1123,13 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
+
+    // Mobile Bottom Nav Instant Active State
+    const bottomNavItems = document.querySelectorAll('.nav-item-bottom');
+    bottomNavItems.forEach(item => {
+        item.addEventListener('click', function() {
+            bottomNavItems.forEach(nav => nav.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
 });

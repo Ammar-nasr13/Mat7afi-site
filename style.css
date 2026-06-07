@@ -15,16 +15,12 @@
     --white: #ffffff;
     --text-cream: #FFFDD0;
     --text-navy: #0A192F;
-    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     
-    /* English Font Settings */
-    html[lang="en"] body {
-        font-family: 'Outfit', sans-serif;
-    }
-    html[lang="en"] h1, html[lang="en"] h2, html[lang="en"] h3, html[lang="en"] h4, html[lang="en"] h5, html[lang="en"] h6 {
-        font-family: 'Outfit', sans-serif;
-    }
-    html[lang="en"] .brand-text .en-name { display: block !important; }    
+    /* Removed English Font Settings to keep layout stable across all languages */
+    html[lang="en"] .brand-text .en-name { display: block !important; }
+    
+    html[lang="fr"] .brand-text .en-name { display: block !important; }
     
     /* Mobile App Design Tokens */
     --mobile-bg: #F8F9FA;
@@ -1004,6 +1000,8 @@ img {
 }
 
 @media (max-width: 576px) {
+    html { scroll-behavior: auto !important; }
+    
     .display-2 { font-size: 1.8rem; }
     .section-heading { font-size: 1.7rem; }
     .btn-premium, .btn-outline-premium { padding: 12px 20px; font-size: 0.9rem; }
