@@ -29,7 +29,7 @@ async function fetchGalleryData() {
     
     try {
         if (typeof AppwriteConfig !== 'undefined' && typeof Appwrite !== 'undefined') {
-            const { Client, Databases } = Appwrite;
+            const { Client, Databases, Query } = Appwrite;
             const client = new Client()
                 .setEndpoint(AppwriteConfig.endpoint)
                 .setProject(AppwriteConfig.projectId);
@@ -39,19 +39,33 @@ async function fetchGalleryData() {
             try {
                 const response = await databases.listDocuments(
                     AppwriteConfig.databaseId, 
-                    'museum_gallery'
+                    'museum_gallery',
+                    [Query.limit(100)]
                 );
                 
                 if (response.documents.length > 0) {
                     allGalleryItems = response.documents.map(doc => {
-                        const imgSource = doc.coverImage || doc.fileUrl;
-                        if (imgSource && imgSource.startsWith('http')) {
-                            doc.actualImageUrl = imgSource;
-                        } else if (imgSource) {
-                            doc.actualImageUrl = getAppwriteImageUrl(imgSource, AppwriteConfig.buckets.tourism);
+                        const coverImg = doc.coverImage;
+                        const file = doc.fileUrl;
+                        
+                        // Map cover image using gallery bucket
+                        if (coverImg && coverImg.startsWith('http')) {
+                            doc.actualImageUrl = coverImg;
+                        } else if (coverImg) {
+                            doc.actualImageUrl = getAppwriteImageUrl(coverImg, '6a237511000001e303ff');
+                        } else if (file && (file.startsWith('http') || file.startsWith('assets/'))) {
+                            doc.actualImageUrl = file;
+                        } else if (file) {
+                            doc.actualImageUrl = getAppwriteImageUrl(file, '6a237511000001e303ff');
                         } else {
                             doc.actualImageUrl = 'assets/placeholder.png';
                         }
+                        
+                        // Map fileUrl to full download/view link if stored as a file ID
+                        if (file && !file.startsWith('http') && !file.startsWith('assets/')) {
+                            doc.fileUrl = `${AppwriteConfig.endpoint}/storage/buckets/6a237511000001e303ff/files/${file}/view?project=${AppwriteConfig.projectId}`;
+                        }
+                        
                         return doc;
                     });
                     
@@ -94,7 +108,7 @@ function renderGrid() {
     
     emptyState.classList.add('d-none');
     
-    const lang = localStorage.getItem('lang') || 'ar';
+    const lang = sessionStorage.getItem('lang') || 'ar';
     
     filteredItems.forEach((item, index) => {
         const badgeInfo = categoryBadges[item.category] || categoryBadges['image'];
@@ -139,7 +153,7 @@ function renderGrid() {
         
         const cardHtml = `
             <div class="store-card" data-aos="fade-up" data-aos-delay="${(index % 4) * 100}">
-                <img src="${item.actualImageUrl}" alt="${title}" loading="eager" fetchpriority="high">
+                <img src="${item.actualImageUrl}" alt="${title}" loading="eager" fetchpriority="high" onerror="this.style.display='none'; this.closest('.store-card').classList.add('no-image');">
                 <div class="store-card-content">
                     <span class="item-badge"><i class="fas ${badgeInfo.icon} me-1"></i> ${badgeInfo.text}</span>
                     <h3 class="item-title">${title}</h3>
@@ -220,19 +234,48 @@ function applyFilters() {
 }
 
 // Actions Logic
-function downloadItem(url, title) {
-    let downloadUrl = url;
-    // Replace /view with /download for Appwrite URLs to force download
-    if (url.includes('/view?')) {
-        downloadUrl = url.replace('/view?', '/download?');
+async function downloadItem(url, title) {
+    try {
+        let downloadUrl = url;
+        // Convert view/preview to download
+        downloadUrl = downloadUrl.replace('/view?', '/download?').replace('/preview?', '/download?');
+        
+        // Strip preview-only query parameters that Appwrite download endpoint rejects
+        downloadUrl = downloadUrl.split('&quality')[0]
+                                 .split('&width')[0]
+                                 .split('&height')[0];
+        
+        // Fetch as blob to force direct download in same page (cross-origin)
+        const response = await fetch(downloadUrl);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = title || 'download';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(blobUrl);
+    } catch (e) {
+        console.error('Direct download failed, falling back to basic link download', e);
+        
+        let downloadUrl = url;
+        downloadUrl = downloadUrl.replace('/view?', '/download?').replace('/preview?', '/download?');
+        downloadUrl = downloadUrl.split('&quality')[0]
+                                 .split('&width')[0]
+                                 .split('&height')[0];
+                                 
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = title || 'download';
+        a.target = '_blank';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
     }
-    const a = document.createElement('a');
-    a.href = downloadUrl;
-    a.download = title || 'download';
-    a.target = '_blank';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
 }
 
 function previewImage(url, title) {
@@ -281,15 +324,15 @@ function shareItem(id, title) {
 }
 
 // Favorites Logic
-function setupFavoritesSystem() {
-    if (!localStorage.getItem('mat7afi_favorites')) {
-        localStorage.setItem('mat7afi_favorites', JSON.stringify([]));
+function initFavorites() {
+    if (!sessionStorage.getItem('mat7afi_favorites')) {
+        sessionStorage.setItem('mat7afi_favorites', JSON.stringify([]));
     }
 }
 
 function getFavorites() {
     try {
-        return JSON.parse(localStorage.getItem('mat7afi_favorites')) || [];
+        return JSON.parse(sessionStorage.getItem('mat7afi_favorites')) || [];
     } catch {
         return [];
     }
@@ -314,5 +357,5 @@ function toggleFavorite(id, btnElement) {
         icon.style.transform = 'scale(1.3)';
         setTimeout(() => icon.style.transform = 'scale(1)', 200);
     }
-    localStorage.setItem('mat7afi_favorites', JSON.stringify(favs));
+    sessionStorage.setItem('mat7afi_favorites', JSON.stringify(favs));
 }

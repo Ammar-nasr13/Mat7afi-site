@@ -317,10 +317,45 @@ h1, h2, h3, h4, h5, .en-name {
     box-shadow: 0 10px 20px rgba(91, 58, 27, 0.3);
 }
 
+.btn-download-mobile {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--cream) !important;
+    padding: 6px 15px;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.8rem;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 38px;
+}
+
+@media (max-width: 575px) {
+    .btn-download-mobile {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        padding: 0;
+    }
+}
+
+.btn-download-mobile:hover {
+    background: rgba(217, 119, 6, 0.2);
+    border-color: var(--accent);
+    color: var(--accent) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(217, 119, 6, 0.2);
+}
+
 /* Hero Section */
 .hero-section {
     position: relative;
-    background: url('assets/Cover.png') no-repeat center center;
+    background: url('../assets/Cover.png') no-repeat center center;
     background-size: cover;
     overflow: hidden;
     padding-top: 90px;
@@ -570,11 +605,10 @@ h1, h2, h3, h4, h5, .en-name {
 }
 
 .card-img-wrap {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 50%;
+    position: relative;
+    height: 210px;
+    flex-shrink: 0;
+    overflow: hidden;
 }
 
 .card-img {
@@ -600,16 +634,13 @@ h1, h2, h3, h4, h5, .en-name {
 }
 
 .card-content {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    left: 0;
-    height: 50%;
+    position: relative;
     padding: 20px;
     z-index: 3;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
+    flex-grow: 1;
 }
 
 .card-content h3 {
@@ -1038,7 +1069,8 @@ img {
     .section-heading { font-size: 1.7rem; }
     .btn-premium, .btn-outline-premium { padding: 12px 20px; font-size: 0.9rem; }
     
-    .artifact-card { height: 240px; }
+    .artifact-card { height: 300px; }
+    .artifact-card-img { height: 150px; }
     .artifact-card-title { font-size: 0.95rem; }
     .artifact-card-body { padding: 10px; }
     
@@ -2158,29 +2190,32 @@ img {
 }
 
 .artifact-card {
-    height: 320px;
+    height: 350px;
     position: relative;
     border-radius: 20px;
     overflow: hidden;
-    background: linear-gradient(180deg, #a4968e 0%, #000000 100%);
-    box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+    background: linear-gradient(180deg, #5b4d45 0%, #060d1a 100%);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
     display: flex;
     flex-direction: column;
-    border: none;
+    justify-content: space-between;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 @media (min-width: 992px) {
     .artifact-card {
-        height: 270px; /* Smaller card on desktop */
+        height: 320px; /* Make it slightly smaller on desktop but still proportional */
     }
 }
 
 .artifact-card-img {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    right: 10px;
-    bottom: 65px; /* Pushed down slightly to give more space */
+    position: relative;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 190px;
+    margin: 15px 15px 0 15px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2191,7 +2226,6 @@ img {
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
-    transform: scale(1.15); /* Makes the image slightly larger */
     transition: transform 0.5s ease;
 }
 
@@ -2201,7 +2235,7 @@ img {
 
 .artifact-card-title, .artifact-card-subtitle {
     margin: 0;
-    text-align: start;
+    text-align: center;
 }
 
 .artifact-card-overlay {
@@ -2209,16 +2243,20 @@ img {
 }
 
 .artifact-card-body {
-    position: absolute;
-    bottom: 20px;
-    left: 15px;
-    right: 15px;
-    z-index: 3;
+    position: relative;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 20px 15px 15px 15px;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(6, 13, 26, 0.9) 30%, rgba(6, 13, 26, 0.98) 100%);
     text-align: center;
+    z-index: 3;
+    width: 100%;
+    margin-top: auto;
 }
 
 .artifact-card-title {
-    font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+    font-size: clamp(0.95rem, 2.5vw, 1.15rem);
     font-weight: 800;
     color: white;
     margin-bottom: 5px;
@@ -2228,15 +2266,26 @@ img {
     -webkit-box-orient: vertical;
     overflow: hidden;
     font-family: 'Cairo', sans-serif;
-    line-height: 1.3;
+    line-height: 1.35;
 }
 
 .artifact-card-subtitle {
-    font-size: clamp(0.75rem, 2vw, 0.85rem);
+    font-size: clamp(0.78rem, 2vw, 0.88rem);
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(255, 255, 255, 0.85);
     white-space: normal;
     font-family: 'Cairo', sans-serif;
+}
+
+/* No Image Fallback */
+.artifact-card.no-image .artifact-card-img {
+    display: none !important;
+}
+
+.artifact-card.no-image .artifact-card-body {
+    margin: auto 0;
+    background: none;
+    padding: 30px 20px;
 }
 
 
@@ -2436,3 +2485,33 @@ img {
     .lead { font-size: 1.3rem !important; }
     .hero-mockup { max-width: 300px !important; }
 }
+
+/* Sleek Premium 3D Badge on Artifact Cards */
+.btn-3d-badge {
+    position: absolute;
+    top: 12px;
+    inset-inline-end: 12px;
+    z-index: 5;
+    background: rgba(254, 252, 232, 0.95); /* matching --mobile-card */
+    border: 1px solid rgba(66, 32, 6, 0.2);
+    color: #422006; /* matching --mobile-text */
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 30px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    cursor: pointer;
+}
+
+.btn-3d-badge:hover {
+    transform: scale(1.1);
+    background: #3b2403; /* matching --premium-brown */
+    color: white;
+    border-color: #3b2403;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
+}
+

@@ -15,7 +15,7 @@
     <link id="bootstrap-css" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/style.css">
     <style>
         .favorites-header {
             padding-top: 120px;
@@ -77,8 +77,9 @@
         }
         .store-card img {
             width: 100%;
-            height: 220px;
-            object-fit: cover;
+            height: 160px;
+            object-fit: contain;
+            background: rgba(0,0,0,0.5); /* Helps to blend contain images */
             display: block;
             border-bottom: 1px solid rgba(255,255,255,0.05);
         }
@@ -87,6 +88,10 @@
             flex-grow: 1;
             display: flex;
             flex-direction: column;
+        }
+        .store-card.no-image .store-card-content {
+            justify-content: center;
+            text-align: center;
         }
         
         /* Inheriting item-* classes from gallery */
@@ -102,13 +107,13 @@
             width: fit-content;
         }
         .item-title {
-            font-size: 1.1rem;
+            font-size: 0.95rem;
             color: white;
             font-weight: 700;
             margin-bottom: 5px;
         }
         .item-museum {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: rgba(255,255,255,0.6);
             margin-bottom: 15px;
             flex-grow: 1;
@@ -154,6 +159,10 @@
             </a>
             
             <div class="top-controls d-flex align-items-center order-lg-last ms-auto ms-lg-3 gap-2">
+                <a href="index.html#download" class="btn-download-mobile d-lg-none" title="تحميل التطبيق">
+                    <i class="fas fa-download d-inline d-sm-none"></i>
+                    <span class="d-none d-sm-inline" data-i18n="nav_download">تحميل التطبيق</span>
+                </a>
                 <a href="index.html#ai-assistant" class="btn btn-icon rounded-circle d-lg-none" title="المساعد الذكي">
                     <i class="fas fa-robot"></i>
                 </a>
@@ -253,8 +262,8 @@
     <script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.0"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    <script src="script.js"></script>
-    <script src="gallery.js"></script> <!-- To reuse fetch and data logic -->
+    <script src="js/script.js"></script>
+    <script src="js/gallery.js"></script> <!-- To reuse fetch and data logic -->
     
     <script>
         AOS.init({ once: true, duration: 800 });
@@ -307,7 +316,7 @@
                 
                 const cardHtml = `
                     <div class="store-card" data-aos="fade-up" data-aos-delay="${(index % 4) * 100}" id="fav-card-${item.$id}">
-                        <img src="${item.actualImageUrl}" alt="${item.titleAr}">
+                        <img src="${item.actualImageUrl}" alt="${item.titleAr}" onerror="this.style.display='none'; this.closest('.store-card').classList.add('no-image');">
                         <div class="store-card-content">
                             <span class="item-badge"><i class="fas ${badgeInfo.icon} me-1"></i> ${badgeInfo.text}</span>
                             <h3 class="item-title">${item.titleAr}</h3>
@@ -334,7 +343,7 @@
         function removeFromFavorites(id) {
             let favs = getFavorites();
             favs = favs.filter(favId => favId !== id);
-            localStorage.setItem('mat7afi_favorites', JSON.stringify(favs));
+            sessionStorage.setItem('mat7afi_favorites', JSON.stringify(favs));
             
             const card = document.getElementById(`fav-card-${id}`);
             if (card) {

@@ -189,7 +189,7 @@
             }
             
             // Adjust back button direction based on language
-            const lang = localStorage.getItem('lang') || 'ar';
+            const lang = sessionStorage.getItem('lang') || 'ar';
             if (lang !== 'ar') {
                 document.documentElement.dir = 'ltr';
                 document.querySelector('.btn-back i').className = 'fas fa-arrow-left';

@@ -15,14 +15,16 @@ let museumArtifactsCache = [];
 let currentMuseumCollection = '';
 let currentMuseumName = '';
 
+let Query;
 // Initialize Appwrite Immediately
 if (typeof Appwrite !== 'undefined') {
-    const { Client, Databases } = Appwrite;
+    const { Client, Databases, Query: AppwriteQuery } = Appwrite;
     const client = new Client();
     client
         .setEndpoint(AppwriteConfig.endpoint)
         .setProject(AppwriteConfig.projectId);
     databases = new Databases(client);
+    Query = AppwriteQuery;
 }
 
 // Gemini API Configuration Caching
@@ -48,8 +50,13 @@ window.getGeminiConfig = async () => {
     return null;
 };
 
+window.getGeminiApiKey = async () => {
+    const config = await window.getGeminiConfig();
+    return config ? config.apiKey : null;
+};
+
 // Global Core Functions
-const getCurrentLang = () => localStorage.getItem('lang') || 'ar';
+const getCurrentLang = () => sessionStorage.getItem('lang') || 'ar';
 
 const getArtifactTitle = (artifact) => {
     const lang = getCurrentLang();
@@ -71,18 +78,29 @@ function getBucketByType(collectionId) {
 }
 
 function getAppwriteImageUrl(fileId, bucketId) {
-    if (!fileId) return 'assets/placeholder.png';
+    if (!fileId) return '';
     if (Array.isArray(fileId)) fileId = fileId[0];
     if (typeof fileId === 'string' && (fileId.startsWith('http') || fileId.startsWith('assets/'))) {
         return fileId;
     }
     fileId = fileId.toString().trim();
-    const action = bucketId === AppwriteConfig.buckets.audio ? 'view' : 'preview';
+    // Use 'view' for audio files, PDFs, and 3D GLB models
+    const isViewableType = bucketId === AppwriteConfig.buckets.audio || 
+                           bucketId === AppwriteConfig.buckets.arModels || 
+                           fileId.toLowerCase().endsWith('.glb') || 
+                           fileId.toLowerCase().endsWith('.pdf');
+    const action = isViewableType ? 'view' : 'preview';
     return `${AppwriteConfig.endpoint}/storage/buckets/${bucketId}/files/${fileId}/${action}?project=${AppwriteConfig.projectId}`;
 }
 
 function setupImageFallback(imgEl, fileId) {
-    if (!imgEl || !fileId) return;
+    if (!imgEl) return;
+    if (!fileId) {
+        imgEl.style.display = 'none';
+        const card = imgEl.closest('.artifact-card');
+        if (card) card.classList.add('no-image');
+        return;
+    }
     const buckets = [
         AppwriteConfig.buckets.artifacts,
         AppwriteConfig.buckets.tourism,
@@ -94,7 +112,9 @@ function setupImageFallback(imgEl, fileId) {
         if (currentIdx < buckets.length) {
             imgEl.src = getAppwriteImageUrl(fileId, buckets[currentIdx++]);
         } else {
-            imgEl.src = 'assets/placeholder.png';
+            imgEl.style.display = 'none';
+            const card = imgEl.closest('.artifact-card');
+            if (card) card.classList.add('no-image');
             imgEl.onerror = null;
         }
     };
@@ -142,12 +162,12 @@ const renderArtifacts = (artifacts) => {
         const artifactLink = `artifact.html?id=${encodeURIComponent(artifactId)}&collection=${encodeURIComponent(currentMuseumCollection)}&museum=${encodeURIComponent(currentMuseumName)}`;
 
         const col = document.createElement('div');
-        col.className = 'col-lg-4 col-md-6 col-6 mb-5';
+        col.className = 'col-lg-4 col-md-6 col-sm-6 col-12 mb-5';
 
-        const btn360Text = lang === 'en' ? '360° View' : (lang === 'fr' ? 'Vue 360°' : 'عرض 360°');
-        const btn360Html = artifact.glbFileId ? `
-            <button class="btn btn-sm btn-outline-light rounded-pill position-absolute" style="top: 10px; right: 10px; z-index: 5; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px);" onclick="event.preventDefault(); window.location.href='${artifactLink}&show3d=true'">
-                <i class="fas fa-cube"></i> ${btn360Text}
+        const glbFileId = artifact.glbFileId || artifact.glbFileld || artifact.glb_file_id || '';
+        const btn360Html = (glbFileId && glbFileId.trim().length > 5) ? `
+            <button class="btn-3d-badge" onclick="event.preventDefault(); window.location.href='${artifactLink}&show3d=true'">
+                <i class="fas fa-cube"></i> <span>3D</span>
             </button>
         ` : '';
 
@@ -187,7 +207,19 @@ window.initMuseumPage = async (collectionId, museumName, museumImg) => {
     currentMuseumName = museumName;
     museumArtifactsCache = [];
 
-    if (museumTitleHero) museumTitleHero.innerText = museumName;
+    if (museumTitleHero) {
+        const lang = getCurrentLang();
+        let titleKey = '';
+        if (collectionId.includes('tourism')) titleKey = 'tourism_title';
+        else if (collectionId.includes('art')) titleKey = 'art_title';
+        else if (collectionId.includes('science')) titleKey = 'science_title';
+        
+        if (titleKey && translations[lang] && translations[lang][titleKey]) {
+            museumTitleHero.innerText = translations[lang][titleKey];
+        } else {
+            museumTitleHero.innerText = museumName;
+        }
+    }
     
     // Set Hero Image
     if (museumHeroImg) {
@@ -207,7 +239,8 @@ window.initMuseumPage = async (collectionId, museumName, museumImg) => {
     }
 
     try {
-        const response = await databases.listDocuments(AppwriteConfig.databaseId, collectionId);
+        const queries = Query ? [Query.limit(100)] : [];
+        const response = await databases.listDocuments(AppwriteConfig.databaseId, collectionId, queries);
         museumArtifactsCache = response.documents || [];
         
         // Background Preloading of Images
@@ -456,7 +489,7 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
     const audioPlayer = document.getElementById('artifact-audio');
     const artifactImg = document.getElementById('artifact-img');
     const playPauseBtn = document.getElementById('play-pause-btn');
-    const waveformContainer = document.getElementById('waveform');
+    const audioProgress = document.getElementById('audio-progress');
     const currentTimeEl = document.getElementById('current-time');
     const durationTimeEl = document.getElementById('duration-time');
     const artifactNameHero = document.getElementById('artifact-name-hero');
@@ -507,11 +540,11 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
             } else {
                 sectionTitles[0].innerText = lang === 'en' ? 'Identification Card' : (lang === 'fr' ? 'Carte d\'identité' : 'بطاقة التعريف');
             }
-            sectionTitles[1].innerText = lang === 'en' ? 'About this piece' : (lang === 'fr' ? 'À propos de cette pièce' : 'عن هذه القطعة');
+            sectionTitles[1].innerText = lang === 'en' ? 'Description' : (lang === 'fr' ? 'Description' : 'الوصف');
         }
         const audioTitle = document.querySelector('#audio-section h3');
         if (audioTitle) {
-            audioTitle.innerText = lang === 'en' ? 'Listen to the Audio Guide' : (lang === 'fr' ? 'Écouter le guide audio' : 'استمع الي الوصف الصوتي');
+            audioTitle.innerText = lang === 'en' ? 'Listen to Audio Description' : (lang === 'fr' ? 'Écouter la description audio' : 'استمع الي الوصف الصوتي');
         }
 
         // Translations for labels based on language
@@ -519,8 +552,8 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
         // Translations for labels based on language
         const labels = {
             ar: { museum: 'المتحف', category: 'التصنيف', era: 'العصر', location: 'مكان الاكتشاف', material: 'المادة', dimensions: 'الأبعاد', author: 'الفنان', serial: 'الرقم التسلسلي', size: 'المقاسات', type: 'الخامة / النوع', hall: 'القاعة' },
-            en: { museum: 'Museum', category: 'Category', era: 'Era', location: 'Discovery Location', material: 'Material', dimensions: 'Dimensions', author: 'Artist', serial: 'Serial Number', size: 'Size', type: 'Type', hall: 'Hall' },
-            fr: { museum: 'Musée', category: 'Catégorie', era: 'Époque', location: 'Lieu de découverte', material: 'Matériel', dimensions: 'Dimensions', author: 'Artiste', serial: 'Numéro de série', size: 'Taille', type: 'Type', hall: 'Salle' }
+            en: { museum: 'Museum: :', category: 'Category: :', era: 'data: :', location: 'Provenance: :', material: 'Material: :', dimensions: 'Dimensions: :', author: 'Artist: :', serial: 'Serial Number: :', size: 'Size: :', type: 'Type: :', hall: 'Hall: :' },
+            fr: { museum: 'Musée: :', category: 'Catégorie: :', era: 'Époque: :', location: 'Provenance: :', material: 'Matériel: :', dimensions: 'Dimensions: :', author: 'Artiste: :', serial: 'Numéro de série: :', size: 'Taille: :', type: 'Type: :', hall: 'Salle: :' }
         };
         const l = labels[lang] || labels.ar;
 
@@ -580,24 +613,29 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
         // Audio Guide Logic
         const audioFileId = artifact[`audio-${lang}`] || artifact[`audio_${lang}`] || artifact['audio-ar'] || artifact.audio_ar || '';
         if (audioFileId && audioSection && audioPlayer) {
-            const audioBucketId = '69f870c0000eb3969260';
+            const audioBucketId = AppwriteConfig.buckets.audio;
             const audioUrl = getAppwriteImageUrl(audioFileId, audioBucketId);
             
-            // Audio bars etc...
-            const barsCount = 20;
-            waveformContainer.innerHTML = '';
-            const bars = [];
-            for (let i = 0; i < barsCount; i++) {
-                const bar = document.createElement('div');
-                bar.className = 'wave-bar';
-                bar.style.height = `${Math.random() * 60 + 20}%`;
-                waveformContainer.appendChild(bar);
-                bars.push(bar);
-            }
-
             audioPlayer.src = audioUrl;
             audioPlayer.load();
             audioSection.style.display = 'block';
+
+            // Generate Waveform Bars
+            const waveformBars = document.getElementById('waveform-bars');
+            if (waveformBars) {
+                waveformBars.innerHTML = '';
+                const barHeights = [20, 35, 50, 65, 45, 25, 35, 55, 75, 90, 65, 30, 45, 60, 80, 95, 80, 55, 35, 45, 65, 75, 55, 30, 25, 45, 65, 80, 50, 30, 20, 35, 50, 40, 20];
+                barHeights.forEach((h) => {
+                    const bar = document.createElement('div');
+                    bar.className = 'waveform-bar';
+                    bar.style.height = `${h}%`;
+                    waveformBars.appendChild(bar);
+                });
+            }
+
+            const seekerHead = document.getElementById('seeker-head');
+            const seekerTimeEl = document.getElementById('seeker-time');
+            const waveformSlider = document.getElementById('waveform-slider');
 
             playPauseBtn.onclick = () => {
                 if (audioPlayer.paused) {
@@ -609,14 +647,82 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
                 }
             };
 
+            audioPlayer.onloadedmetadata = () => {
+                if (seekerTimeEl) {
+                    seekerTimeEl.innerText = `00:00 / ${formatTime(audioPlayer.duration)}`;
+                }
+            };
+
             audioPlayer.ontimeupdate = () => {
                 if (!audioPlayer.duration) return;
-                const progress = audioPlayer.currentTime / audioPlayer.duration;
-                const active = Math.floor(progress * barsCount);
-                bars.forEach((b, i) => b.classList.toggle('active', i < active));
-                if (currentTimeEl) currentTimeEl.innerText = formatTime(audioPlayer.currentTime);
-                if (durationTimeEl) durationTimeEl.innerText = formatTime(audioPlayer.duration);
+                const currentTime = audioPlayer.currentTime;
+                const duration = audioPlayer.duration;
+                const pct = (currentTime / duration) * 100;
+                
+                if (seekerHead) {
+                    seekerHead.style.left = `${pct}%`;
+                }
+                if (seekerTimeEl) {
+                    seekerTimeEl.innerText = `${formatTime(currentTime)} / ${formatTime(duration)}`;
+                }
+
+                // Highlight active waveform bars
+                const bars = document.querySelectorAll('.waveform-bar');
+                const activeCount = Math.round((pct / 100) * bars.length);
+                bars.forEach((bar, idx) => {
+                    if (idx < activeCount) {
+                        bar.classList.add('active');
+                    } else {
+                        bar.classList.remove('active');
+                    }
+                });
             };
+
+            // Custom Seeker Click/Drag Support
+            if (waveformSlider) {
+                let isDragging = false;
+                
+                const updateSeek = (e) => {
+                    const rect = waveformSlider.getBoundingClientRect();
+                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                    const x = clientX - rect.left;
+                    const pct = Math.max(0, Math.min(1, x / rect.width));
+                    
+                    if (audioPlayer.duration) {
+                        audioPlayer.currentTime = pct * audioPlayer.duration;
+                    }
+                };
+                
+                waveformSlider.addEventListener('mousedown', (e) => {
+                    isDragging = true;
+                    updateSeek(e);
+                });
+                
+                window.addEventListener('mousemove', (e) => {
+                    if (isDragging) {
+                        updateSeek(e);
+                    }
+                });
+                
+                window.addEventListener('mouseup', () => {
+                    isDragging = false;
+                });
+                
+                waveformSlider.addEventListener('touchstart', (e) => {
+                    isDragging = true;
+                    updateSeek(e);
+                }, { passive: true });
+                
+                window.addEventListener('touchmove', (e) => {
+                    if (isDragging) {
+                        updateSeek(e);
+                    }
+                }, { passive: true });
+                
+                window.addEventListener('touchend', () => {
+                    isDragging = false;
+                });
+            }
         }
 
         // 360 GLB Model Logic
@@ -625,11 +731,20 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
         const glbFileId = artifact.glbFileId || artifact.glbFileld || artifact.glb_file_id || '';
         if (glbFileId && btn360Wrap && btn360Element) {
             btn360Wrap.style.display = 'block';
-            btn360Element.onclick = () => {
-                const modelBucketId = getBucketByType(collectionId);
+            const handle360Click = () => {
+                const modelBucketId = AppwriteConfig.buckets.arModels;
                 const modelUrl = getAppwriteImageUrl(glbFileId, modelBucketId);
                 window.location.href = `viewer3d.html?url=${encodeURIComponent(modelUrl)}&title=${encodeURIComponent(name)}`;
             };
+            btn360Element.onclick = handle360Click;
+
+            // Auto-redirect if show3d is true
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('show3d') === 'true') {
+                const newSearch = window.location.search.replace(/[&?]show3d=true/, '');
+                window.history.replaceState({}, document.title, window.location.pathname + newSearch);
+                handle360Click();
+            }
         } else if (btn360Wrap) {
             btn360Wrap.style.display = 'none';
         }
@@ -701,6 +816,8 @@ async function handleChat() {
     const text = userInput.value.trim();
     if (!text) return;
     
+    const lang = getCurrentLang();
+    
     const addMsg = (t, s) => {
         const d = document.createElement('div');
         d.className = `message ${s}-msg`;
@@ -712,9 +829,10 @@ async function handleChat() {
     addMsg(text, 'user');
     userInput.value = '';
     
+    const thinkingText = lang === 'en' ? 'Thinking...' : (lang === 'fr' ? 'Analyse...' : 'جاري التفكير...');
     const thinking = document.createElement('div');
     thinking.className = 'message system-msg thinking';
-    thinking.innerText = 'جاري التفكير...';
+    thinking.innerText = thinkingText;
     chatMessages.appendChild(thinking);
 
     const geminiConfig = await window.getGeminiConfig();
@@ -723,11 +841,17 @@ async function handleChat() {
 
     if (!API_KEY) {
         thinking.remove();
-        addMsg('عذراً، لم أستطع جلب مفتاح API للذكاء الاصطناعي حالياً.', 'system');
+        const noApiKeyText = lang === 'en' ? 'Sorry, I couldn\'t retrieve the AI API key at the moment.' : 
+                             (lang === 'fr' ? 'Désolé, je n\'ai pas pu récupérer la clé API de l\'IA pour le moment.' : 'عذراً، لم أستطع جلب مفتاح API للذكاء الاصطناعي حالياً.');
+        addMsg(noApiKeyText, 'system');
         return;
     }
 
-    const SYSTEM_PROMPT = "أنت Ego Pro، مساعد ذكي خبير في متاحف جامعة المنيا. أجب باحترافية وبشكل مفصل باللغة العربية.";
+    const SYSTEM_PROMPT = lang === 'en' 
+        ? "You are Ego Pro, a smart assistant expert in Minia University Museums. Answer professionally, concisely, and in detail in English."
+        : (lang === 'fr'
+            ? "Vous êtes Ego Pro, un assistant intelligent expert des musées de l'Université de Minia. Répondez de manière professionnelle, concise et détaillée en français."
+            : "أنت Ego Pro، مساعد ذكي خبير في متاحف جامعة المنيا. أجب باحترافية وبشكل مفصل باللغة العربية.");
 
     try {
         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${API_KEY}`, {
@@ -750,14 +874,23 @@ async function handleChat() {
             const responseText = data.candidates[0].content.parts[0].text;
             addMsg(responseText, 'system');
         } else {
-            addMsg('عذراً، لم أستطع معالجة طلبك حالياً.', 'system');
+            const processErrorText = lang === 'en' ? 'Sorry, I couldn\'t process your request at the moment.' : 
+                                     (lang === 'fr' ? 'Désolé, je n\'ai pas pu traiter votre demande pour le moment.' : 'عذراً، لم أستطع معالجة طلبك حالياً.');
+            addMsg(processErrorText, 'system');
         }
     } catch (e) { 
         thinking.remove(); 
         const futureDate = new Date();
         futureDate.setDate(futureDate.getDate() + 2);
-        const dateString = futureDate.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
-        addMsg(`سوف نعود قريباً. نتوقع العودة للعمل بحلول: ${dateString}`, 'system'); 
+        const locale = lang === 'en' ? 'en-US' : (lang === 'fr' ? 'fr-FR' : 'ar-EG');
+        const dateString = futureDate.toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' });
+        
+        const fallbackMsg = lang === 'en' 
+            ? `We will be back soon. We expect to resume operations by: ${dateString}`
+            : (lang === 'fr'
+                ? `Nous serons de retour bientôt. Nous prévoyons de reprendre nos opérations d'ici le : ${dateString}`
+                : `سوف نعود قريباً. نتوقع العودة للعمل بحلول: ${dateString}`);
+        addMsg(fallbackMsg, 'system'); 
     }
 }
 
@@ -770,7 +903,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Theme Toggle
     if (themeToggle) {
         // Check saved theme
-        const savedTheme = localStorage.getItem('theme') || 'light';
+        const savedTheme = sessionStorage.getItem('theme') || 'light';
         document.documentElement.setAttribute('data-theme', savedTheme);
         themeToggle.innerHTML = savedTheme === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
 
@@ -778,7 +911,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const currentTheme = document.documentElement.getAttribute('data-theme');
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
             document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
+            sessionStorage.setItem('theme', newTheme);
             themeToggle.innerHTML = newTheme === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
         });
     }
@@ -834,9 +967,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 "feat_ar_desc": "View 3D models of artifacts and scientific specimens in your own environment.",
                 "soon": "Soon",
                 "ai_status": "Ego Pro is Online",
-                "ai_desc": "Chat with our smart assistant powered by OpenAI for accurate and exclusive information.",
+                "ai_desc": "Chat with our smart assistant powered by OpenAI for precise information.",
                 "ai_active": "Active AI System",
-                "ai_welcome": "Welcome! I am Ego Pro, your smart guide in Minia University Museums. How can I help you today?",
+                "ai_welcome": "Welcome! I am Ego Pro, your smart guide. How can I help you today?",
                 "ai_placeholder": "Ask me about any artifact...",
                 "download_title": "Carry the Museums in your Pocket",
                 "download_desc": "Get the full experience through the official app. Available soon on official stores and available now for direct download.",
@@ -867,7 +1000,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 "filter_art": "Modern Art Museum",
                 "filter_images": "Images",
                 "filter_cards": "Artifact Cards",
-                "filter_files": "Files"
+                "filter_files": "Files",
+                "gallery_search_placeholder": "Search for artifact, file, or museum...",
+                "museum_search_placeholder": "Search inside this museum's collections..."
             },
             ar: {
                 "nav_home": "الرئيسية",
@@ -917,10 +1052,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 "feat_ar": "واقع معزز (AR)",
                 "feat_ar_desc": "مشاهدة ثلاثية الأبعاد للقطع الأثرية والعينات العلمية في بيئتك الخاصة.",
                 "soon": "قريباً",
-                "ai_status": "Ego Pro",
-                "ai_desc": "تحدث الان مع الشات بوت واعرف معلومات وتفاصيل عن المتاحف",
-                "ai_active": "متصل الان",
-                "ai_welcome": "مرحباً بك! أنا Ego Pro مرشدك الذكي في متاحف جامعة المنيا. كيف يمكنني مساعدتك اليوم؟",
+                "ai_status": "إيجو برو متصل الآن",
+                "ai_desc": "تحدث مع مساعدنا الذكي المدعوم من OpenAI للحصول على معلومات دقيقة.",
+                "ai_active": "نظام ذكاء اصطناعي نشط",
+                "ai_welcome": "مرحباً بك! أنا Ego Pro مرشدك الذكي. كيف يمكنني مساعدتك اليوم؟",
                 "ai_placeholder": "اسألني عن أي قطعة أثرية...",
                 "download_title": "احمل المتاحف في جيبك",
                 "download_desc": "احصل على التجربة الكاملة عبر التطبيق الرسمي. متوفر قريباً على المتاجر الرسمية ومتاح الآن للتحميل المباشر.",
@@ -951,7 +1086,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 "filter_art": "متحف الفن الحديث",
                 "filter_images": "الصور",
                 "filter_cards": "البطاقات الأثرية",
-                "filter_files": "الملفات"
+                "filter_files": "الملفات",
+                "gallery_search_placeholder": "ابحث عن أثر، ملف، أو متحف...",
+                "museum_search_placeholder": "ابحث داخل مقتنيات هذا المتحف..."
             },
             fr: {
                 "nav_home": "Accueil",
@@ -1035,7 +1172,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 "filter_art": "Art",
                 "filter_images": "Images",
                 "filter_cards": "Cartes",
-                "filter_files": "Fichiers"
+                "filter_files": "Fichiers",
+                "gallery_search_placeholder": "Rechercher un artefact, fichier, ou musée...",
+                "museum_search_placeholder": "Rechercher dans les collections de ce musée..."
             }
         };
 
@@ -1058,6 +1197,38 @@ document.addEventListener('DOMContentLoaded', () => {
             if (detailsContainer) {
                 detailsContainer.style.textAlign = lang === 'ar' ? 'right' : 'left';
                 detailsContainer.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+            }
+            
+            // Translate museum page header elements dynamically
+            const urlParams = new URLSearchParams(window.location.search);
+            const collId = urlParams.get('id') || currentMuseumCollection;
+            const museumTitleHero = document.getElementById('museum-title-hero');
+            if (museumTitleHero && collId) {
+                let titleKey = '';
+                if (collId.includes('tourism')) titleKey = 'tourism_title';
+                else if (collId.includes('art')) titleKey = 'art_title';
+                else if (collId.includes('science')) titleKey = 'science_title';
+                
+                if (titleKey && translations[lang] && translations[lang][titleKey]) {
+                    museumTitleHero.innerText = translations[lang][titleKey];
+                }
+            }
+
+            // Translate location text if it exists
+            const locationEl = document.querySelector('.location');
+            if (locationEl) {
+                const locText = lang === 'ar' ? 'المنيا' : 'Minia';
+                locationEl.innerHTML = `${locText} <i class="fas fa-map-marker-alt ms-1"></i>`;
+            }
+
+            // Align inputs dynamically based on text direction
+            const searchInput = document.getElementById('artifact-search');
+            if (searchInput) {
+                searchInput.style.textAlign = lang === 'ar' ? 'right' : 'left';
+            }
+            const gallerySearchInput = document.getElementById('gallery-search');
+            if (gallerySearchInput) {
+                gallerySearchInput.style.textAlign = lang === 'ar' ? 'right' : 'left';
             }
             if (currentLangText) {
                 const langNames = { ar: 'العربية', en: 'English', es: 'Español', fr: 'Français', it: 'Italiano' };
@@ -1142,14 +1313,14 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         // Default to Arabic
-        const savedLang = localStorage.getItem('lang') || 'ar';
+        const savedLang = sessionStorage.getItem('lang') || 'ar';
         updateLanguage(savedLang);
 
         langSwitches.forEach(sw => {
             sw.addEventListener('click', (e) => {
                 e.preventDefault();
                 const newLang = sw.getAttribute('data-lang');
-                localStorage.setItem('lang', newLang);
+                sessionStorage.setItem('lang', newLang);
                 updateLanguage(newLang);
             });
         });
@@ -1162,4 +1333,24 @@ document.addEventListener('DOMContentLoaded', () => {
             this.classList.add('active');
         });
     });
+
+    // Aggressive Background Preloader for Images
+    setTimeout(() => {
+        const imagesToPreload = [
+            'assets/tourism-museum.jpg',
+            'assets/artt-museum.jpg',
+            'assets/متاحف كلية علوم.png',
+            'assets/science-museum.png',
+            'assets/science-museum1.png',
+            'assets/Frame 1.png',
+            'assets/Frame 2.png',
+            'assets/Frame 3.png',
+            'assets/Frame 4.png',
+            'assets/Desktop  2.png'
+        ];
+        imagesToPreload.forEach(src => {
+            const img = new Image();
+            img.src = src;
+        });
+    }, 2000);
 });
