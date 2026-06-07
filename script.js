@@ -49,15 +49,15 @@ let cachedGeminiConfig = null;
 window.getGeminiConfig = async () => {
     if (cachedGeminiConfig) return cachedGeminiConfig;
     try {
-        const response = await databases.getDocument(
+        const response = await databases.listDocuments(
             AppwriteConfig.databaseId,
-            'appconfig',
             'appconfig'
         );
-        if (response) {
+        if (response && response.documents && response.documents.length > 0) {
+            const configDoc = response.documents[0];
             cachedGeminiConfig = {
-                apiKey: response.gemini_api || response.gemini_api_key,
-                model: response.gemini_model || 'gemini-1.5-pro'
+                apiKey: configDoc.gemini_api || configDoc.gemini_api_key,
+                model: configDoc.gemini_model || 'gemini-1.5-pro'
             };
             return cachedGeminiConfig;
         }
@@ -636,6 +636,22 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
                 if (currentTimeEl) currentTimeEl.innerText = formatTime(audioPlayer.currentTime);
                 if (durationTimeEl) durationTimeEl.innerText = formatTime(audioPlayer.duration);
             };
+            };
+        }
+
+        // 360 GLB Model Logic
+        const btn360Wrap = document.getElementById('btn-360-wrap');
+        const btn360Element = document.getElementById('btn-360-element');
+        const glbFileId = artifact.glbFileId || artifact.glbFileld || artifact.glb_file_id || '';
+        if (glbFileId && btn360Wrap && btn360Element) {
+            btn360Wrap.style.display = 'block';
+            btn360Element.onclick = () => {
+                const modelBucketId = getBucketByType(collectionId);
+                const modelUrl = getAppwriteImageUrl(glbFileId, modelBucketId);
+                window.location.href = `viewer3d.html?url=${encodeURIComponent(modelUrl)}&title=${encodeURIComponent(name)}`;
+            };
+        } else if (btn360Wrap) {
+            btn360Wrap.style.display = 'none';
         }
 
     } catch (err) { console.error(err); } finally {
@@ -788,8 +804,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Language Toggle (Basic setup)
-    if (langSwitches.length > 0) {
-        const translations = {
+    const translations = {
             en: {
                 "nav_home": "Home",
                 "nav_museums": "Museums",
@@ -815,6 +830,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 "tourism_title": "Tourism Faculty Museum",
                 "tourism_desc": "Displays models simulating ancient Egyptian eras, from Pharaonic to Islamic.",
                 "explore_pieces": "Explore Artifacts",
+                "artifact_360": "360° View",
+                "artifact_history": "Summoning History...",
                 "science_cat": "Science",
                 "science_title": "Science Faculty Museums",
                 "science_desc": "A journey into the world of nature and geological history through hundreds of rare specimens.",
@@ -895,8 +912,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 "museums_subtitle": "ثلاث وجهات ثقافية، تجربة واحدة متكاملة",
                 "tourism_cat": "الآثار",
                 "tourism_title": "متحف كلية السياحة",
-                "tourism_desc": "يعرض نماذج تحاكي العصور المصرية القديمة، من الفرعونية إلى الإسلامية.",
+                "tourism_desc": "يعرض نماذج تحاكي العصور المصرية القديمة من الفرعوني وحتى الإسلامي.",
                 "explore_pieces": "استكشف القطع",
+                "artifact_360": "عـرض 360°",
+                "artifact_history": "جاري استحضار التاريخ...",
                 "science_cat": "العلوم",
                 "science_title": "متاحف كلية العلوم",
                 "science_desc": "رحلة في عالم الطبيعة والتاريخ الجيولوجي عبر مئات العينات النادرة والفريدة.",
@@ -954,7 +973,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 "filter_cards": "البطاقات الأثرية",
                 "filter_files": "الملفات"
             },
-
             fr: {
                 "nav_home": "Accueil",
                 "nav_museums": "Musées",
@@ -978,8 +996,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 "museums_subtitle": "Trois destinations culturelles, une expérience intégrée",
                 "tourism_cat": "Antiquités",
                 "tourism_title": "Musée de la Faculté de Tourisme",
-                "tourism_desc": "Expose des modèles simulant les époques de l'Égypte antique, de l'époque pharaonique à l'islamique.",
-                "explore_pieces": "Explorer les Artefacts",
+                "tourism_desc": "Expose des maquettes simulant les époques égyptiennes anciennes, de l'époque pharaonique à l'époque islamique.",
+                "explore_pieces": "Explorer les pièces",
+                "artifact_360": "Vue 360°",
+                "artifact_history": "Invocation de l'histoire...",
                 "science_cat": "Science",
                 "science_title": "Musées de la Faculté des Sciences",
                 "science_desc": "Un voyage dans le monde de la nature et de l'histoire géologique à travers des centaines de spécimens rares.",
@@ -1042,6 +1062,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const updateLanguage = (lang) => {
             document.documentElement.lang = lang;
             document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+            
+            // Swap Bootstrap CSS for perfect RTL/LTR layout mirroring
+            const bootstrapLink = document.getElementById('bootstrap-css');
+            if (bootstrapLink) {
+                if (lang === 'ar') {
+                    bootstrapLink.href = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css';
+                } else {
+                    bootstrapLink.href = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css';
+                }
+            }
+            
+            // Adjust artifact details container alignment
+            const detailsContainer = document.querySelector('.details-container');
+            if (detailsContainer) {
+                detailsContainer.style.textAlign = lang === 'ar' ? 'right' : 'left';
+                detailsContainer.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+            }
             if (currentLangText) {
                 const langNames = { ar: 'العربية', en: 'English', es: 'Español', fr: 'Français', it: 'Italiano' };
                 currentLangText.innerText = langNames[lang] || 'العربية';
@@ -1125,7 +1162,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateLanguage(newLang);
             });
         });
-    }
 
     // Mobile Bottom Nav Instant Active State
     const bottomNavItems = document.querySelectorAll('.nav-item-bottom');

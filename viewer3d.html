@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>عرض ثلاثي الأبعاد 360° | متاحف جامعة المنيا</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Model Viewer component -->
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
+
+    <style>
+        :root {
+            --navy-dark: #0a192f;
+            --accent: #d97706;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle at center, #1e293b 0%, #020617 100%);
+            font-family: 'Cairo', sans-serif;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* 3D Viewer Element */
+        model-viewer {
+            width: 100%;
+            height: 100%;
+            background-color: transparent;
+            --poster-color: transparent;
+        }
+        
+        /* Top Navigation Overlay */
+        .viewer-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 20px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 10;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+            pointer-events: none;
+        }
+        
+        .viewer-title {
+            color: white;
+            margin: 0;
+            font-weight: 900;
+            font-size: 1.5rem;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            pointer-events: auto;
+        }
+        
+        .btn-back {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            pointer-events: auto;
+            text-decoration: none;
+        }
+        .btn-back:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            transform: scale(1.1);
+        }
+        
+        /* Loading Overlay */
+        #loading-overlay {
+            position: absolute;
+            inset: 0;
+            background: #020617;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            color: white;
+            transition: opacity 0.5s;
+        }
+        .spinner {
+            font-size: 3rem;
+            color: var(--accent);
+            animation: spin 1s infinite linear;
+            margin-bottom: 20px;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        
+        /* Controls Info */
+        .controls-hint {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            pointer-events: none;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .controls-hint i { color: var(--accent); }
+    </style>
+</head>
+<body>
+
+    <div id="loading-overlay">
+        <i class="fas fa-cube spinner"></i>
+        <h3 id="loading-text">جاري استحضار النموذج ثلاثي الأبعاد...</h3>
+    </div>
+
+    <div class="viewer-header">
+        <a href="javascript:history.back()" class="btn-back" title="عودة">
+            <i class="fas fa-arrow-right"></i>
+        </a>
+        <h2 class="viewer-title" id="model-title">قطعة أثرية</h2>
+        <div style="width: 50px;"></div> <!-- spacer -->
+    </div>
+
+    <model-viewer 
+        id="artifact-viewer"
+        src="" 
+        alt="A 3D model of an artifact" 
+        auto-rotate 
+        camera-controls
+        shadow-intensity="1"
+        exposure="1.2">
+    </model-viewer>
+
+    <div class="controls-hint">
+        <span><i class="fas fa-hand-pointer"></i> اسحب للتدوير</span>
+        <span><i class="fas fa-search-plus"></i> كبّر للتفاصيل</span>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const modelUrl = urlParams.get('url');
+            const modelTitle = urlParams.get('title');
+            
+            if (modelTitle) {
+                document.getElementById('model-title').innerText = modelTitle;
+            }
+            
+            const viewer = document.getElementById('artifact-viewer');
+            const loadingOverlay = document.getElementById('loading-overlay');
+            
+            if (modelUrl) {
+                viewer.src = modelUrl;
+                
+                viewer.addEventListener('load', () => {
+                    loadingOverlay.style.opacity = '0';
+                    setTimeout(() => loadingOverlay.remove(), 500);
+                });
+                
+                viewer.addEventListener('error', (e) => {
+                    document.getElementById('loading-text').innerText = 'حدث خطأ أثناء تحميل النموذج. تأكد من صحة الرابط.';
+                    document.querySelector('.spinner').className = 'fas fa-exclamation-triangle spinner';
+                    document.querySelector('.spinner').style.animation = 'none';
+                    document.querySelector('.spinner').style.color = '#ef4444';
+                    console.error('Model Viewer Error:', e);
+                });
+            } else {
+                document.getElementById('loading-text').innerText = 'لم يتم العثور على رابط النموذج.';
+            }
+            
+            // Adjust back button direction based on language
+            const lang = localStorage.getItem('lang') || 'ar';
+            if (lang !== 'ar') {
+                document.documentElement.dir = 'ltr';
+                document.querySelector('.btn-back i').className = 'fas fa-arrow-left';
+            }
+        });
+    </script>
+</body>
+</html>

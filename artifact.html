@@ -54,10 +54,10 @@
         <img id="artifact-img" src="assets/placeholder.png" alt="Artifact" class="artifact-main-img" fetchpriority="high" onerror="this.src='assets/placeholder.png'">
         
         <!-- 360 Button center bottom -->
-        <div class="btn-360-wrap">
-            <button class="btn-360" onclick="alert('خاصية العرض ثلاثي الأبعاد ستكون متاحة قريباً في نسخة الويب ✨')">
-                <i class="fas fa-sync-alt"></i>
-                <span>عـرض 360°</span>
+        <div class="btn-360-wrap" id="btn-360-wrap" style="display: none;">
+            <button class="btn-360" id="btn-360-element">
+                <i class="fas fa-cube"></i>
+                <span data-i18n="artifact_360">عـرض 360°</span>
             </button>
         </div>
 

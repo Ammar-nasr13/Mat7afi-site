@@ -126,10 +126,13 @@ function renderGrid() {
                     <i class="fas fa-download"></i>
                 </button>
             `;
-        } else {
+        } else if (item.category === 'image' || !item.category) {
             actionsHtml = `
-                <button onclick="downloadItem('${item.actualImageUrl}', '${title}')" class="item-btn btn-primary" title="تحميل">
-                    تحميل مباشر <i class="fas fa-download ms-1"></i>
+                <button onclick="previewImage('${item.actualImageUrl}', '${title.replace(/'/g, "\\'")}')" class="item-btn btn-primary" title="معاينة">
+                    معاينة <i class="fas fa-eye ms-1"></i>
+                </button>
+                <button onclick="downloadItem('${item.actualImageUrl}', '${title.replace(/'/g, "\\'")}')" class="item-btn" title="تحميل">
+                    <i class="fas fa-download"></i>
                 </button>
             `;
         }
@@ -187,6 +190,13 @@ function setupSearch() {
     }
 }
 
+function normalizeArabic(text) {
+    if (!text) return '';
+    return text.replace(/[أإآا]/g, 'ا')
+               .replace(/ة/g, 'ه')
+               .replace(/[ًٌٍَُِّْ]/g, '');
+}
+
 function applyFilters() {
     const dbMuseumMap = { 'tourism': 'tourism_museum', 'science': 'science_museum', 'art': 'modern_art_museum' };
     
@@ -199,8 +209,8 @@ function applyFilters() {
         
         // Search
         if (currentSearchQuery) {
-            const searchStr = `${item.titleAr || ''} ${item.titleEn || ''} ${museumNames[item.museum] || ''} ${item.shortDescriptionAr || ''}`.toLowerCase();
-            if (!searchStr.includes(currentSearchQuery)) return false;
+            const searchStr = normalizeArabic(`${item.titleAr || ''} ${item.titleEn || ''} ${museumNames[item.museum] || ''} ${item.shortDescriptionAr || ''}`.toLowerCase());
+            if (!searchStr.includes(normalizeArabic(currentSearchQuery))) return false;
         }
         
         return true;
@@ -211,13 +221,48 @@ function applyFilters() {
 
 // Actions Logic
 function downloadItem(url, title) {
+    let downloadUrl = url;
+    // Replace /view with /download for Appwrite URLs to force download
+    if (url.includes('/view?')) {
+        downloadUrl = url.replace('/view?', '/download?');
+    }
     const a = document.createElement('a');
-    a.href = url;
+    a.href = downloadUrl;
     a.download = title || 'download';
+    a.target = '_blank';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
 }
+
+function previewImage(url, title) {
+    const modalHtml = `
+        <div id="image-preview-modal" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(10, 25, 47, 0.95); backdrop-filter: blur(10px); z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column; opacity: 0; transition: opacity 0.3s ease;">
+            <button onclick="closePreviewModal()" style="position: absolute; top: 20px; right: 25px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; width: 45px; height: 45px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"><i class="fas fa-times"></i></button>
+            <img src="${url}" alt="${title}" style="max-width: 90%; max-height: 80vh; object-fit: contain; border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); transform: scale(0.9); transition: transform 0.3s ease;" id="preview-modal-img">
+            <h3 style="color: white; margin-top: 25px; font-family: 'Cairo', sans-serif; font-weight: 700; text-align: center; padding: 0 15px;">${title}</h3>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Animate in
+    setTimeout(() => {
+        const modal = document.getElementById('image-preview-modal');
+        const img = document.getElementById('preview-modal-img');
+        if (modal && img) {
+            modal.style.opacity = '1';
+            img.style.transform = 'scale(1)';
+        }
+    }, 10);
+}
+
+window.closePreviewModal = function() {
+    const modal = document.getElementById('image-preview-modal');
+    if (modal) {
+        modal.style.opacity = '0';
+        setTimeout(() => modal.remove(), 300);
+    }
+};
 
 function shareItem(id, title) {
     const url = window.location.origin + window.location.pathname.replace('gallery.html', '') + 'item.html?id=' + id;

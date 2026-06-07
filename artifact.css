@@ -30,9 +30,17 @@ img { max-width: 100%; height: auto; }
     z-index: 2;
     max-height: 280px;
     max-width: 90%;
+    margin-bottom: 40px; /* Moves image up slightly */
     object-fit: contain;
     filter: drop-shadow(0 20px 40px rgba(0,0,0,0.6));
     transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-size: clamp(1.1rem, 3.5vw, 1.5rem);
+}
+#audio-section h3 {
+    font-size: clamp(1rem, 4vw, 1.5rem) !important;
 }
 
 .artifact-main-img:hover { transform: scale(1.1) rotate(2deg); }
