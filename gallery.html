@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>معرض متحفي | استكشاف متاحف جامعة المنيا بصرياً</title>
+    <meta name="description" content="استكشف الصور والبطاقات الأثرية والملفات الرقمية الخاصة بمتاحف جامعة المنيا في معرض متحفي بتصميم بصري جذاب.">
+    <meta name="keywords" content="معرض متحفي, متاحف المنيا, صور أثرية, بطاقات أثرية, متاحف جامعة المنيا, Mat7afi Gallery">
+    <meta property="og:title" content="معرض متحفي | متاحف جامعة المنيا">
+    <meta property="og:description" content="استكشف الصور والبطاقات الأثرية والملفات الرقمية الخاصة بمتاحف جامعة المنيا في معرض متحفي.">
+    <meta property="og:image" content="https://mat7afi.site/assets/Cover.png">
+    <link rel="icon" type="image/png" href="assets/icon.png">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <link id="bootstrap-css" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Specific Styles for Gallery Page */
+        .gallery-page-header {
+            padding-top: 120px;
+            padding-bottom: 40px;
+            background: linear-gradient(135deg, var(--navy-dark) 20%, rgba(10, 25, 47, 0.9) 100%);
+            color: var(--cream);
+            text-align: center;
+        }
+        .gallery-page-title {
+            font-size: 3rem;
+            font-weight: 900;
+            margin-bottom: 15px;
+            font-family: 'Cairo', sans-serif;
+        }
+        .gallery-page-subtitle {
+            font-size: 1.2rem;
+            color: rgba(255, 253, 208, 0.8);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .filters-container {
+            background: var(--navy);
+            padding: 20px 0;
+            position: sticky;
+            top: 76px;
+            z-index: 990;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            border-bottom: 1px solid rgba(217, 119, 6, 0.2);
+        }
+        
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+        
+        .filter-btn {
+            background: transparent;
+            border: 1px solid rgba(217, 119, 6, 0.5);
+            color: var(--cream);
+            padding: 8px 20px;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .filter-btn:hover, .filter-btn.active {
+            background: var(--accent);
+            color: var(--navy-dark);
+            border-color: var(--accent);
+        }
+        
+        .search-box-gallery {
+            max-width: 500px;
+            margin: 0 auto;
+            position: relative;
+        }
+        .search-box-gallery input {
+            width: 100%;
+            padding: 12px 20px 12px 45px;
+            border-radius: 50px;
+            border: 1px solid rgba(217, 119, 6, 0.3);
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .search-box-gallery input:focus {
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 15px rgba(217, 119, 6, 0.3);
+        }
+        .search-box-gallery i {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--accent);
+        }
+
+        /* Store Grid */
+        .store-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+            padding: 40px 0;
+        }
+        
+        .store-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(217, 119, 6, 0.15);
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .store-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            border-color: rgba(217, 119, 6, 0.5);
+        }
+        .store-card img {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            display: block;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .store-card-content {
+            padding: 15px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .item-badge {
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background: rgba(217, 119, 6, 0.2);
+            color: var(--accent-light);
+            display: inline-block;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+        .item-title {
+            font-size: 1.1rem;
+            color: white;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        .item-museum {
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 15px;
+            flex-grow: 1;
+        }
+        .item-actions {
+            display: flex;
+            gap: 8px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            padding-top: 12px;
+        }
+        .item-btn {
+            background: rgba(255,255,255,0.05);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            font-size: 0.85rem;
+        }
+        .item-btn:hover { background: rgba(255,255,255,0.15); color: var(--accent); }
+        .item-btn.btn-primary { background: var(--accent); color: var(--navy-dark); flex-grow: 1; width: auto; font-weight: 700; }
+        .item-btn.btn-primary:hover { background: var(--accent-light); }
+        .item-btn.favorite-btn.active i { color: #ef4444; }
+
+    </style>
+</head>
+<body class="bg-navy-dark">
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg fixed-top scrolled" id="mainNav">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="index.html">
+                <img src="assets/logo.png" alt="Mat7afi" class="nav-logo me-2">
+                <div class="brand-text">
+                    <span class="en-name">Mat7afi</span>
+                    <span class="ar-name" data-i18n="brand_subtitle">متاحف جامعة المنيا</span>
+                </div>
+            </a>
+            
+            <div class="top-controls d-flex align-items-center order-lg-last ms-auto ms-lg-3 gap-2">
+                <a href="index.html#ai-assistant" class="btn btn-icon rounded-circle d-lg-none" title="المساعد الذكي">
+                    <i class="fas fa-robot"></i>
+                </a>
+                <a href="favorites.html" class="btn btn-icon rounded-circle" title="المفضلة">
+                    <i class="fas fa-heart"></i>
+                </a>
+                <div class="dropdown">
+                    <button class="btn btn-lang rounded-pill dropdown-toggle" type="button" id="langDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-globe me-1"></i> <span id="current-lang-text" class="d-none d-sm-inline">العربية</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="langDropdown">
+                        <li><a class="dropdown-item lang-switch active" href="#" data-lang="ar">العربية</a></li>
+                        <li><a class="dropdown-item lang-switch" href="#" data-lang="en">English</a></li>
+                        <li><a class="dropdown-item lang-switch" href="#" data-lang="fr">Français</a></li>
+                    </ul>
+                </div>
+                <button class="navbar-toggler ms-2 d-none d-md-block d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item"><a class="nav-link" href="index.html#hero">الرئيسية</a></li>
+                    <li class="nav-item"><a class="nav-link" href="index.html#museums">متاحفنا</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="gallery.html">معرض متحفي</a></li>
+                    <li class="nav-item"><a class="nav-link" href="index.html#features">المميزات</a></li>
+                    <li class="nav-item"><a class="nav-link" href="index.html#ai-assistant">المساعد الذكي</a></li>
+                    <li class="nav-item ms-lg-3"><a class="btn-download" href="index.html#download">تحميل التطبيق</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Bottom Navbar -->
+    <div class="mobile-bottom-nav d-lg-none">
+        <a href="index.html#hero" class="nav-item-bottom">
+            <i class="fas fa-home"></i>
+            <span data-i18n="bottom_home">الرئيسية</span>
+        </a>
+        <a href="index.html#museums" class="nav-item-bottom">
+            <i class="fas fa-landmark"></i>
+            <span data-i18n="bottom_museums">متاحفنا</span>
+        </a>
+        <a href="gallery.html" class="nav-item-bottom active">
+            <i class="fas fa-image"></i>
+            <span data-i18n="gallery_nav">معرض متحفي</span>
+        </a>
+        <a href="index.html#features" class="nav-item-bottom">
+            <i class="fas fa-star"></i>
+            <span data-i18n="bottom_features">المميزات</span>
+        </a>
+    </div>
+
+    <!-- Header -->
+    <header class="gallery-page-header">
+        <div class="container" data-aos="fade-up">
+            <h1 class="gallery-page-title d-flex align-items-center justify-content-center gap-3" style="font-size: 3rem; font-weight: 900; margin-bottom: 10px;">
+                <span data-i18n="gallery_page_title">معرض متحفي</span>
+            </h1>
+            <p class="gallery-page-subtitle" data-i18n="gallery_page_subtitle">استكشف الصور والبطاقات الأثرية والملفات الرقمية الخاصة بمتاحف جامعة المنيا.</p>
+        </div>
+    </header>
+
+    <!-- Filters & Search -->
+    <section class="filters-container">
+        <div class="container">
+            <div class="search-box-gallery mb-4" data-aos="fade-down" data-aos-delay="100">
+                <i class="fas fa-search"></i>
+                <input type="text" id="gallery-search" placeholder="ابحث عن أثر، ملف، أو متحف...">
+            </div>
+            
+            <div class="container d-flex flex-wrap justify-content-center gap-2">
+            <button class="filter-btn active" data-filter="all" data-i18n="filter_all">الكل</button>
+            <button class="filter-btn" data-filter="tourism" data-i18n="filter_tourism">متحف كلية السياحة والفنادق</button>
+            <button class="filter-btn" data-filter="science" data-i18n="filter_science">متحف العلوم</button>
+            <button class="filter-btn" data-filter="art" data-i18n="filter_art">متحف الفن الحديث</button>
+        </div>
+
+        </div>
+    </section>
+
+    <!-- Gallery Grid -->
+    <main class="container min-vh-100 position-relative">
+        
+        <div class="text-center w-100 py-5 text-white" id="gallery-loading">
+            <i class="fas fa-spinner fa-spin fa-3x text-accent mb-3"></i>
+            <p data-i18n="gallery_loading">جاري تحميل المعرض...</p>
+        </div>
+
+        <div class="store-grid" id="gallery-grid">
+            <!-- Items will be injected here by JS -->
+        </div>
+        <div class="empty-state-box d-none" id="gallery-empty" style="background: rgba(10, 25, 47, 0.7); border: 1px dashed rgba(217, 119, 6, 0.4); border-radius: 20px; padding: 60px 30px; text-align: center; max-width: 600px; margin: 40px auto; backdrop-filter: blur(10px); box-shadow: 0 15px 35px rgba(0,0,0,0.2);">
+            <div style="width: 90px; height: 90px; background: rgba(255, 255, 255, 0.05); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 25px; box-shadow: inset 0 0 20px rgba(0,0,0,0.5);">
+                <i class="fas fa-search fa-3x" style="color: rgba(255,255,255,0.2);"></i>
+            </div>
+            <h3 class="text-white fw-bold mb-3" data-i18n="gallery_empty_title">لم يتم العثور على نتائج</h3>
+            <p class="text-white-50 mb-0 lh-lg" data-i18n="gallery_empty_desc">عفواً، لا توجد عناصر مطابقة لبحثك أو الفلاتر المحددة. جرب تغيير كلمات البحث أو اختر "الكل" لعرض كافة المقتنيات.</p>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <!-- Use existing script.js for Appwrite config if available, else standalone gallery.js -->
+    <script src="script.js"></script>
+    <script src="gallery.js"></script>
+    <script>
+        AOS.init({ once: true, duration: 800 });
+    </script>
+</body>
+</html>

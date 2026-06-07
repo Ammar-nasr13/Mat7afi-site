@@ -2,32 +2,38 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://mat7afi.site/</loc>
-    <lastmod>2026-05-11</lastmod>
-    <priority>1.00</priority>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://mat7afi.site/index.html</loc>
-    <lastmod>2026-05-11</lastmod>
-    <priority>0.90</priority>
+    <loc>https://mat7afi.site/gallery.html</loc>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://mat7afi.site/favorites.html</loc>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://mat7afi.site/museum.html</loc>
-    <lastmod>2026-05-11</lastmod>
-    <priority>0.80</priority>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://mat7afi.site/item.html</loc>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
   <url>
     <loc>https://mat7afi.site/artifact.html</loc>
-    <lastmod>2026-05-11</lastmod>
-    <priority>0.70</priority>
-  </url>
-  <url>
-    <loc>https://mat7afi.site/privacy-policy.html</loc>
-    <lastmod>2026-05-11</lastmod>
-    <priority>0.50</priority>
-  </url>
-  <url>
-    <loc>https://mat7afi.site/terms.html</loc>
-    <lastmod>2026-05-11</lastmod>
-    <priority>0.50</priority>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
 </urlset>

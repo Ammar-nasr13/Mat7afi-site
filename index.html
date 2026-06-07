@@ -13,7 +13,7 @@
     <link rel="canonical" href="https://mat7afi.site/">
     
     <!-- Security Headers -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https://appwrite.etihadalmdina.com https://upload.wikimedia.org; connect-src 'self' https://appwrite.etihadalmdina.com https://api.openai.com; frame-ancestors 'none';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com https://www.googletagmanager.com https://cdn-cookieyes.com 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https://appwrite.etihadalmdina.com https://upload.wikimedia.org https://www.googletagmanager.com; connect-src 'self' https://appwrite.etihadalmdina.com https://api.openai.com https://www.google-analytics.com; frame-ancestors 'none';">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     
     <!-- Open Graph / Facebook -->
@@ -74,21 +74,22 @@
     </script>
     
     <!-- Resource Hints -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdn.jsdelivr.net">
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link rel="preconnect" href="https://unpkg.com">
 
+    <!-- Performance Optimization -->
+    <link rel="preconnect" href="https://appwrite.etihadalmdina.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
     <!-- Preload Critical Assets -->
     <link rel="preload" href="assets/logo.png" as="image">
-    <link rel="preload" href="assets/interface.png" as="image">
-    <link rel="preload" href="assets/Cover.png" as="image">
 
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
     
     <!-- Styles -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
+    <link id="bootstrap-css" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css?v=2">
@@ -116,7 +117,7 @@
 
   gtag('config', 'G-7DFHT1LDHB');
 </script>
-<script id="cookieyes" type="text/javascript" src="https://cdn-cookieyes.com/client_data/17e6723dd69f8abdd6044c27/script.js"></script>
+<script id="cookieyes" type="text/javascript" src="https://cdn-cookieyes.com/client_data/17e6723dd69f8abdd6044c27/script.js" defer></script>
 <!-- Google Tag Manager -->
 <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
 new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -134,55 +135,109 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 <img src="assets/logo.png" alt="شعار متاحف جامعة المنيا - Mat7afi" class="nav-logo me-2" fetchpriority="high">
                 <div class="brand-text">
                     <span class="en-name">Mat7afi</span>
-                    <span class="ar-name">متاحف جامعة المنيا</span>
+                    <span class="ar-name" data-i18n="brand_subtitle">متاحف جامعة المنيا</span>
                 </div>
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <i class="fas fa-bars"></i>
-            </button>
+            
+            <!-- Controls (Favorites, Lang & Dark Mode) -->
+            <div class="top-controls d-flex align-items-center order-lg-last ms-auto ms-lg-3 gap-2">
+                <a href="index.html#ai-assistant" class="btn btn-icon rounded-circle d-lg-none" title="المساعد الذكي">
+                    <i class="fas fa-robot"></i>
+                </a>
+                <a href="favorites.html" class="btn btn-icon rounded-circle" title="المفضلة">
+                    <i class="fas fa-heart"></i>
+                </a>
+                <div class="dropdown">
+                    <button class="btn btn-lang rounded-pill dropdown-toggle" type="button" id="langDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-globe me-1"></i> <span id="current-lang-text" class="d-none d-sm-inline">العربية</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="langDropdown">
+                        <li><a class="dropdown-item lang-switch active" href="#" data-lang="ar">العربية</a></li>
+                        <li><a class="dropdown-item lang-switch" href="#" data-lang="en">English</a></li>
+                        <li><a class="dropdown-item lang-switch" href="#" data-lang="fr">Français</a></li>
+                    </ul>
+                </div>
+                <button class="navbar-toggler ms-2 d-none d-md-block d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+
             <div class="collapse navbar-collapse" id="navbarNav">
                 <button class="btn-close-menu d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                     <i class="fas fa-times"></i>
                 </button>
                 <ul class="navbar-nav ms-auto align-items-center">
-                    <li class="nav-item"><a class="nav-link" href="#hero">الرئيسية</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#museums">متاحفنا</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#smart-services">الخدمات الذكية</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#features">المميزات</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#ai-assistant">المساعد الذكي</a></li>
-                    <li class="nav-item ms-lg-3"><a class="btn-download" href="#download">تحميل التطبيق</a></li>
+                    <li class="nav-item"><a class="nav-link" href="index.html#hero" data-i18n="nav_home">الرئيسية</a></li>
+                    <li class="nav-item"><a class="nav-link" href="index.html#museums" data-i18n="nav_museums">متاحفنا</a></li>
+                    <li class="nav-item"><a class="nav-link" href="gallery.html" data-i18n="gallery_nav">معرض متحفي</a></li>
+                    <li class="nav-item"><a class="nav-link" href="index.html#features" data-i18n="nav_features">المميزات</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#ai-assistant" data-i18n="nav_assistant">المساعد الذكي</a></li>
+                    <li class="nav-item ms-lg-3"><a class="btn-download" href="#download" data-i18n="nav_download">تحميل التطبيق</a></li>
                 </ul>
             </div>
         </div>
     </nav>
+
+    <!-- Mobile Bottom Navbar -->
+    <div class="mobile-bottom-nav d-lg-none">
+        <a href="#hero" class="nav-item-bottom active">
+            <i class="fas fa-home"></i>
+            <span data-i18n="bottom_home">الرئيسية</span>
+        </a>
+        <a href="#museums" class="nav-item-bottom">
+            <i class="fas fa-landmark"></i>
+            <span data-i18n="bottom_museums">متاحفنا</span>
+        </a>
+        <a href="gallery.html" class="nav-item-bottom">
+            <i class="fas fa-image"></i>
+            <span data-i18n="gallery_nav">معرض متحفي</span>
+        </a>
+        <a href="index.html#features" class="nav-item-bottom">
+            <i class="fas fa-star"></i>
+            <span data-i18n="bottom_features">المميزات</span>
+        </a>
+    </div>
 
     <!-- Hero Section -->
     <header id="hero" class="hero-section">
         <div class="hero-overlay"></div>
         <div class="container position-relative">
             <div class="row align-items-center min-vh-100 py-5">
-                <div class="col-lg-7 text-center text-lg-start content-box" data-aos="fade-right">
-                    <div class="futuristic-badge mb-3">
+                <div class="col-lg-7 text-center content-box" data-aos="fade-right">
+                    <div class="futuristic-badge mb-4 mx-auto">
                         <span class="badge-dot"></span>
-                        مستقبل السياحة الرقمية
+                        <span data-i18n="hero_badge">مستقبل السياحة الرقمية</span>
                     </div>
+                    
+                    <div class="hero-brand-typography mx-auto text-center">
+                        <div class="mat7afi-spaced">M A T 7 A F I</div>
+                        <div class="mat7afi-slogan" data-i18n="hero_slogan">الماضي... بشكل عمره ما اتشاف</div>
+                        <div class="slogan-divider">
+                            <span class="line"></span>
+                            <span class="pharaonic-eye">&#x13080;</span>
+                            <span class="line"></span>
+                        </div>
+                    </div>
+
                     <h1 class="display-2 fw-black text-white mb-4">
-                        حيث يلتقي <br> 
-                        <span class="text-accent gradient-text">الفن والعلوم</span>
+                        <span data-i18n="hero_title_1">حيث يلتقي</span> <br class="d-md-none">
+                        <span class="text-accent gradient-text" data-i18n="hero_title_2">الفن والعلوم</span>
+                        <span data-i18n="hero_title_3"></span>
                     </h1>
-                    <p class="lead text-cream-50 mb-5 max-width-600">
-                        استكشف كنوز جامعة المنيا من خلال تطبيق <b>Mat7afi</b>. تجربة فريدة تجمع بين سحر الفن الحديث، أسرار الطبيعة والعلوم، وعمق التاريخ الأثري في منصة واحدة متطورة.
+                    <p class="lead text-cream-50 mb-5 mx-auto max-width-600" data-i18n="hero_desc">
+                        اكتشف كنوز جامعة المنيا من خلال تطبيق <b>Mat7afi</b>. تجربة فريدة تجمع بين سحر الفن الحديث، أسرار الطبيعة والعلوم، وعمق التاريخ الأثري في منصة واحدة متطورة.
                     </p>
-                    <div class="d-flex flex-wrap justify-content-center justify-content-lg-start gap-4">
+                    <div class="d-flex flex-wrap justify-content-center gap-4">
                         <a href="#download" class="btn-premium">
-                            <span>ابدأ الاستكشاف الآن</span>
-                            <i class="fas fa-arrow-left ms-2"></i>
+                            <span data-i18n="btn_start">ابدأ الاستكشاف الآن</span>
+                            <i class="fas fa-arrow-left ms-2" id="hero-arrow"></i>
                         </a>
-                        <a href="#museums" class="btn-outline-premium">
+                        <a href="#museums" class="btn-outline-premium" data-i18n="btn_tour">
                             جولة في المتاحف
                         </a>
                     </div>
                 </div>
+                
                 <div class="col-lg-5 mt-5 mt-lg-0" data-aos="zoom-in" data-aos-delay="200">
                     <div class="hero-mockup-wrapper">
                         <div class="glow-effect"></div>
@@ -194,11 +249,11 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     </header>
 
     <!-- Museums Section -->
-    <section id="museums" class="py-5 bg-navy-dark">
+    <section id="museums" class="py-5">
         <div class="container py-5">
             <div class="section-title-wrap text-center mb-5" data-aos="fade-up">
-                <h2 class="section-heading">متاحفنا المتميزة</h2>
-                <p class="section-subheading">ثلاث وجهات ثقافية، تجربة واحدة متكاملة</p>
+                <h2 class="section-heading" data-i18n="museums_title">متاحفنا المتميزة</h2>
+                <p class="section-subheading" data-i18n="museums_subtitle">ثلاث وجهات ثقافية، تجربة واحدة متكاملة</p>
                 <div class="heading-underline"></div>
             </div>
             
@@ -211,42 +266,42 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                             <div class="card-gradient-overlay"></div>
                         </div>
                         <div class="card-content">
-                            <span class="museum-category">الآثار</span>
-                            <h3>متحف كلية السياحة</h3>
-                            <p>يعرض نماذج تحاكي العصور المصرية القديمة، من الفرعونية إلى الإسلامية.</p>
-                            <span class="learn-more">استكشف القطع <i class="fas fa-arrow-left"></i></span>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Science Museum -->
-                <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
-                    <div class="museum-card" onclick="loadMuseumArtifacts('science_atifacts', 'متحف كلية العلوم', 'assets/science-museum.png')">
-                        <div class="card-img-wrap">
-                            <img src="assets/science-museum.png" alt="متحف كلية العلوم" class="card-img" loading="lazy">
-                            <div class="card-gradient-overlay"></div>
-                        </div>
-                        <div class="card-content">
-                            <span class="museum-category">العلوم</span>
-                            <h3>متحف كلية العلوم</h3>
-                            <p>رحلة في عالم الطبيعة والتاريخ الجيولوجي عبر مئات العينات النادرة والفريدة.</p>
-                            <span class="learn-more">استكشف القطع <i class="fas fa-arrow-left"></i></span>
+                            <span class="museum-category" data-i18n="tourism_cat">الآثار</span>
+                            <h3 data-i18n="tourism_title">متحف كلية السياحة</h3>
+                            <p data-i18n="tourism_desc">يعرض نماذج تحاكي العصور المصرية القديمة، من الفرعونية إلى الإسلامية.</p>
+                            <span class="learn-more"><span data-i18n="explore_pieces">استكشف القطع</span> <i class="fas fa-arrow-left arrow-dir"></i></span>
                         </div>
                     </div>
                 </div>
                 
                 <!-- Modern Art Museum -->
-                <div class="col-lg-4 col-md-6 mx-auto" data-aos="fade-up" data-aos-delay="300">
+                <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
                     <div class="museum-card" onclick="loadMuseumArtifacts('art_atifacts', 'متحف الفن الحديث', 'assets/artt-museum.jpg')">
                         <div class="card-img-wrap">
                             <img src="assets/artt-museum.jpg" alt="متحف الفن الحديث" class="card-img" loading="lazy">
                             <div class="card-gradient-overlay"></div>
                         </div>
                         <div class="card-content">
-                            <span class="museum-category">الفنون</span>
-                            <h3>متحف الفن الحديث</h3>
-                            <p>يضم مجموعة فريدة من اللوحات والمنحوتات المعاصرة التي تعكس الإبداع المصري.</p>
-                            <span class="learn-more">استكشف القطع <i class="fas fa-arrow-left"></i></span>
+                            <span class="museum-category" data-i18n="art_cat">الفنون</span>
+                            <h3 data-i18n="art_title">متحف الفن الحديث</h3>
+                            <p data-i18n="art_desc">يضم مجموعة فريدة من اللوحات والمنحوتات المعاصرة التي تعكس الإبداع المصري.</p>
+                            <span class="learn-more"><span data-i18n="explore_pieces">استكشف القطع</span> <i class="fas fa-arrow-left arrow-dir"></i></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Science Museum -->
+                <div class="col-lg-4 col-md-6 mx-auto" data-aos="fade-up" data-aos-delay="300">
+                    <div class="museum-card" onclick="loadMuseumArtifacts('science_atifacts', 'متاحف كلية العلوم', 'assets/متاحف كلية علوم.png')">
+                        <div class="card-img-wrap">
+                            <img src="assets/متاحف كلية علوم.png" alt="متاحف كلية العلوم" class="card-img" loading="lazy">
+                            <div class="card-gradient-overlay"></div>
+                        </div>
+                        <div class="card-content">
+                            <span class="museum-category" data-i18n="science_cat">العلوم</span>
+                            <h3 data-i18n="science_title">متاحف كلية العلوم</h3>
+                            <p data-i18n="science_desc">رحلة في عالم الطبيعة والتاريخ الجيولوجي عبر مئات العينات النادرة والفريدة.</p>
+                            <span class="learn-more"><span data-i18n="explore_pieces">استكشف القطع</span> <i class="fas fa-arrow-left arrow-dir"></i></span>
                         </div>
                     </div>
                 </div>
@@ -258,8 +313,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     <section id="gallery" class="py-5 bg-navy-dark">
         <div class="container py-5">
             <div class="section-title-wrap text-center mb-5" data-aos="fade-up">
-                <h2 class="section-heading text-cream">نظرة داخل التطبيق</h2>
-                <p class="section-subheading">واجهات عصرية مصممة لراحتك</p>
+                <h2 class="section-heading text-cream" data-i18n="gallery_title">نظرة داخل التطبيق</h2>
+                <p class="section-subheading" data-i18n="gallery_subtitle">واجهات عصرية مصممة لراحتك</p>
                 <div class="heading-underline"></div>
             </div>
             <div class="row g-3">
@@ -292,46 +347,46 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         <div class="container py-5">
             <div class="row align-items-center">
                 <div class="col-lg-5 mb-5 mb-lg-0" data-aos="fade-left">
-                    <h2 class="display-5 fw-bold text-navy mb-4">تقنيات تفوق التوقعات</h2>
-                    <p class="lead text-muted mb-5">تطبيق Mat7afi ليس مجرد دليل سياحي، بل هو رفيقك في رحلة استكشاف شاملة للفن والعلوم والطبيعة.</p>
+                    <h2 class="display-5 fw-bold text-navy mb-4" data-i18n="feat_title">تقنيات تفوق التوقعات</h2>
+                    <p class="lead text-muted mb-5" data-i18n="feat_desc">تطبيق Mat7afi ليس مجرد دليل سياحي، بل هو رفيقك في رحلة استكشاف شاملة للفن والعلوم والطبيعة.</p>
                     
                     <div class="feature-item d-flex align-items-start mb-4">
                         <div class="feature-icon"><i class="fas fa-qrcode"></i></div>
                         <div class="feature-text">
-                            <h4>ماسح QR ذكي</h4>
-                            <p>تعرف على اللوحات الفنية، العينات العلمية، والقطع الأثرية في ثوانٍ.</p>
+                            <h4 data-i18n="feat_qr">ماسح QR ذكي</h4>
+                            <p data-i18n="feat_qr_desc">تعرف على اللوحات الفنية، العينات العلمية، والقطع الأثرية في ثوانٍ.</p>
                         </div>
                     </div>
                     
                     <div class="feature-item d-flex align-items-start mb-4">
                         <div class="feature-icon"><i class="fas fa-headphones-alt"></i></div>
                         <div class="feature-text">
-                            <h4>دليل صوتي شامل</h4>
-                            <p>استمتع بشرح صوتي مفصل لكل مقتنيات المتاحف الثلاثة بأعلى جودة.</p>
+                            <h4 data-i18n="feat_audio">دليل صوتي شامل</h4>
+                            <p data-i18n="feat_audio_desc">استمتع بشرح صوتي مفصل لكل مقتنيات المتاحف الثلاثة بأعلى جودة.</p>
                         </div>
                     </div>
 
                     <div class="feature-item d-flex align-items-start mb-4">
                         <div class="feature-icon"><i class="fas fa-robot"></i></div>
                         <div class="feature-text">
-                            <h4>مساعد ذكي (AI Chatbot)</h4>
-                            <p>دردشة تفاعلية فورية للإجابة على جميع تساؤلاتك حول أي قطعة أثرية أو علمية.</p>
+                            <h4 data-i18n="feat_ai">مساعد ذكي (AI Chatbot)</h4>
+                            <p data-i18n="feat_ai_desc">دردشة تفاعلية فورية للإجابة على جميع تساؤلاتك حول أي قطعة أثرية أو علمية.</p>
                         </div>
                     </div>
                     
                     <div class="feature-item d-flex align-items-start mb-4">
-                        <div class="feature-icon"><i class="fas fa-store"></i></div>
+                        <div class="feature-icon"><i class="fas fa-vr-cardboard"></i></div>
                         <div class="feature-text">
-                            <h4>المتجر الإلكتروني <span class="badge bg-brown ms-2">قريباً</span></h4>
-                            <p>قريباً ستتمكن من اقتناء هدايا تذكارية ونسخ مصغرة من روائعنا الفنية.</p>
+                            <h4><span data-i18n="feat_ar">واقع معزز (AR)</span></h4>
+                            <p data-i18n="feat_ar_desc">مشاهدة ثلاثية الأبعاد للقطع الأثرية والعينات العلمية في بيئتك الخاصة.</p>
                         </div>
                     </div>
 
                     <div class="feature-item d-flex align-items-start">
-                        <div class="feature-icon"><i class="fas fa-vr-cardboard"></i></div>
+                        <div class="feature-icon"><i class="fas fa-store"></i></div>
                         <div class="feature-text">
-                            <h4>واقع معزز (AR) <span class="badge bg-brown ms-2">قريباً</span></h4>
-                            <p>مشاهدة ثلاثية الأبعاد للقطع الأثرية والعينات العلمية في بيئتك الخاصة.</p>
+                            <h4><span data-i18n="feat_store">المتجر الإلكتروني</span> <span class="badge bg-brown ms-2" data-i18n="soon">قريباً</span></h4>
+                            <p data-i18n="feat_store_desc">قريباً ستتمكن من اقتناء هدايا تذكارية ونسخ مصغرة من روائعنا الفنية.</p>
                         </div>
                     </div>
                 </div>
@@ -342,90 +397,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         </div>
     </section>
 
-    <!-- Smart Services Section (New: From Mobile App) -->
-    <section id="smart-services" class="smart-services-section">
-        <div class="container">
-            <div class="section-title-wrap text-center mb-5" data-aos="fade-up">
-                <h2 class="section-heading text-cream">الخدمات الذكية</h2>
-                <div class="heading-underline"></div>
-                <p class="text-accent fw-bold mt-3">تقنيات رؤية 2030 والمتاحف الذكية</p>
-            </div>
-
-            <!-- Activation Status Card -->
-            <div class="status-card" data-aos="fade-up">
-                <div class="row align-items-center">
-                    <div class="col-md-auto text-center text-md-start mb-3 mb-md-0">
-                        <i class="fas fa-star-half-alt"></i>
-                    </div>
-                    <div class="col-md">
-                        <h3 class="h4">تفعيل الخدمات الذكية</h3>
-                        <p class="mb-0">متبقي لديك 3 محاولات مجانية. قم بتفعيل النسخة الكاملة للاستمتاع بكافة الميزات مدى الحياة.</p>
-                    </div>
-                    <div class="col-md-auto text-center">
-                        <div class="activation-input-group">
-                            <input type="text" id="activation-code-input" placeholder="ادخل كود التفعيل" class="form-control activation-input">
-                            <button onclick="handleCodeActivation()" class="btn-activate-v2">
-                                <i class="fas fa-magic"></i>
-                                تفعيل
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Features Grid -->
-            <div class="feature-grid">
-                <!-- Feature 1: AI Visual Guide -->
-                <div class="smart-feature-card card-blue" data-aos="fade-up" data-aos-delay="100">
-                    <div class="feature-icon-wrap">
-                        <i class="fas fa-camera-retro"></i>
-                    </div>
-                    <h4>الدليل المرئي الذكي</h4>
-                    <p>وجه الكاميرا، وسيقوم الذكاء الاصطناعي بتحليل القطعة وسرد قصتها التاريخية فوراً.</p>
-                    <div class="feature-footer">
-                        <i class="fas fa-arrow-left"></i>
-                    </div>
-                </div>
-
-                <!-- Feature 2: AR Showcase -->
-                <div class="smart-feature-card card-brown" data-aos="fade-up" data-aos-delay="200">
-                    <div class="feature-icon-wrap">
-                        <i class="fas fa-cube"></i>
-                    </div>
-                    <h4>استعراض الواقع المعزز</h4>
-                    <p>استعرض المجسمات الأثرية في بيئتك عبر تقنية الواقع المعزز (AR) بتفاصيل دقيقة.</p>
-                    <div class="feature-footer">
-                        <i class="fas fa-arrow-left"></i>
-                    </div>
-                </div>
-
-                <!-- Feature 3: AI Voice Guide -->
-                <div class="smart-feature-card card-blue" data-aos="fade-up" data-aos-delay="300">
-                    <div class="feature-icon-wrap">
-                        <i class="fas fa-microphone-alt"></i>
-                    </div>
-                    <h4>الدليل الصوتي الذكي</h4>
-                    <p>مرشدك السياحي الشخصي، اسأله صوتياً عن أي حضارة وسيجيبك بطلاقة.</p>
-                    <div class="feature-footer">
-                        <i class="fas fa-arrow-left"></i>
-                    </div>
-                </div>
-
-                <!-- Feature 5: Knowledge Quiz -->
-                <div class="smart-feature-card card-blue" data-aos="fade-up" data-aos-delay="500">
-                    <span class="card-badge">🎯 تحدٍّ</span>
-                    <div class="feature-icon-wrap">
-                        <i class="fas fa-trophy"></i>
-                    </div>
-                    <h4>تحدي المعرفة</h4>
-                    <p>اختبر معلوماتك في تحديات ممتعة، وتعرف على مدى خبرتك في تاريخ الحضارات.</p>
-                    <div class="feature-footer">
-                        <i class="fas fa-arrow-left"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
 
     <!-- AI Chatbot Section -->
     <section id="ai-assistant" class="py-5 bg-navy position-relative overflow-hidden">
@@ -437,19 +408,19 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                         <div class="row g-0">
                             <div class="col-md-5 bg-brown-gradient p-5 text-white d-flex flex-column justify-content-center">
                                 <div class="ai-icon-large mb-4"><i class="fas fa-robot"></i></div>
-                                <h2 class="fw-bold mb-3">Ego Pro متصل الآن</h2>
-                                <p class="mb-4 text-white-50">تحدث مع المساعد الذكي المدعوم بـ OpenAI للحصول على معلومات دقيقة وحصرية عن أي مقتنيات أثرية.</p>
+                                <h2 class="fw-bold mb-3" data-i18n="ai_status">Ego Pro متصل الآن</h2>
+                                <p class="mb-4 text-white-50" data-i18n="ai_desc">تحدث مع المساعد الذكي المدعوم بـ OpenAI للحصول على معلومات دقيقة وحصرية عن أي مقتنيات أثرية.</p>
                                 <div class="ai-status">
                                     <span class="status-pulse"></span>
-                                    <span>نظام نشط بالذكاء الاصطناعي</span>
+                                    <span data-i18n="ai_active">نظام نشط بالذكاء الاصطناعي</span>
                                 </div>
                             </div>
                             <div class="col-md-7 bg-white p-4 d-flex flex-column">
                                 <div id="chat-messages" class="chat-container mb-3">
-                                    <div class="message system-msg">مرحباً بك! أنا Ego Pro مرشدك الذكي في متاحف جامعة المنيا. كيف يمكنني مساعدتك اليوم؟</div>
+                                    <div class="message system-msg" data-i18n="ai_welcome">مرحباً بك! أنا Ego Pro مرشدك الذكي في متاحف جامعة المنيا. كيف يمكنني مساعدتك اليوم؟</div>
                                 </div>
                                 <div class="chat-input-wrap">
-                                    <input type="text" id="user-input" placeholder="اسألني عن أي قطعة أثرية..." class="form-control">
+                                    <input type="text" id="user-input" data-i18n-placeholder="ai_placeholder" placeholder="اسألني عن أي قطعة أثرية..." class="form-control">
                                     <button id="send-btn" class="btn-send"><i class="fas fa-paper-plane"></i></button>
                                 </div>
                             </div>
@@ -464,8 +435,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     <section id="download" class="py-5 bg-cream">
         <div class="container py-5">
             <div class="cta-card bg-navy-gradient text-white p-5 rounded-5 text-center shadow-2xl" data-aos="fade-up">
-                <h2 class="display-5 fw-black mb-4">احمل المتاحف في جيبك</h2>
-                <p class="lead mb-5 opacity-75">احصل على التجربة الكاملة عبر التطبيق الرسمي. متوفر قريباً على المتاجر الرسمية ومتاح الآن للتحميل المباشر.</p>
+                <h2 class="display-5 fw-black mb-4" data-i18n="download_title">احمل المتاحف في جيبك</h2>
+                <p class="lead mb-5 opacity-75" data-i18n="download_desc">احصل على التجربة الكاملة عبر التطبيق الرسمي. متوفر قريباً على المتاجر الرسمية ومتاح الآن للتحميل المباشر.</p>
                 
                 <!-- Store Badges -->
                 <div class="d-flex flex-wrap justify-content-center gap-4 mb-5">
@@ -473,19 +444,19 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                         <a href="#" class="store-link disabled-link">
                             <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Google Play">
                         </a>
-                        <span class="coming-soon-badge">قريباً</span>
+                        <span class="coming-soon-badge" data-i18n="soon">قريباً</span>
                     </div>
                     <div class="store-link-wrapper position-relative">
                         <a href="#" class="store-link disabled-link">
                             <img src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg" alt="App Store">
                         </a>
-                        <span class="coming-soon-badge">قريباً</span>
+                        <span class="coming-soon-badge" data-i18n="soon">قريباً</span>
                     </div>
                 </div>
 
                 <!-- Direct Download Links -->
                 <div class="mt-5 pt-5 border-top border-white border-opacity-10">
-                    <h3 class="h5 text-accent mb-4">تحميل مباشر (إصدارات الأجهزة)</h3>
+                    <h3 class="h5 text-accent mb-4" data-i18n="download_direct">تحميل مباشر (إصدارات الأجهزة)</h3>
                     <div class="d-flex flex-wrap justify-content-center gap-3">
                         <a href="#" class="btn-outline-premium btn-sm">
                             <i class="fab fa-android me-2"></i> إصدار Universal (APK)
@@ -497,7 +468,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                             <i class="fab fa-android me-2"></i> إصدار armeabi-v7a
                         </a>
                     </div>
-                    <p class="mt-3 text-white-50 small">يمكنك تحميل الملف المناسب لنوع جهازك وتثبيته مباشرة.</p>
+                    <p class="mt-3 text-white-50 small" data-i18n="download_direct_desc">يمكنك تحميل الملف المناسب لنوع جهازك وتثبيته مباشرة.</p>
                 </div>
             </div>
         </div>
@@ -559,31 +530,39 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 <div class="col-lg-4 text-center text-lg-start">
                     <img src="assets/logo.png" alt="Mat7afi Logo" class="footer-logo mb-3">
                     <h4 class="fw-bold mb-3 text-accent">Mat7afi | متاحف جامعة المنيا</h4>
-                    <p class="text-white-50">المشروع الرقمي الرسمي لتوثيق وعرض كنوز متاحف جامعة المنيا باستخدام أحدث التقنيات.</p>
+                    <p class="text-white-50" data-i18n="footer_desc">المشروع الرقمي الرسمي لتوثيق وعرض كنوز متاحف جامعة المنيا باستخدام أحدث التقنيات.</p>
                 </div>
                 <div class="col-lg-4 text-center">
-                    <h5 class="fw-bold mb-4">روابط سريعة</h5>
+                    <h5 class="fw-bold mb-4" data-i18n="footer_links_title">روابط سريعة</h5>
                     <ul class="list-unstyled footer-links">
-                        <li><a href="#hero">الرئيسية</a></li>
-                        <li><a href="#museums">متاحفنا</a></li>
-                        <li><a href="privacy-policy.html">سياسة الخصوصية</a></li>
-                        <li><a href="terms.html">الشروط والأحكام</a></li>
+                        <li><a href="#hero" data-i18n="nav_home">الرئيسية</a></li>
+                        <li><a href="#museums" data-i18n="nav_museums">متاحفنا</a></li>
+                        <li><a href="privacy-policy.html" data-i18n="footer_privacy">سياسة الخصوصية</a></li>
+                        <li><a href="terms.html" data-i18n="footer_terms">الشروط والأحكام</a></li>
                     </ul>
                 </div>
-                <div class="col-lg-4 text-center text-lg-end">
-                    <h5 class="fw-bold mb-4">تابعنا</h5>
-                    <div class="social-icons">
+                <div class="col-lg-4 text-center text-lg-start">
+                    <h5 class="fw-bold mb-4" data-i18n="footer_follow">تابعنا</h5>
+                    <div class="social-icons d-flex justify-content-center justify-content-lg-start gap-3">
                         <a href="https://www.facebook.com/share/14eDwjJJU6m/" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
                         <a href="https://www.tiktok.com/@miniauniversitymuseumapp?_r=1&_t=ZS-96A3fQvTTl9" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
                         <a href="https://www.instagram.com/minia_university_museums?igsh=MTI3eTVxZTVsajZnbQ==" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
                     </div>
-                    <div class="footer-credit mt-4 text-white-50 small">
-                        <p class="mb-2">© 2026 جميع الحقوق محفوظة لجامعة المنيا</p>
-                        <p class="mb-2">تم التطوير بواسطة</p>
-                        <ul class="list-unstyled footer-credit-list mb-0">
-                            <li>Ammar Nasr - Ego Pro</li>
-                            <li>UI/UX Designer Ashraqt Khalifa</li>
-                        </ul>
+                </div>
+            </div>
+            
+            <!-- Bottom Bar -->
+            <div class="footer-bottom mt-5 pt-4 border-top border-secondary opacity-75">
+                <div class="row align-items-center">
+                    <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
+                        <p class="mb-0 small" data-i18n="footer_rights">© 2026 جميع الحقوق محفوظة لجامعة المنيا</p>
+                    </div>
+                    <div class="col-md-6 text-center text-md-end">
+                        <div class="developer-credits small">
+                            <span data-i18n="footer_dev">تم التطوير بواسطة:</span>
+                            <span class="text-accent ms-1">Ammar Nasr (Ego Pro)</span> | 
+                            <span class="text-accent">Ashraqt Khalifa (UI/UX)</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -592,9 +571,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
     <!-- Scripts -->
     <!-- Appwrite SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.0" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
-    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js" defer></script>
     <script src="script.js?v=2" defer></script>
     <script>
         window.loadMuseumArtifacts = (collectionId, museumName, museumImg) => {

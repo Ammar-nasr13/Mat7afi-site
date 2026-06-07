@@ -28,15 +28,27 @@
     <meta property="twitter:title" content="استكشاف المتاحف | متحفي">
     <meta property="twitter:description" content="استكشف مقتنيات متاحف جامعة المنيا بجودة عالية.">
     <meta property="twitter:image" content="https://mat7afi.site/assets/Cover.png">
-    
+    <title>المتحف | متحفي - متاحف جامعة المنيا</title>
+    <meta name="description" content="استكشف مقتنيات متاحف جامعة المنيا بكلية السياحة والفنادق والعلوم والفن الحديث.">
+    <meta name="keywords" content="متاحف المنيا, متحف السياحة, متحف العلوم, متحف الفن الحديث, متاحف جامعة المنيا, Mat7afi">
+    <meta property="og:title" content="المتحف | متحفي">
+    <meta property="og:description" content="استكشف مقتنيات متاحف جامعة المنيا.">
+    <meta property="og:image" content="https://mat7afi.site/assets/Cover.png">
     <link rel="icon" type="image/png" href="assets/icon.png">
+    
+    <!-- Performance Optimization -->
+    <link rel="preconnect" href="https://appwrite.etihadalmdina.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Fonts & CSS -->
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
+    <link id="bootstrap-css" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-navy">
+<body class="museum-page" style="background-color: #ffffff; color: #333;">
 
     <!-- Museum Premium Header from Global CSS -->
     <header class="museum-hero-premium">
@@ -64,11 +76,13 @@
 
 
     <!-- Content -->
-    <section class="search-section-museum">
+    <section class="search-section-museum py-4">
         <div class="container">
-            <div class="museum-search-box">
-                <input type="text" id="artifact-search" placeholder="ابحث في مقتنيات المتحف..." class="text-white border-0">
-                <i class="fas fa-search text-accent"></i>
+            <div class="museum-search-box-light shadow-sm" style="background: white; border: 1px solid #e0e0e0; border-radius: 50px; padding: 8px 15px; display: flex; align-items: center;">
+                <input type="text" id="artifact-search" placeholder="ابحث في مقتنيات المتحف..." class="border-0 bg-transparent" style="flex-grow: 1; color: #666; outline: none; text-align: center; font-size: 1.1rem;">
+                <div style="background: #4a2c11; border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer;">
+                    <i class="fas fa-search text-white"></i>
+                </div>
             </div>
         </div>
     </section>

@@ -253,17 +253,17 @@ body { background-color: var(--premium-bg); color: var(--premium-text); font-fam
 }
 
 @media (max-width: 768px) {
-    .artifact-hero { height: 350px; }
-    .hero-title-info h1 { font-size: 1.3rem; }
-    .main-card { padding: 25px; border-radius: 25px; }
-    .details-container { margin-top: 50px; }
-    .btn-360 { width: 65px; height: 65px; }
+    .artifact-hero { height: 300px; padding-top: 50px; }
+    .artifact-main-img { max-height: 200px; }
+    .hero-title-info { bottom: 15px; right: 15px; }
+    .hero-title-info h1 { font-size: 1.2rem; }
+    .hero-title-info p { font-size: 0.8rem; }
+    .main-card { padding: 25px 20px; border-radius: 25px; }
+    .details-container { margin-top: 50px; padding: 0 15px; }
+    .btn-360-wrap { bottom: -25px; }
+    .btn-360 { width: 60px; height: 60px; }
+    .btn-360 i { font-size: 1.2rem; }
+    .btn-360 span { font-size: 0.55rem; }
     .audio-play-btn { width: 55px; height: 55px; font-size: 1.5rem; }
-}
-
-@media (max-width: 768px) {
-    .artifact-hero { height: 350px; }
-    .artifact-name { font-size: 1.7rem; }
-    .main-card { padding: 25px; border-radius: 25px; }
-    .details-container { margin-top: -40px; }
+    .info-grid { grid-template-columns: 1fr; gap: 10px; }
 }

@@ -44,13 +44,36 @@ if (typeof Appwrite !== 'undefined') {
     databases = new Databases(client);
 }
 
+// Gemini API Key Caching
+let cachedGeminiApiKey = null;
+window.getGeminiApiKey = async () => {
+    if (cachedGeminiApiKey) return cachedGeminiApiKey;
+    try {
+        const response = await databases.listDocuments(
+            AppwriteConfig.databaseId,
+            'appconfig'
+        );
+        if (response.documents && response.documents.length > 0) {
+            cachedGeminiApiKey = response.documents[0].gemini_api_key;
+            return cachedGeminiApiKey;
+        }
+    } catch (e) {
+        console.error('Failed to fetch Gemini API Key from Appwrite', e);
+    }
+    return null;
+};
+
 // Global Core Functions
+const getCurrentLang = () => localStorage.getItem('preferredLang') || 'ar';
+
 const getArtifactTitle = (artifact) => {
-    return artifact['name-ar'] || artifact.name || artifact.title || 'قطعة أثرية';
+    const lang = getCurrentLang();
+    return artifact[`name-${lang}`] || artifact['name-ar'] || artifact.name || artifact.title || 'قطعة أثرية';
 };
 
 const getArtifactDescription = (artifact) => {
-    return artifact['description-ar'] || artifact.description || artifact.desc || '';
+    const lang = getCurrentLang();
+    return artifact[`description-${lang}`] || artifact['description-ar'] || artifact.description || artifact.desc || '';
 };
 
 // Helpers
@@ -101,9 +124,9 @@ const renderArtifacts = (artifacts) => {
     if (!artifacts || !artifacts.length) {
         artifactsGrid.innerHTML = `
             <div class="col-12 text-center py-5">
-                <div class="mobile-info-card" style="background: rgba(255,255,255,0.05); padding: 30px; border-radius: 20px;">
-                    <h3 class="text-white">لا توجد نتائج للبحث.</h3>
-                    <p class="text-white-50">جرب البحث بكلمات أخرى</p>
+                <div class="mobile-info-card" style="background: rgba(0,0,0,0.05); padding: 30px; border-radius: 20px;">
+                    <h3 class="text-dark">لا توجد نتائج للبحث.</h3>
+                    <p class="text-secondary">جرب البحث بكلمات أخرى</p>
                 </div>
             </div>
         `;
@@ -116,15 +139,19 @@ const renderArtifacts = (artifacts) => {
         const bucketId = getBucketByType(currentMuseumCollection);
         const imageUrl = getAppwriteImageUrl(artifact.image || artifact.image_url, bucketId);
         const artifactId = artifact.$id || artifact.id || '';
-        const artifactTitle = getArtifactTitle(artifact);
+        let artifactTitle = getArtifactTitle(artifact);
         
         let subtitle = '';
+        const lang = getCurrentLang();
         if (currentMuseumCollection.includes('tourism')) {
-            subtitle = artifact['era-ar'] || artifact.era || '';
+            subtitle = artifact[`era-${lang}`] || artifact['era-ar'] || artifact.era || '';
         } else if (currentMuseumCollection.includes('art')) {
-            subtitle = artifact['author-ar'] || artifact.author || '';
+            const author = artifact[`author-${lang}`] || artifact['author-ar'] || artifact.author || (lang === 'en' ? 'Unknown Artist' : (lang === 'fr' ? 'Artiste inconnu' : 'فنان غير معروف'));
+            const serial = artifact.serial_number ? `#${artifact.serial_number}` : '';
+            artifactTitle = author;
+            subtitle = serial;
         } else if (currentMuseumCollection.includes('science')) {
-            subtitle = artifact['category-ar'] || artifact.category || '';
+            subtitle = artifact[`category-${lang}`] || artifact['category-ar'] || artifact.category || '';
         }
 
         const artifactLink = `artifact.html?id=${encodeURIComponent(artifactId)}&collection=${encodeURIComponent(currentMuseumCollection)}&museum=${encodeURIComponent(currentMuseumName)}`;
@@ -132,9 +159,17 @@ const renderArtifacts = (artifacts) => {
         const col = document.createElement('div');
         col.className = 'col-lg-3 col-md-4 col-6 mb-5';
 
+        const btn360Text = lang === 'en' ? '360° View' : (lang === 'fr' ? 'Vue 360°' : 'عرض 360°');
+        const btn360Html = artifact.glbFileId ? `
+            <button class="btn btn-sm btn-outline-light rounded-pill position-absolute" style="top: 10px; right: 10px; z-index: 5; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px);" onclick="event.preventDefault(); window.location.href='${artifactLink}&show3d=true'">
+                <i class="fas fa-cube"></i> ${btn360Text}
+            </button>
+        ` : '';
+
         col.innerHTML = `
             <a href="${artifactLink}" class="artifact-card-link" style="text-decoration:none;">
-                <div class="artifact-card">
+                <div class="artifact-card position-relative">
+                    ${btn360Html}
                     <div class="artifact-card-img">
                         <img src="${imageUrl}" alt="${artifactTitle}" loading="lazy">
                     </div>
@@ -181,22 +216,252 @@ window.initMuseumPage = async (collectionId, museumName, museumImg) => {
         }
     }
 
+    if (collectionId.includes('science')) {
+        renderScienceMuseums();
+        return;
+    }
+
     try {
-        const response = await databases.listDocuments(AppwriteConfig.databaseId, collectionId);
-        museumArtifactsCache = response.documents || [];
+        const cacheKey = `museum_${collectionId}`;
+        const cachedData = sessionStorage.getItem(cacheKey);
         
-        if (!museumArtifactsCache.length) {
+        if (cachedData) {
+            museumArtifactsCache = JSON.parse(cachedData);
+            // Fetch in background to keep cache fresh without blocking UI
+            databases.listDocuments(AppwriteConfig.databaseId, collectionId).then(response => {
+                sessionStorage.setItem(cacheKey, JSON.stringify(response.documents || []));
+            }).catch(e => console.log('Background cache update failed', e));
+        } else {
+            const response = await databases.listDocuments(AppwriteConfig.databaseId, collectionId);
+            museumArtifactsCache = response.documents || [];
+            sessionStorage.setItem(cacheKey, JSON.stringify(museumArtifactsCache));
+        }
+        
+        if (!museumArtifactsCache.length && !collectionId.includes('art')) {
             artifactsGrid.innerHTML = `
                 <div class="col-12 text-center py-5">
-                    <h3 class="text-white">لا توجد قطع أثرية متاحة حالياً في هذا المتحف.</h3>
+                    <h3 class="text-dark">لا توجد قطع أثرية متاحة حالياً في هذا المتحف.</h3>
                 </div>
             `;
             return;
         }
-        renderArtifacts(museumArtifactsCache);
+
+        // Add back button container if not exists
+        let backToHallsBtn = document.getElementById('back-to-halls-btn');
+        if (!backToHallsBtn) {
+            backToHallsBtn = document.createElement('div');
+            backToHallsBtn.id = 'back-to-halls-btn';
+            backToHallsBtn.className = 'text-center mb-4';
+            backToHallsBtn.style.display = 'none';
+            artifactsGrid.parentNode.insertBefore(backToHallsBtn, artifactsGrid);
+        }
+
+        if (collectionId.includes('art')) {
+            renderArtHalls();
+        } else {
+            renderArtifacts(museumArtifactsCache);
+        }
     } catch (error) {
         console.error('Error fetching artifacts:', error);
         artifactsGrid.innerHTML = `<div class="col-12 text-center py-5"><h3 class="text-danger">حدث خطأ أثناء تحميل البيانات.</h3></div>`;
+    }
+};
+
+window.renderArtHalls = () => {
+    const artifactsGrid = document.getElementById('artifacts-grid');
+    const backToHallsBtn = document.getElementById('back-to-halls-btn');
+    if (!artifactsGrid) return;
+    
+    if (backToHallsBtn) backToHallsBtn.style.display = 'none';
+    
+    const lang = getCurrentLang();
+    artifactsGrid.innerHTML = '';
+    const fragment = document.createDocumentFragment();
+
+    const halls = [
+        { id: 1, img: 'assets/artt-museum.jpg', ar: 'القاعة الأولى', en: 'Hall 1', fr: 'Salle 1' },
+        { id: 2, img: 'assets/artt-museum.jpg', ar: 'القاعة الثانية', en: 'Hall 2', fr: 'Salle 2' },
+        { id: 3, img: 'assets/artt-museum.jpg', ar: 'القاعة الثالثة', en: 'Hall 3', fr: 'Salle 3' },
+        { id: 4, img: 'assets/artt-museum.jpg', ar: 'القاعة الرابعة', en: 'Hall 4', fr: 'Salle 4' }
+    ];
+
+    halls.forEach(hall => {
+        const title = hall[lang] || hall.ar;
+        const col = document.createElement('div');
+        col.className = 'col-lg-3 col-md-4 col-6 mb-5';
+        
+        col.innerHTML = `
+            <a href="javascript:void(0)" onclick="filterArtByHall(${hall.id}, '${title}')" class="artifact-card-link" style="text-decoration:none;">
+                <div class="artifact-card position-relative">
+                    <div class="artifact-card-img">
+                        <img src="${hall.img}" alt="${title}" loading="lazy" style="filter: brightness(0.8);">
+                    </div>
+                    <div class="artifact-card-overlay"></div>
+                    <div class="artifact-card-body text-center">
+                        <h3 class="artifact-card-title w-100" style="font-size: 1.5rem;">${title}</h3>
+                    </div>
+                </div>
+            </a>
+        `;
+        fragment.appendChild(col);
+    });
+
+    artifactsGrid.appendChild(fragment);
+};
+
+window.renderScienceMuseums = () => {
+    const artifactsGrid = document.getElementById('artifacts-grid');
+    const backToHallsBtn = document.getElementById('back-to-halls-btn');
+    if (!artifactsGrid) return;
+    
+    if (backToHallsBtn) backToHallsBtn.style.display = 'none';
+    
+    const lang = getCurrentLang();
+    artifactsGrid.innerHTML = '';
+    const fragment = document.createDocumentFragment();
+
+    const museums = [
+        { 
+            id: 'zoology', 
+            img: 'assets/science-museum.png', 
+            ar: 'متحف علم الحيوان', 
+            en: 'Zoology Museum', 
+            fr: 'Musée de Zoologie',
+            desc_ar: 'اكتشف تنوع الكائنات الحية وتطورها. <span style="display:block; font-size:0.75rem; opacity:0.4; margin-top:5px;">* نماذج محاكاة رقمية للعرض</span>',
+            desc_en: 'Discover the diversity of living organisms. <span style="display:block; font-size:0.75rem; opacity:0.4; margin-top:5px;">* Digital simulation models</span>',
+            desc_fr: 'Découvrez la diversité des organismes vivants. <span style="display:block; font-size:0.75rem; opacity:0.4; margin-top:5px;">* Modèles de simulation numérique</span>',
+            cat_ar: 'علم الحيوان', cat_en: 'Zoology', cat_fr: 'Zoologie'
+        },
+        { 
+            id: 'biology', 
+            img: 'assets/science-museum1.png', 
+            ar: 'متحف البيولوجي', 
+            en: 'Biology Museum', 
+            fr: 'Musée de Biologie',
+            desc_ar: 'رحلة في أعماق الطبيعة والخلايا الحية. <span style="display:block; font-size:0.75rem; opacity:0.4; margin-top:5px;">* نماذج محاكاة رقمية للعرض</span>',
+            desc_en: 'A journey into the depths of nature and living cells. <span style="display:block; font-size:0.75rem; opacity:0.4; margin-top:5px;">* Digital simulation models</span>',
+            desc_fr: 'Un voyage dans les profondeurs de la nature et des cellules. <span style="display:block; font-size:0.75rem; opacity:0.4; margin-top:5px;">* Modèles de simulation numérique</span>',
+            cat_ar: 'البيولوجيا', cat_en: 'Biology', cat_fr: 'Biologie'
+        }
+    ];
+
+    museums.forEach(museum => {
+        const title = museum[lang] || museum.ar;
+        const desc = museum[`desc_${lang}`] || museum.desc_ar;
+        const cat = museum[`cat_${lang}`] || museum.cat_ar;
+        const exploreText = lang === 'en' ? 'Explore Pieces' : (lang === 'fr' ? 'Explorer les pièces' : 'استكشف القطع');
+        
+        const col = document.createElement('div');
+        col.className = 'col-lg-5 col-md-6 col-12 mb-5 mx-auto';
+        
+        col.innerHTML = `
+            <div class="museum-card" onclick="showScienceComingSoon('${title}')" style="min-height: 450px; height: 100%; background: #1e293b; border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease;" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 12px 25px rgba(0,0,0,0.4)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 8px 15px rgba(0,0,0,0.2)';">
+                <div style="width: 100%; height: 250px; overflow: hidden; flex-shrink: 0;">
+                    <img src="${museum.img}" alt="${title}" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease;" loading="lazy" onmouseover="this.style.transform='scale(1.05)';" onmouseout="this.style.transform='scale(1)';">
+                </div>
+                <div style="padding: 20px 25px; flex-grow: 1; display: flex; flex-direction: column; justify-content: center; text-align: right;">
+                    <span style="color: #d4af37; font-size: 0.9rem; font-weight: 700; display: block; margin-bottom: 8px;">${cat}</span>
+                    <h3 style="color: #ffffff; font-size: 1.5rem; font-weight: 800; margin-bottom: 12px;">${title}</h3>
+                    <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.95rem; line-height: 1.6; margin-bottom: 20px;">${desc}</p>
+                    <span style="color: #d4af37; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; font-size: 1rem; margin-top: auto;">
+                        <span>${exploreText}</span> 
+                        <i class="fas fa-arrow-left"></i>
+                    </span>
+                </div>
+            </div>
+        `;
+        fragment.appendChild(col);
+    });
+
+    artifactsGrid.appendChild(fragment);
+};
+
+window.showScienceComingSoon = (museumTitle) => {
+    const artifactsGrid = document.getElementById('artifacts-grid');
+    const backToHallsBtn = document.getElementById('back-to-halls-btn');
+    const lang = getCurrentLang();
+    
+    const backBtnText = lang === 'en' ? 'Back to Museums' : (lang === 'fr' ? 'Retour aux Musées' : 'العودة للمتاحف');
+    if (backToHallsBtn) {
+        backToHallsBtn.innerHTML = `
+            <button class="btn btn-outline-light rounded-pill px-4 py-2" onclick="renderScienceMuseums()">
+                <i class="fas fa-arrow-right me-2"></i> ${backBtnText}
+            </button>
+            <h3 class="text-white mt-3">${museumTitle}</h3>
+        `;
+        backToHallsBtn.style.display = 'block';
+    }
+
+    const targetDate = new Date();
+    targetDate.setDate(targetDate.getDate() + 2);
+    
+    const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+    const formattedDate = targetDate.toLocaleDateString(
+        lang === 'en' ? 'en-US' : (lang === 'fr' ? 'fr-FR' : 'ar-EG'), 
+        dateOptions
+    );
+
+    const soonMsg = lang === 'en' ? `The museum pieces will be available soon by ${formattedDate}` : 
+                    (lang === 'fr' ? `Les pièces du musée seront bientôt disponibles d'ici le ${formattedDate}` : 
+                    `سيتم توفير قطع المتحف قريباً بحلول ${formattedDate}`);
+
+    artifactsGrid.innerHTML = `
+        <div class="col-12 text-center py-5">
+            <div class="mobile-info-card" style="background: rgba(0,0,0,0.05); padding: 50px 30px; border-radius: 20px;">
+                <i class="fas fa-tools text-warning mb-4" style="font-size: 4rem;"></i>
+                <h2 class="text-dark mb-3" style="font-weight: bold;">${soonMsg}</h2>
+                <p class="text-secondary">نعمل بجد لإضافة القطع الخاصة بهذا المتحف لتجربة مميزة.</p>
+            </div>
+        </div>
+    `;
+};
+
+window.filterArtByHall = (hallId, hallTitle) => {
+    const lang = getCurrentLang();
+    const filtered = museumArtifactsCache.filter(a => {
+        const artIdVal = a['art-id'] || a.art_id || a.artId;
+        return String(artIdVal) === String(hallId);
+    });
+    
+    const backBtnText = lang === 'en' ? 'Back to Halls' : (lang === 'fr' ? 'Retour aux Salles' : 'العودة للقاعات');
+    const backToHallsBtn = document.getElementById('back-to-halls-btn');
+    if (backToHallsBtn) {
+        backToHallsBtn.innerHTML = `
+            <button class="btn btn-outline-light rounded-pill px-4 py-2" onclick="renderArtHalls()">
+                <i class="fas fa-arrow-right me-2"></i> ${backBtnText}
+            </button>
+            <h3 class="text-white mt-3">${hallTitle}</h3>
+        `;
+        backToHallsBtn.style.display = 'block';
+    }
+    
+    if (!filtered.length) {
+        const artifactsGrid = document.getElementById('artifacts-grid');
+        
+        const targetDate = new Date();
+        targetDate.setDate(targetDate.getDate() + 2);
+        
+        const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+        const formattedDate = targetDate.toLocaleDateString(
+            lang === 'en' ? 'en-US' : (lang === 'fr' ? 'fr-FR' : 'ar-EG'), 
+            dateOptions
+        );
+
+        const soonMsg = lang === 'en' ? `The museum pieces will be available soon by ${formattedDate}` : 
+                        (lang === 'fr' ? `Les pièces du musée seront bientôt disponibles d'ici le ${formattedDate}` : 
+                        `سيتم توفير قطع القاعة قريباً بحلول ${formattedDate}`);
+
+        artifactsGrid.innerHTML = `
+            <div class="col-12 text-center py-5">
+                <div class="mobile-info-card" style="background: rgba(0,0,0,0.05); padding: 50px 30px; border-radius: 20px;">
+                    <i class="fas fa-tools text-warning mb-4" style="font-size: 4rem;"></i>
+                    <h2 class="text-dark mb-3" style="font-weight: bold;">${soonMsg}</h2>
+                    <p class="text-secondary">${lang === 'en' ? 'We are working hard to add pieces to this hall.' : (lang === 'fr' ? 'Nous travaillons dur pour ajouter des pièces à cette salle.' : 'نعمل بجد لإضافة القطع الخاصة بهذه القاعة لتجربة مميزة.')}</p>
+                </div>
+            </div>
+        `;
+    } else {
+        renderArtifacts(filtered);
     }
 };
 
@@ -219,19 +484,45 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
     if (artifactContent) artifactContent.style.display = 'none';
 
     try {
-        const artifact = await databases.getDocument(AppwriteConfig.databaseId, collectionId, documentId);
+        const cacheKey = `artifact_${collectionId}_${documentId}`;
+        const cachedData = sessionStorage.getItem(cacheKey);
+        let artifact;
         
-        const name = getArtifactTitle(artifact);
-        if (artifactNameHero) artifactNameHero.innerText = name;
-        
-        let subtitle = '';
-        if (collectionId.includes('tourism')) {
-            subtitle = artifact['era-ar'] || artifact.era || 'عصر غير محدد';
-        } else if (collectionId.includes('art')) {
-            subtitle = artifact['author-ar'] || artifact.author || 'فنان غير معروف';
-        } else if (collectionId.includes('science')) {
-            subtitle = artifact['category-ar'] || artifact.category || 'تصنيف علمي';
+        if (cachedData) {
+            artifact = JSON.parse(cachedData);
+            databases.getDocument(AppwriteConfig.databaseId, collectionId, documentId).then(res => {
+                sessionStorage.setItem(cacheKey, JSON.stringify(res));
+            }).catch(e => console.log('Background cache update failed', e));
+        } else {
+            const museumCacheKey = `museum_${collectionId}`;
+            const museumCache = sessionStorage.getItem(museumCacheKey);
+            if (museumCache) {
+                const artifactsList = JSON.parse(museumCache);
+                artifact = artifactsList.find(a => a.$id === documentId || a.id === documentId);
+            }
+            
+            if (!artifact) {
+                artifact = await databases.getDocument(AppwriteConfig.databaseId, collectionId, documentId);
+            }
+            sessionStorage.setItem(cacheKey, JSON.stringify(artifact));
         }
+        const lang = getCurrentLang();
+        
+        let name = getArtifactTitle(artifact);
+        let subtitle = '';
+
+        if (collectionId.includes('tourism')) {
+            subtitle = artifact[`era-${lang}`] || artifact['era-ar'] || artifact.era || 'عصر غير محدد';
+        } else if (collectionId.includes('art')) {
+            const hallName = artifact[`nameh-${lang}`] || artifact['nameh-ar'] || artifact.nameh || (lang === 'en' ? `Hall ${artifact['art-id']}` : `القاعة ${artifact['art-id']}`);
+            const author = artifact[`author-${lang}`] || artifact['author-ar'] || artifact.author || (lang === 'en' ? 'Unknown Artist' : (lang === 'fr' ? 'Artiste inconnu' : 'فنان غير معروف'));
+            name = hallName;
+            subtitle = author;
+        } else if (collectionId.includes('science')) {
+            subtitle = artifact[`category-${lang}`] || artifact['category-ar'] || artifact.category || 'تصنيف علمي';
+        }
+        
+        if (artifactNameHero) artifactNameHero.innerText = name;
         if (artifactSubtitleHero) artifactSubtitleHero.innerText = subtitle;
 
         const bucketId = getBucketByType(collectionId);
@@ -241,18 +532,64 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
             setupImageFallback(artifactImg, artifact.image || artifact.image_url);
         }
 
-        if (artifactDesc) artifactDesc.innerText = getArtifactDescription(artifact) || 'لا يوجد وصف متاح.';
+        const emptyDesc = lang === 'en' ? 'No description available.' : (lang === 'fr' ? 'Aucune description disponible.' : 'لا يوجد وصف متاح.');
+        if (artifactDesc) artifactDesc.innerText = getArtifactDescription(artifact) || emptyDesc;
+
+        // Translate section titles if they exist
+        const sectionTitles = document.querySelectorAll('.section-title');
+        if (sectionTitles.length >= 2) {
+            sectionTitles[0].innerText = lang === 'en' ? 'Identification Card' : (lang === 'fr' ? 'Carte d\'identité' : 'بطاقة التعريف');
+            sectionTitles[1].innerText = lang === 'en' ? 'About this piece' : (lang === 'fr' ? 'À propos de cette pièce' : 'عن هذه القطعة');
+        }
+        const audioTitle = document.querySelector('#audio-section h3');
+        if (audioTitle) {
+            audioTitle.innerText = lang === 'en' ? 'Listen to the Audio Guide' : (lang === 'fr' ? 'Écouter le guide audio' : 'استمع الي الوصف الصوتي');
+        }
+
+        // Translations for labels based on language
+        // Translations for labels based on language
+        // Translations for labels based on language
+        const labels = {
+            ar: { museum: 'المتحف', category: 'التصنيف', era: 'العصر', location: 'مكان الاكتشاف', material: 'المادة', dimensions: 'الأبعاد', author: 'الفنان', serial: 'الرقم التسلسلي', size: 'المقاسات', type: 'الخامة / النوع', hall: 'القاعة' },
+            en: { museum: 'Museum', category: 'Category', era: 'Era', location: 'Discovery Location', material: 'Material', dimensions: 'Dimensions', author: 'Artist', serial: 'Serial Number', size: 'Size', type: 'Type', hall: 'Hall' },
+            fr: { museum: 'Musée', category: 'Catégorie', era: 'Époque', location: 'Lieu de découverte', material: 'Matériel', dimensions: 'Dimensions', author: 'Artiste', serial: 'Numéro de série', size: 'Taille', type: 'Type', hall: 'Salle' }
+        };
+        const l = labels[lang] || labels.ar;
 
         // Populate Info Grid
         if (infoGrid) {
             infoGrid.innerHTML = '';
             const fields = [
-                { label: 'المتحف', value: museumName, icon: 'fas fa-museum' },
-                { label: 'التصنيف', value: collectionId.includes('tourism') ? 'آثار' : (collectionId.includes('art') ? 'فن' : 'علوم'), icon: 'fas fa-tags' }
+                { label: l.museum, value: museumName, icon: 'fas fa-museum' },
+                { label: l.category, value: collectionId.includes('tourism') ? (lang==='en'?'Antiquities':(lang==='fr'?'Antiquités':'آثار')) : (collectionId.includes('art') ? (lang==='en'?'Art':(lang==='fr'?'Art':'فن')) : (lang==='en'?'Science':(lang==='fr'?'Science':'علوم'))), icon: 'fas fa-tags' }
             ];
             if (collectionId.includes('tourism')) {
-                if (artifact['era-ar']) fields.push({ label: 'العصر', value: artifact['era-ar'], icon: 'fas fa-history' });
-                if (artifact['location-ar']) fields.push({ label: 'الموقع المستكشف', value: artifact['location-ar'], icon: 'fas fa-map-marker-alt' });
+                const eraVal = artifact[`era-${lang}`] || artifact['era-ar'];
+                if (eraVal) fields.push({ label: l.era, value: eraVal, icon: 'fas fa-history' });
+                
+                const locVal = artifact[`location-${lang}`] || artifact['location-ar'];
+                if (locVal) fields.push({ label: l.location, value: locVal, icon: 'fas fa-map-marker-alt' });
+
+                const matVal = artifact[`material-${lang}`] || artifact['material-ar'];
+                if (matVal) fields.push({ label: l.material, value: matVal, icon: 'fas fa-cube' });
+
+                const dimVal = artifact[`dimensions-${lang}`] || artifact['dimensions-ar'];
+                if (dimVal) fields.push({ label: l.dimensions, value: dimVal, icon: 'fas fa-ruler-combined' });
+            } else if (collectionId.includes('art')) {
+                const authorVal = artifact[`author-${lang}`] || artifact['author-ar'];
+                if (authorVal) fields.push({ label: l.author, value: authorVal, icon: 'fas fa-palette' });
+
+                const typeVal = artifact[`type-${lang}`] || artifact['type-ar'];
+                if (typeVal) fields.push({ label: l.type, value: typeVal, icon: 'fas fa-paint-brush' });
+
+                const sizeVal = artifact[`size-${lang}`] || artifact['size-ar'];
+                if (sizeVal) fields.push({ label: l.size, value: sizeVal, icon: 'fas fa-ruler-combined' });
+
+                const hallVal = artifact[`nameh-${lang}`] || artifact['nameh-ar'] || artifact.nameh || artifact['art-id'];
+                if (hallVal) fields.push({ label: l.hall, value: hallVal, icon: 'fas fa-door-open' });
+
+                const serialVal = artifact.serial_number;
+                if (serialVal) fields.push({ label: l.serial, value: serialVal, icon: 'fas fa-hashtag' });
             }
             fields.forEach(f => {
                 infoGrid.innerHTML += `
@@ -268,7 +605,7 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
         }
 
         // Audio Guide Logic
-        const audioFileId = artifact['audio-ar'] || artifact.audio_ar || '';
+        const audioFileId = artifact[`audio-${lang}`] || artifact[`audio_${lang}`] || artifact['audio-ar'] || artifact.audio_ar || '';
         if (audioFileId && audioSection && audioPlayer) {
             const audioBucketId = '69f870c0000eb3969260';
             const audioUrl = getAppwriteImageUrl(audioFileId, audioBucketId);
@@ -332,13 +669,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Navbar Scroll Effect
     const navbar = document.querySelector('.navbar');
+    let isScrolling = false;
     window.addEventListener('scroll', () => {
-        if (window.scrollY > 50) {
-            navbar.classList.add('scrolled');
-        } else {
-            navbar.classList.remove('scrolled');
+        if (!isScrolling && navbar) {
+            window.requestAnimationFrame(() => {
+                if (window.scrollY > 50) {
+                    navbar.classList.add('scrolled');
+                } else {
+                    navbar.classList.remove('scrolled');
+                }
+                isScrolling = false;
+            });
+            isScrolling = true;
         }
-    });
+    }, { passive: true });
 
     const userInput = document.getElementById('user-input');
     const sendBtn = document.getElementById('send-btn');
@@ -372,7 +716,13 @@ async function handleChat() {
     thinking.innerText = 'جاري التفكير...';
     chatMessages.appendChild(thinking);
 
-    const API_KEY = 'AIzaSyCrTSLql-6iD0V4FhgKN3dTLnGJb9ln8eE';
+    const API_KEY = await window.getGeminiApiKey();
+    if (!API_KEY) {
+        thinking.remove();
+        addMsg('عذراً، لم أستطع جلب مفتاح API للذكاء الاصطناعي حالياً.', 'system');
+        return;
+    }
+
     const SYSTEM_PROMPT = "أنت Ego Pro، مساعد ذكي خبير في متاحف جامعة المنيا. أجب باحترافية وبشكل مفصل باللغة العربية.";
 
     try {
@@ -407,47 +757,354 @@ async function handleChat() {
     }
 }
 
-// Smart Services Activation Logic
-window.handleCodeActivation = async () => {
-    const codeInput = document.getElementById('activation-code-input');
-    if (!codeInput) return;
-    
-    const code = codeInput.value.trim();
-    if (!code) {
-        alert('الرجاء إدخال كود التفعيل.');
-        return;
+// Theme and Language Toggle Logic
+document.addEventListener('DOMContentLoaded', () => {
+    const themeToggle = document.getElementById('theme-toggle');
+    const langSwitches = document.querySelectorAll('.lang-switch');
+    const currentLangText = document.getElementById('current-lang-text');
+
+    // Theme Toggle
+    if (themeToggle) {
+        // Check saved theme
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        themeToggle.innerHTML = savedTheme === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            themeToggle.innerHTML = newTheme === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+        });
     }
-    
-    try {
-        // Query the activation_codes collection
-        const response = await databases.listDocuments(
-            AppwriteConfig.databaseId, 
-            AppwriteConfig.collections.activation,
-            [
-                Appwrite.Query.equal('code', code)
-            ]
-        );
-        
-        if (response.documents.length > 0) {
-            const doc = response.documents[0];
-            if (doc.isUsed) {
-                alert('هذا الكود مستخدم بالفعل.');
-            } else {
-                // Mark as used
-                await databases.updateDocument(
-                    AppwriteConfig.databaseId,
-                    AppwriteConfig.collections.activation,
-                    doc.$id,
-                    { isUsed: true }
-                );
-                alert('تم التفعيل بنجاح! جميع الخدمات الذكية متاحة الآن مدى الحياة.');
-                codeInput.value = '';
+
+    // Language Toggle (Basic setup)
+    if (langSwitches.length > 0) {
+        const translations = {
+            en: {
+                "nav_home": "Home",
+                "nav_museums": "Museums",
+                "nav_features": "Features",
+                "nav_assistant": "AI Assistant",
+                "nav_download": "Download App",
+                "brand_subtitle": "Minia University Museums",
+                "hero_badge": "Future of Digital Tourism",
+                "hero_slogan": "The past... like never seen before",
+                "hero_title_1": "Where",
+                "hero_title_2": "Art & Science",
+                "hero_title_3": "Meet",
+                "hero_desc": "Explore Minia University treasures through Mat7afi. A unique digital experience combining modern art, nature secrets, and deep history.",
+                "btn_start": "Start Exploring",
+                "btn_tour": "Museum Tour",
+                "bottom_home": "Home",
+                "bottom_museums": "Museums",
+                "bottom_features": "Features",
+                "bottom_assistant": "Assistant",
+                "museums_title": "Our Featured Museums",
+                "museums_subtitle": "Three cultural destinations, one integrated experience",
+                "tourism_cat": "Antiquities",
+                "tourism_title": "Tourism Faculty Museum",
+                "tourism_desc": "Displays models simulating ancient Egyptian eras, from Pharaonic to Islamic.",
+                "explore_pieces": "Explore Artifacts",
+                "science_cat": "Science",
+                "science_title": "Science Faculty Museums",
+                "science_desc": "A journey into the world of nature and geological history through hundreds of rare specimens.",
+                "art_cat": "Arts",
+                "art_title": "Modern Art Museum",
+                "art_desc": "Features a unique collection of contemporary paintings and sculptures reflecting Egyptian creativity.",
+                "gallery_title": "Inside the App",
+                "gallery_subtitle": "Modern interfaces designed for your comfort",
+                "feat_title": "Technologies Beyond Expectations",
+                "feat_desc": "Mat7afi app is not just a tourist guide, it's your companion on a comprehensive journey exploring art, science, and nature.",
+                "feat_qr": "Smart QR Scanner",
+                "feat_qr_desc": "Identify paintings, scientific specimens, and artifacts in seconds.",
+                "feat_audio": "Comprehensive Audio Guide",
+                "feat_audio_desc": "Enjoy a detailed, high-quality audio explanation of all museum collections.",
+                "feat_ai": "AI Chatbot",
+                "feat_ai_desc": "Instant interactive chat to answer all your questions about any artifact or specimen.",
+                "feat_store": "Online Store",
+                "feat_store_desc": "Soon you'll be able to purchase souvenirs and miniature replicas of our masterpieces.",
+                "feat_ar": "Augmented Reality (AR)",
+                "feat_ar_desc": "View 3D models of artifacts and scientific specimens in your own environment.",
+                "soon": "Soon",
+                "ai_status": "Ego Pro is Online",
+                "ai_desc": "Chat with our smart assistant powered by OpenAI for accurate and exclusive information.",
+                "ai_active": "Active AI System",
+                "ai_welcome": "Welcome! I am Ego Pro, your smart guide in Minia University Museums. How can I help you today?",
+                "ai_placeholder": "Ask me about any artifact...",
+                "download_title": "Carry the Museums in your Pocket",
+                "download_desc": "Get the full experience through the official app. Available soon on official stores and available now for direct download.",
+                "download_direct": "Direct Download (Device Versions)",
+                "download_direct_desc": "You can download the appropriate file for your device and install it directly.",
+                "footer_desc": "The official digital project to document and display the treasures of Minia University museums using the latest technologies.",
+                "footer_links_title": "Quick Links",
+                "footer_privacy": "Privacy Policy",
+                "footer_terms": "Terms and Conditions",
+                "footer_follow": "Follow Us",
+                "footer_rights": "© 2026 All Rights Reserved to Minia University",
+                "footer_dev": "Developed by",
+                "gallery_nav": "Museum Gallery",
+                "gallery_page_title": "Museum Gallery",
+                "gallery_page_subtitle": "Explore images, artifact cards, and digital files from Minia University Museums.",
+                "gallery_loading": "Loading Gallery...",
+                "gallery_empty_title": "No Results Found",
+                "gallery_empty_desc": "Sorry, no items match your search or selected filters. Try changing your search terms or select 'All'.",
+                "fav_title": "Favorites",
+                "fav_subtitle": "Your private list of saved items and files to revisit later.",
+                "fav_loading": "Loading Favorites...",
+                "fav_empty_title": "No Items in Favorites Yet",
+                "fav_empty_desc": "You can explore our comprehensive digital gallery and save the images and files that interest you to easily revisit them later.",
+                "fav_empty_btn": "Browse Gallery Now",
+                "filter_all": "All",
+                "filter_tourism": "Tourism Faculty Museum",
+                "filter_science": "Science Museum",
+                "filter_art": "Modern Art Museum",
+                "filter_images": "Images",
+                "filter_cards": "Artifact Cards",
+                "filter_files": "Files"
+            },
+            ar: {
+                "nav_home": "الرئيسية",
+                "nav_museums": "متاحفنا",
+                "nav_features": "المميزات",
+                "nav_assistant": "المساعد الذكي",
+                "nav_download": "تحميل التطبيق",
+                "brand_subtitle": "متاحف جامعة المنيا",
+                "hero_badge": "مستقبل السياحة الرقمية",
+                "hero_slogan": "الماضي... بشكل عمره ما اتشاف",
+                "hero_title_1": "حيث يلتقي",
+                "hero_title_2": "الفن والعلوم",
+                "hero_title_3": "",
+                "hero_desc": "اكتشف كنوز جامعة المنيا من خلال تطبيق Mat7afi. تجربة فريدة تجمع بين سحر الفن الحديث، أسرار الطبيعة والعلوم، وعمق التاريخ الأثري في منصة واحدة متطورة.",
+                "btn_start": "ابدأ الاستكشاف الآن",
+                "btn_tour": "جولة في المتاحف",
+                "bottom_home": "الرئيسية",
+                "bottom_museums": "متاحفنا",
+                "bottom_features": "المميزات",
+                "bottom_assistant": "المساعد",
+                "museums_title": "متاحفنا المتميزة",
+                "museums_subtitle": "ثلاث وجهات ثقافية، تجربة واحدة متكاملة",
+                "tourism_cat": "الآثار",
+                "tourism_title": "متحف كلية السياحة",
+                "tourism_desc": "يعرض نماذج تحاكي العصور المصرية القديمة، من الفرعونية إلى الإسلامية.",
+                "explore_pieces": "استكشف القطع",
+                "science_cat": "العلوم",
+                "science_title": "متاحف كلية العلوم",
+                "science_desc": "رحلة في عالم الطبيعة والتاريخ الجيولوجي عبر مئات العينات النادرة والفريدة.",
+                "art_cat": "الفنون",
+                "art_title": "متحف الفن الحديث",
+                "art_desc": "يضم مجموعة فريدة من اللوحات والمنحوتات المعاصرة التي تعكس الإبداع المصري.",
+                "gallery_title": "نظرة داخل التطبيق",
+                "gallery_subtitle": "واجهات عصرية مصممة لراحتك",
+                "feat_title": "تقنيات تفوق التوقعات",
+                "feat_desc": "تطبيق Mat7afi ليس مجرد دليل سياحي، بل هو رفيقك في رحلة استكشاف شاملة للفن والعلوم والطبيعة.",
+                "feat_qr": "ماسح QR ذكي",
+                "feat_qr_desc": "تعرف على اللوحات الفنية، العينات العلمية، والقطع الأثرية في ثوانٍ.",
+                "feat_audio": "دليل صوتي شامل",
+                "feat_audio_desc": "استمتع بشرح صوتي مفصل لكل مقتنيات المتاحف الثلاثة بأعلى جودة.",
+                "feat_ai": "مساعد ذكي (AI Chatbot)",
+                "feat_ai_desc": "دردشة تفاعلية فورية للإجابة على جميع تساؤلاتك حول أي قطعة أثرية أو علمية.",
+                "feat_store": "المتجر الإلكتروني",
+                "feat_store_desc": "قريباً ستتمكن من اقتناء هدايا تذكارية ونسخ مصغرة من روائعنا الفنية.",
+                "feat_ar": "واقع معزز (AR)",
+                "feat_ar_desc": "مشاهدة ثلاثية الأبعاد للقطع الأثرية والعينات العلمية في بيئتك الخاصة.",
+                "soon": "قريباً",
+                "ai_status": "Ego Pro متصل الآن",
+                "ai_desc": "تحدث مع المساعد الذكي المدعوم بـ OpenAI للحصول على معلومات دقيقة وحصرية عن أي مقتنيات أثرية.",
+                "ai_active": "نظام نشط بالذكاء الاصطناعي",
+                "ai_welcome": "مرحباً بك! أنا Ego Pro مرشدك الذكي في متاحف جامعة المنيا. كيف يمكنني مساعدتك اليوم؟",
+                "ai_placeholder": "اسألني عن أي قطعة أثرية...",
+                "download_title": "احمل المتاحف في جيبك",
+                "download_desc": "احصل على التجربة الكاملة عبر التطبيق الرسمي. متوفر قريباً على المتاجر الرسمية ومتاح الآن للتحميل المباشر.",
+                "download_direct": "تحميل مباشر (إصدارات الأجهزة)",
+                "download_direct_desc": "يمكنك تحميل الملف المناسب لنوع جهازك وتثبيته مباشرة.",
+                "footer_desc": "المشروع الرقمي الرسمي لتوثيق وعرض كنوز متاحف جامعة المنيا باستخدام أحدث التقنيات.",
+                "footer_links_title": "روابط سريعة",
+                "footer_privacy": "سياسة الخصوصية",
+                "footer_terms": "الشروط والأحكام",
+                "footer_follow": "تابعنا",
+                "footer_rights": "© 2026 جميع الحقوق محفوظة لجامعة المنيا",
+                "footer_dev": "تم التطوير بواسطة",
+                "gallery_nav": "معرض متحفي",
+                "gallery_page_title": "معرض متحفي",
+                "gallery_page_subtitle": "استكشف الصور والبطاقات الأثرية والملفات الرقمية الخاصة بمتاحف جامعة المنيا.",
+                "gallery_loading": "جاري تحميل المعرض...",
+                "gallery_empty_title": "لم يتم العثور على نتائج",
+                "gallery_empty_desc": "عفواً، لا توجد عناصر مطابقة لبحثك أو الفلاتر المحددة. جرب تغيير كلمات البحث أو اختر \"الكل\" لعرض كافة المقتنيات.",
+                "fav_title": "المفضلة",
+                "fav_subtitle": "قائمتك الخاصة بالعناصر والملفات التي قمت بحفظها للرجوع إليها لاحقاً.",
+                "fav_loading": "جاري تحميل المفضلة...",
+                "fav_empty_title": "لم تقم بإضافة أي عناصر للمفضلة بعد",
+                "fav_empty_desc": "يمكنك استكشاف معرضنا الرقمي الشامل وإضافة الصور والملفات الأثرية التي تثير اهتمامك للرجوع إليها لاحقاً بكل سهولة.",
+                "fav_empty_btn": "تصفح المعرض الآن",
+                "filter_all": "الكل",
+                "filter_tourism": "متحف كلية السياحة والفنادق",
+                "filter_science": "متحف العلوم",
+                "filter_art": "متحف الفن الحديث",
+                "filter_images": "الصور",
+                "filter_cards": "البطاقات الأثرية",
+                "filter_files": "الملفات"
+            },
+
+            fr: {
+                "nav_home": "Accueil",
+                "nav_museums": "Musées",
+                "nav_features": "Fonctionnalités",
+                "nav_assistant": "Assistant IA",
+                "nav_download": "Télécharger",
+                "brand_subtitle": "Musées de l'Université de Minia",
+                "hero_badge": "L'Avenir du Tourisme Numérique",
+                "hero_slogan": "Le passé... comme jamais vu auparavant",
+                "hero_title_1": "Où",
+                "hero_title_2": "Art et Science",
+                "hero_title_3": "Se Rencontrent",
+                "hero_desc": "Découvrez les trésors de l'Université de Minia via Mat7afi. Une expérience numérique unique alliant art moderne, nature et histoire profonde.",
+                "btn_start": "Commencer l'Exploration",
+                "btn_tour": "Visite du Musée",
+                "bottom_home": "Accueil",
+                "bottom_museums": "Musées",
+                "bottom_features": "Fonctions",
+                "bottom_assistant": "Assistant",
+                "museums_title": "Nos Musées en Vedette",
+                "museums_subtitle": "Trois destinations culturelles, une expérience intégrée",
+                "tourism_cat": "Antiquités",
+                "tourism_title": "Musée de la Faculté de Tourisme",
+                "tourism_desc": "Expose des modèles simulant les époques de l'Égypte antique, de l'époque pharaonique à l'islamique.",
+                "explore_pieces": "Explorer les Artefacts",
+                "science_cat": "Science",
+                "science_title": "Musées de la Faculté des Sciences",
+                "science_desc": "Un voyage dans le monde de la nature et de l'histoire géologique à travers des centaines de spécimens rares.",
+                "art_cat": "Arts",
+                "art_title": "Musée d'Art Moderne",
+                "art_desc": "Présente une collection unique de peintures et sculptures contemporaines reflétant la créativité égyptienne.",
+                "gallery_title": "À l'Intérieur de l'App",
+                "gallery_subtitle": "Des interfaces modernes conçues pour votre confort",
+                "feat_title": "Des Technologies au-delà des Attentes",
+                "feat_desc": "L'application Mat7afi n'est pas seulement un guide, c'est votre compagnon pour un voyage complet.",
+                "feat_qr": "Scanner QR Intelligent",
+                "feat_qr_desc": "Identifiez peintures, spécimens scientifiques et artefacts en quelques secondes.",
+                "feat_audio": "Guide Audio Complet",
+                "feat_audio_desc": "Profitez d'une explication audio détaillée et de haute qualité de toutes les collections.",
+                "feat_ai": "Chatbot IA",
+                "feat_ai_desc": "Chat interactif instantané pour répondre à toutes vos questions.",
+                "feat_store": "Boutique en Ligne",
+                "feat_store_desc": "Bientôt, vous pourrez acheter des souvenirs et des répliques miniatures de nos chefs-d'œuvre.",
+                "feat_ar": "Réalité Augmentée (RA)",
+                "feat_ar_desc": "Visualisez des modèles 3D d'artefacts et de spécimens dans votre propre environnement.",
+                "soon": "Bientôt",
+                "ai_status": "Ego Pro est En Ligne",
+                "ai_desc": "Discutez avec notre assistant intelligent propulsé par OpenAI pour des informations précises.",
+                "ai_active": "Système IA Actif",
+                "ai_welcome": "Bienvenue ! Je suis Ego Pro, votre guide intelligent. Comment puis-je vous aider aujourd'hui ?",
+                "ai_placeholder": "Interrogez-moi sur n'importe quel artefact...",
+                "download_title": "Transportez les Musées dans votre Poche",
+                "download_desc": "Obtenez l'expérience complète via l'application officielle. Disponible bientôt.",
+                "download_direct": "Téléchargement Direct",
+                "download_direct_desc": "Vous pouvez télécharger le fichier approprié pour votre appareil et l'installer directement.",
+                "footer_desc": "Le projet numérique officiel pour documenter et exposer les trésors des musées de l'Université de Minia.",
+                "footer_links_title": "Liens Rapides",
+                "footer_privacy": "Politique de Confidentialité",
+                "footer_terms": "Conditions Générales",
+                "footer_follow": "Suivez-nous",
+                "footer_rights": "© 2026 Tous Droits Réservés à l'Université de Minia",
+                "footer_dev": "Développé par",
+                "gallery_nav": "Galerie du Musée",
+                "gallery_page_title": "Galerie du Musée",
+                "gallery_page_subtitle": "Explorez des images, des cartes et des fichiers numériques.",
+                "gallery_loading": "Chargement de la galerie...",
+                "gallery_empty_title": "Aucun résultat trouvé",
+                "gallery_empty_desc": "Désolé, aucun élément ne correspond à votre recherche.",
+                "fav_title": "Favoris",
+                "fav_subtitle": "Votre liste privée d'éléments enregistrés.",
+                "fav_loading": "Chargement des favoris...",
+                "fav_empty_title": "Aucun élément dans les favoris",
+                "fav_empty_desc": "Vous pouvez explorer notre galerie numérique et enregistrer des images.",
+                "fav_empty_btn": "Parcourir la galerie",
+                "filter_all": "Tout",
+                "filter_tourism": "Tourisme",
+                "filter_science": "Science",
+                "filter_art": "Art",
+                "filter_images": "Images",
+                "filter_cards": "Cartes",
+                "filter_files": "Fichiers"
             }
-        } else {
-            alert('الكود غير صحيح.');
-        }
-    } catch (error) {
-        console.error('Error activating code:', error);
-        alert('حدث خطأ أثناء الاتصال بالسيرفر. يرجى المحاولة لاحقاً.');
+        };
+
+        const updateLanguage = (lang) => {
+            document.documentElement.lang = lang;
+            document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+            if (currentLangText) {
+                const langNames = { ar: 'العربية', en: 'English', es: 'Español', fr: 'Français', it: 'Italiano' };
+                currentLangText.innerText = langNames[lang] || 'العربية';
+            }
+            langSwitches.forEach(sw => {
+                if(sw.getAttribute('data-lang') === lang) {
+                    sw.classList.add('active');
+                } else {
+                    sw.classList.remove('active');
+                }
+            });
+            
+            // Apply translations
+            const elements = document.querySelectorAll('[data-i18n]');
+            elements.forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[lang] && translations[lang][key] !== undefined) {
+                    el.innerText = translations[lang][key];
+                }
+            });
+            
+            // Translate placeholders
+            const inputs = document.querySelectorAll('[data-i18n-placeholder]');
+            inputs.forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (translations[lang] && translations[lang][key] !== undefined) {
+                    el.placeholder = translations[lang][key];
+                }
+            });
+
+            // Switch Bootstrap CSS based on language
+            const bsLinkLtr = document.getElementById('bootstrap-css-ltr');
+            const bsLinkRtl = document.getElementById('bootstrap-css-rtl');
+            if (bsLinkLtr && bsLinkRtl) {
+                bsLinkLtr.disabled = lang === 'ar';
+                bsLinkRtl.disabled = lang !== 'ar';
+            } else {
+                const bsLink = document.getElementById('bootstrap-css');
+                if (bsLink) {
+                    const newHref = lang === 'ar' 
+                        ? 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css' 
+                        : 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css';
+                    if (bsLink.getAttribute('href') !== newHref) {
+                        bsLink.href = newHref;
+                    }
+                }
+            }
+            
+            // Adjust icons direction if needed
+            const heroArrow = document.getElementById('hero-arrow');
+            if (heroArrow) {
+                heroArrow.className = lang === 'ar' ? 'fas fa-arrow-left ms-2' : 'fas fa-arrow-right ms-2';
+            }
+            
+            const cardArrows = document.querySelectorAll('.arrow-dir');
+            cardArrows.forEach(arrow => {
+                arrow.className = lang === 'ar' ? 'fas fa-arrow-left arrow-dir' : 'fas fa-arrow-right arrow-dir';
+            });
+        };
+
+        // Default to Arabic
+        const savedLang = localStorage.getItem('lang') || 'ar';
+        updateLanguage(savedLang);
+
+        langSwitches.forEach(sw => {
+            sw.addEventListener('click', (e) => {
+                e.preventDefault();
+                const newLang = sw.getAttribute('data-lang');
+                localStorage.setItem('lang', newLang);
+                updateLanguage(newLang);
+            });
+        });
     }
-};
+});
