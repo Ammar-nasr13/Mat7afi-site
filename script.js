@@ -44,21 +44,25 @@ if (typeof Appwrite !== 'undefined') {
     databases = new Databases(client);
 }
 
-// Gemini API Key Caching
-let cachedGeminiApiKey = null;
-window.getGeminiApiKey = async () => {
-    if (cachedGeminiApiKey) return cachedGeminiApiKey;
+// Gemini API Configuration Caching
+let cachedGeminiConfig = null;
+window.getGeminiConfig = async () => {
+    if (cachedGeminiConfig) return cachedGeminiConfig;
     try {
-        const response = await databases.listDocuments(
+        const response = await databases.getDocument(
             AppwriteConfig.databaseId,
+            'appconfig',
             'appconfig'
         );
-        if (response.documents && response.documents.length > 0) {
-            cachedGeminiApiKey = response.documents[0].gemini_api_key;
-            return cachedGeminiApiKey;
+        if (response) {
+            cachedGeminiConfig = {
+                apiKey: response.gemini_api_key,
+                model: response.gemini_model || 'gemini-1.5-pro'
+            };
+            return cachedGeminiConfig;
         }
     } catch (e) {
-        console.error('Failed to fetch Gemini API Key from Appwrite', e);
+        console.error('Error fetching Gemini Config from appconfig', e);
     }
     return null;
 };
@@ -725,7 +729,10 @@ async function handleChat() {
     thinking.innerText = 'جاري التفكير...';
     chatMessages.appendChild(thinking);
 
-    const API_KEY = await window.getGeminiApiKey();
+    const geminiConfig = await window.getGeminiConfig();
+    const API_KEY = geminiConfig ? geminiConfig.apiKey : null;
+    const GEMINI_MODEL = geminiConfig ? geminiConfig.model : 'gemini-1.5-pro';
+
     if (!API_KEY) {
         thinking.remove();
         addMsg('عذراً، لم أستطع جلب مفتاح API للذكاء الاصطناعي حالياً.', 'system');
@@ -735,7 +742,7 @@ async function handleChat() {
     const SYSTEM_PROMPT = "أنت Ego Pro، مساعد ذكي خبير في متاحف جامعة المنيا. أجب باحترافية وبشكل مفصل باللغة العربية.";
 
     try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${API_KEY}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 

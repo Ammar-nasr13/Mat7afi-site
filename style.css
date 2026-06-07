@@ -1008,6 +1008,7 @@ img {
     .section-heading { font-size: 1.7rem; }
     .btn-premium, .btn-outline-premium { padding: 12px 20px; font-size: 0.9rem; }
     
+    .artifact-card { height: 280px; }
     .artifact-card-title { font-size: 0.95rem; }
     .artifact-card-body { padding: 10px; }
     

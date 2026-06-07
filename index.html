@@ -261,13 +261,19 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 <!-- Tourism Museum -->
                 <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
                     <div class="museum-card" onclick="loadMuseumArtifacts('tourism_artifacts', 'متحف كلية السياحة', 'assets/tourism-museum.jpg')">
-                        <div class="card-img-wrap" style="height: 100%;">
+                        <div class="card-img-wrap" style="height: 50%;">
                             <img src="assets/tourism-museum.jpg" alt="متحف كلية السياحة والفنادق" class="card-img" loading="lazy">
                             <div class="card-grey-overlay"></div>
                             <div class="card-gradient-overlay"></div>
                         </div>
                         <div class="card-content">
+                            <span class="museum-category" data-i18n="tourism_cat">الآثار</span>
                             <h3 data-i18n="tourism_title">متحف كلية السياحة</h3>
+                            <p data-i18n="tourism_desc">يعرض نماذج تحاكي العصور المصرية القديمة، من الفرعونية إلى الإسلامية.</p>
+                            <span class="learn-more">
+                                <span data-i18n="explore_pieces">استكشف القطع</span>
+                                <i class="fas fa-arrow-left"></i>
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -275,13 +281,19 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 <!-- Modern Art Museum -->
                 <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
                     <div class="museum-card" onclick="loadMuseumArtifacts('art_atifacts', 'متحف الفن الحديث', 'assets/artt-museum.jpg')">
-                        <div class="card-img-wrap" style="height: 100%;">
+                        <div class="card-img-wrap" style="height: 50%;">
                             <img src="assets/artt-museum.jpg" alt="متحف الفن الحديث" class="card-img" loading="lazy">
                             <div class="card-grey-overlay"></div>
                             <div class="card-gradient-overlay"></div>
                         </div>
                         <div class="card-content">
+                            <span class="museum-category" data-i18n="art_cat">الفنون</span>
                             <h3 data-i18n="art_title">متحف الفن الحديث</h3>
+                            <p data-i18n="art_desc">يضم مجموعة فريدة من اللوحات والمنحوتات المعاصرة التي تعكس الإبداع المصري.</p>
+                            <span class="learn-more">
+                                <span data-i18n="explore_pieces">استكشف القطع</span>
+                                <i class="fas fa-arrow-left"></i>
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -289,13 +301,19 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 <!-- Science Museum -->
                 <div class="col-lg-4 col-md-6 mx-auto" data-aos="fade-up" data-aos-delay="300">
                     <div class="museum-card" onclick="loadMuseumArtifacts('science_atifacts', 'متاحف كلية العلوم', 'assets/متاحف كلية علوم.png')">
-                        <div class="card-img-wrap" style="height: 100%;">
+                        <div class="card-img-wrap" style="height: 50%;">
                             <img src="assets/متاحف كلية علوم.png" alt="متاحف كلية العلوم" class="card-img" loading="lazy">
                             <div class="card-grey-overlay"></div>
                             <div class="card-gradient-overlay"></div>
                         </div>
                         <div class="card-content">
+                            <span class="museum-category" data-i18n="science_cat">العلوم</span>
                             <h3 data-i18n="science_title">متاحف كلية العلوم</h3>
+                            <p data-i18n="science_desc">رحلة في عالم الطبيعة والتاريخ الجيولوجي عبر مئات العينات النادرة والفريدة.</p>
+                            <span class="learn-more">
+                                <span data-i18n="explore_pieces">استكشف القطع</span>
+                                <i class="fas fa-arrow-left"></i>
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -400,29 +418,18 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 <div class="col-lg-10">
                     <div class="ai-box shadow-2xl" data-aos="zoom-in">
                         <div class="row g-0">
-                            <div class="col-md-5 bg-brown-gradient p-5 text-white d-flex flex-column justify-content-center">
+                            <div class="col-md-5 bg-brown-gradient p-5 text-white d-flex flex-column justify-content-center align-items-center text-center">
                                 <div class="ai-icon-large mb-4"><i class="fas fa-robot"></i></div>
                                 <h2 class="fw-bold mb-3" data-i18n="ai_status">Ego Pro متصل الآن</h2>
                                 <p class="mb-4 text-white-50" data-i18n="ai_desc">تحدث مع المساعد الذكي المدعوم بـ OpenAI للحصول على معلومات دقيقة وحصرية عن أي مقتنيات أثرية.</p>
-                                <div class="ai-status">
+                                <div class="ai-status justify-content-center">
                                     <span class="status-pulse"></span>
                                     <span data-i18n="ai_active">نظام نشط بالذكاء الاصطناعي</span>
                                 </div>
                             </div>
                             <div class="col-md-7 bg-white p-4 d-flex flex-column">
                                 <div id="chat-messages" class="chat-container mb-3">
-                                    <div class="message system-msg" data-i18n="ai_welcome">مرحباً بك! أنا Ego Pro مرشدك الذكي في متاحف جامعة المنيا. يمكنك سؤالي عن أي قطعة، أو استخدام الخدمات الذكية التالية:</div>
-                                </div>
-                                <div class="chat-quick-actions d-flex gap-2 mb-3 overflow-auto pb-1 px-1">
-                                    <button class="btn btn-sm btn-outline-brown rounded-pill text-nowrap" data-bs-toggle="modal" data-bs-target="#cameraModal">
-                                        <i class="fas fa-qrcode me-1"></i> <span data-i18n="feat_qr">ماسح QR ذكي</span>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-brown rounded-pill text-nowrap" data-bs-toggle="modal" data-bs-target="#voiceModal">
-                                        <i class="fas fa-headphones-alt me-1"></i> <span data-i18n="feat_audio">الدليل الصوتي</span>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-brown rounded-pill text-nowrap" onclick="window.location.href='gallery.html'">
-                                        <i class="fas fa-vr-cardboard me-1"></i> <span data-i18n="feat_ar">الواقع المعزز (AR)</span>
-                                    </button>
+                                    <div class="message system-msg" data-i18n="ai_welcome">مرحباً بك! أنا Ego Pro مرشدك الذكي في متاحف جامعة المنيا. كيف يمكنني مساعدتك اليوم؟</div>
                                 </div>
                                 <div class="chat-input-wrap mt-0">
                                     <input type="text" id="user-input" data-i18n-placeholder="ai_placeholder" placeholder="اسألني عن أي قطعة أثرية..." class="form-control">

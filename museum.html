@@ -51,37 +51,35 @@
 <body class="museum-page" style="background-color: #ffffff; color: #333;">
 
     <!-- Museum Premium Header from Global CSS -->
-    <header class="museum-hero-premium">
-        <img id="museum-hero-img" src="assets/Cover.png" class="museum-hero-img" alt="Museum Hero">
-        <div class="museum-hero-overlay"></div>
+    <header class="museum-hero-premium position-relative" style="height: 45vh; min-height: 300px; overflow: hidden; border-bottom-left-radius: 30px; border-bottom-right-radius: 30px;">
+        <img id="museum-hero-img" src="assets/Cover.png" class="museum-hero-img w-100 h-100 object-fit-cover position-absolute top-0 start-0" alt="Museum Hero">
+        <div class="museum-hero-overlay position-absolute top-0 start-0 w-100 h-100" style="background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);"></div>
         
-        <div class="museum-header-nav">
-            <a href="index.html" class="btn-back-circle"><i class="fas fa-arrow-right"></i></a>
-        </div>
-
-        <div class="museum-hero-content">
-            <h1 id="museum-title-hero" class="museum-title-main">جاري التحميل...</h1>
-            <div class="museum-meta">
-                <span class="location"><i class="fas fa-location-dot me-2"></i> جامعة المنيا، مصر</span>
-                <div class="stars ms-3">
-                    <i class="fas fa-star text-warning"></i>
-                    <i class="fas fa-star text-warning"></i>
-                    <i class="fas fa-star text-warning"></i>
-                    <i class="fas fa-star text-warning"></i>
-                    <i class="fas fa-star text-warning"></i>
+        <div class="museum-hero-content-wrapper d-flex justify-content-between align-items-end w-100 px-4 pb-4 position-absolute bottom-0 z-3">
+            <div class="museum-info text-end">
+                <h1 id="museum-title-hero" class="museum-title-main fw-bold text-white mb-1" style="font-size: 1.8rem; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">جاري التحميل...</h1>
+                <div class="museum-meta d-flex align-items-center justify-content-end gap-3 text-white">
+                    <span class="location fw-semibold text-white" style="text-shadow: 0 1px 3px rgba(0,0,0,0.5);">المنيا <i class="fas fa-map-marker-alt ms-1"></i></span>
+                    <div class="stars text-warning" style="font-size: 0.9rem;">
+                        <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                    </div>
                 </div>
+            </div>
+            <div class="museum-action d-flex align-items-center">
+                <a href="index.html" class="btn-share-circle d-flex align-items-center justify-content-center text-white text-decoration-none" style="width: 50px; height: 50px; background: rgba(74, 44, 17, 0.9); border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.3); font-size: 1.2rem;">
+                    <i class="fas fa-share"></i>
+                </a>
             </div>
         </div>
     </header>
 
-
     <!-- Content -->
-    <section class="search-section-museum py-4">
-        <div class="container">
-            <div class="museum-search-box-light shadow-sm" style="background: white; border: 1px solid #e0e0e0; border-radius: 50px; padding: 8px 15px; display: flex; align-items: center;">
-                <input type="text" id="artifact-search" placeholder="ابحث في مقتنيات المتحف..." class="border-0 bg-transparent" style="flex-grow: 1; color: #666; outline: none; text-align: center; font-size: 1.1rem;">
-                <div style="background: #4a2c11; border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer;">
-                    <i class="fas fa-search text-white"></i>
+    <section class="search-section-museum py-3 mt-3">
+        <div class="container px-3">
+            <div class="museum-search-box-light shadow-sm" style="background: white; border: 1px solid #e0e0e0; border-radius: 50px; padding: 5px; display: flex; align-items: center; justify-content: space-between; max-width: 600px; margin: 0 auto;">
+                <input type="text" id="artifact-search" placeholder="ابحث داخل متحف السياحة والفنادق" class="border-0 bg-transparent px-3 w-100" style="color: #666; outline: none; font-size: 0.95rem; text-align: right;">
+                <div style="background: #4a2c11; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer;">
+                    <i class="fas fa-search text-white" style="font-size: 0.9rem;"></i>
                 </div>
             </div>
         </div>
