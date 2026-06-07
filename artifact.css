@@ -10,7 +10,9 @@
     --card-shadow: 0 10px 30px rgba(0,0,0,0.08);
 }
 
-body { background-color: var(--premium-bg); color: var(--premium-text); font-family: 'Cairo', sans-serif; overflow-x: hidden; }
+body { background-color: var(--premium-bg); color: var(--premium-text); font-family: 'Cairo', sans-serif; overflow-x: hidden; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+
+img { max-width: 100%; height: auto; }
 
 /* Mobile-Inspired Header */
 .artifact-hero {

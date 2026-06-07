@@ -27,15 +27,6 @@ async function fetchGalleryData() {
     const grid = document.getElementById('gallery-grid');
     const loading = document.getElementById('gallery-loading');
     
-    // Check Cache for SPEED
-    const cachedData = sessionStorage.getItem('gallery_data_cache');
-    if (cachedData) {
-        allGalleryItems = JSON.parse(cachedData);
-        filteredItems = [...allGalleryItems];
-        if(loading) loading.style.display = 'none';
-        renderGrid();
-    }
-    
     try {
         if (typeof AppwriteConfig !== 'undefined' && typeof Appwrite !== 'undefined') {
             const { Client, Databases } = Appwrite;
@@ -63,7 +54,6 @@ async function fetchGalleryData() {
                         }
                         return doc;
                     });
-                    sessionStorage.setItem('gallery_data_cache', JSON.stringify(allGalleryItems));
                     
                     // Preload all gallery images in background
                     setTimeout(() => {

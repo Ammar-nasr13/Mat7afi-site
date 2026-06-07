@@ -56,7 +56,7 @@ window.getGeminiConfig = async () => {
         );
         if (response) {
             cachedGeminiConfig = {
-                apiKey: response.gemini_api_key,
+                apiKey: response.gemini_api || response.gemini_api_key,
                 model: response.gemini_model || 'gemini-1.5-pro'
             };
             return cachedGeminiConfig;
@@ -226,20 +226,8 @@ window.initMuseumPage = async (collectionId, museumName, museumImg) => {
     }
 
     try {
-        const cacheKey = `museum_${collectionId}`;
-        const cachedData = sessionStorage.getItem(cacheKey);
-        
-        if (cachedData) {
-            museumArtifactsCache = JSON.parse(cachedData);
-            // Fetch in background to keep cache fresh without blocking UI
-            databases.listDocuments(AppwriteConfig.databaseId, collectionId).then(response => {
-                sessionStorage.setItem(cacheKey, JSON.stringify(response.documents || []));
-            }).catch(e => console.log('Background cache update failed', e));
-        } else {
-            const response = await databases.listDocuments(AppwriteConfig.databaseId, collectionId);
-            museumArtifactsCache = response.documents || [];
-            sessionStorage.setItem(cacheKey, JSON.stringify(museumArtifactsCache));
-        }
+        const response = await databases.listDocuments(AppwriteConfig.databaseId, collectionId);
+        museumArtifactsCache = response.documents || [];
         
         // Background Preloading of Images
         if (museumArtifactsCache.length > 0) {
@@ -498,28 +486,7 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
     if (artifactContent) artifactContent.style.display = 'none';
 
     try {
-        const cacheKey = `artifact_${collectionId}_${documentId}`;
-        const cachedData = sessionStorage.getItem(cacheKey);
-        let artifact;
-        
-        if (cachedData) {
-            artifact = JSON.parse(cachedData);
-            databases.getDocument(AppwriteConfig.databaseId, collectionId, documentId).then(res => {
-                sessionStorage.setItem(cacheKey, JSON.stringify(res));
-            }).catch(e => console.log('Background cache update failed', e));
-        } else {
-            const museumCacheKey = `museum_${collectionId}`;
-            const museumCache = sessionStorage.getItem(museumCacheKey);
-            if (museumCache) {
-                const artifactsList = JSON.parse(museumCache);
-                artifact = artifactsList.find(a => a.$id === documentId || a.id === documentId);
-            }
-            
-            if (!artifact) {
-                artifact = await databases.getDocument(AppwriteConfig.databaseId, collectionId, documentId);
-            }
-            sessionStorage.setItem(cacheKey, JSON.stringify(artifact));
-        }
+        let artifact = await databases.getDocument(AppwriteConfig.databaseId, collectionId, documentId);
         const lang = getCurrentLang();
         
         let name = getArtifactTitle(artifact);
