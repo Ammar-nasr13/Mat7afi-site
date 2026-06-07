@@ -577,8 +577,12 @@ h1, h2, h3, h4, h5, .en-name {
     bottom: 0;
     right: 0;
     left: 0;
+    height: 50%;
     padding: 20px;
     z-index: 3;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
 }
 
 .card-content h3 {
@@ -611,6 +615,7 @@ h1, h2, h3, h4, h5, .en-name {
     display: inline-flex;
     align-items: center;
     gap: 8px;
+    margin-top: auto;
     transition: var(--transition);
 }
 
@@ -1006,7 +1011,7 @@ img {
     .section-heading { font-size: 1.7rem; }
     .btn-premium, .btn-outline-premium { padding: 12px 20px; font-size: 0.9rem; }
     
-    .artifact-card { height: 280px; }
+    .artifact-card { height: 240px; }
     .artifact-card-title { font-size: 0.95rem; }
     .artifact-card-body { padding: 10px; }
     
@@ -2126,7 +2131,7 @@ img {
 }
 
 .artifact-card {
-    height: 380px;
+    height: 320px;
     position: relative;
     border-radius: 20px;
     overflow: hidden;

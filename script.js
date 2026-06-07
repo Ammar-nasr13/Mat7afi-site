@@ -68,7 +68,7 @@ window.getGeminiConfig = async () => {
 };
 
 // Global Core Functions
-const getCurrentLang = () => localStorage.getItem('preferredLang') || 'ar';
+const getCurrentLang = () => localStorage.getItem('lang') || 'ar';
 
 const getArtifactTitle = (artifact) => {
     const lang = getCurrentLang();
@@ -1108,6 +1108,17 @@ document.addEventListener('DOMContentLoaded', () => {
             cardArrows.forEach(arrow => {
                 arrow.className = lang === 'ar' ? 'fas fa-arrow-left arrow-dir' : 'fas fa-arrow-right arrow-dir';
             });
+
+            // Re-render currently viewed artifacts/halls to update language immediately
+            if (typeof renderArtifacts === 'function' && typeof museumArtifactsCache !== 'undefined' && museumArtifactsCache.length > 0) {
+                renderArtifacts(museumArtifactsCache);
+            }
+            if (typeof renderScienceMuseums === 'function' && typeof currentMuseumCollection !== 'undefined' && currentMuseumCollection.includes('science')) {
+                renderScienceMuseums();
+            }
+            if (typeof renderArtHalls === 'function' && typeof currentMuseumCollection !== 'undefined' && currentMuseumCollection.includes('art_')) {
+                renderArtHalls();
+            }
         };
 
         // Default to Arabic
