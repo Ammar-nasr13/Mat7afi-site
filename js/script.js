@@ -16,8 +16,13 @@ let currentMuseumCollection = '';
 let currentMuseumName = '';
 
 let Query;
-// Initialize Appwrite Immediately
-if (typeof Appwrite !== 'undefined') {
+// Appwrite initialization helper (deferred to DOMContentLoaded to avoid race)
+function initAppwrite() {
+    if (typeof Appwrite === 'undefined') {
+        console.warn('Appwrite SDK not available yet. Initialization deferred.');
+        return false;
+    }
+
     const { Client, Databases, Query: AppwriteQuery } = Appwrite;
     const client = new Client();
     client
@@ -25,6 +30,7 @@ if (typeof Appwrite !== 'undefined') {
         .setProject(AppwriteConfig.projectId);
     databases = new Databases(client);
     Query = AppwriteQuery;
+    return true;
 }
 
 // Gemini API Configuration Caching
@@ -762,6 +768,17 @@ function formatTime(s) {
 
 // DOM Dependent Events
 document.addEventListener('DOMContentLoaded', () => {
+    // Ensure Appwrite SDK is initialized before any Appwrite calls
+    if (!initAppwrite()) {
+        // Retry a few times in case the SDK is still loading
+        let attempts = 0;
+        const interval = setInterval(() => {
+            attempts++;
+            if (initAppwrite() || attempts > 8) {
+                clearInterval(interval);
+            }
+        }, 200);
+    }
     const normalizeArabic = (text) => {
         if (!text) return '';
         return text.replace(/[أإآ]/g, 'ا')
