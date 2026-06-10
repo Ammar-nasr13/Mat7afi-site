@@ -118,6 +118,17 @@ const getGeologyGalleryUrls = (artifact) => {
 };
 
 const glbPreloadCache = new Set();
+const imagePreloadCache = new Set();
+const GALLERY_BUCKET_ID = '6a237511000001e303ff';
+let preloadAllStarted = false;
+
+function preloadImageUrl(url) {
+    if (!url || imagePreloadCache.has(url)) return;
+    imagePreloadCache.add(url);
+    const img = new Image();
+    img.decoding = 'async';
+    img.src = url;
+}
 
 function preloadGlbModel(fileId, collectionId) {
     if (!fileId || glbPreloadCache.has(fileId)) return;
@@ -128,56 +139,111 @@ function preloadGlbModel(fileId, collectionId) {
     });
 }
 
-async function preloadGeologyCollection() {
-    if (!databases && !initAppwrite()) return;
-    try {
-        const queries = Query ? [Query.limit(100)] : [];
-        const response = await databases.listDocuments(
-            AppwriteConfig.databaseId,
-            AppwriteConfig.collections.geology,
-            queries
-        );
-        const docs = response.documents || [];
-        const bucketId = AppwriteConfig.buckets.geoImages;
-        docs.forEach(artifact => {
-            const imgUrl = getAppwriteImageUrl(artifact.image || artifact.image_url, bucketId);
-            if (imgUrl) {
-                const img = new Image();
-                img.src = imgUrl;
-            }
-            getGeologyGalleryUrls(artifact).forEach(url => {
-                const img = new Image();
-                img.src = url;
-            });
-            const glbId = artifact.glbFileId || artifact.glbFileld || artifact.glb_file_id || '';
-            if (glbId && glbId.trim().length > 5) {
-                preloadGlbModel(glbId, AppwriteConfig.collections.geology);
-            }
-        });
-    } catch (e) {
-        console.warn('Geology preload skipped:', e);
+function getArtifactGalleryUrls(artifact, bucketId, collectionId) {
+    if (collectionId && isGeologyCollection(collectionId)) {
+        return getGeologyGalleryUrls(artifact);
+    }
+    const raw = artifact.images || artifact.gallery_images || artifact.gallery || [];
+    const ids = Array.isArray(raw) ? raw : (raw ? [raw] : []);
+    return ids.map(id => getAppwriteImageUrl(id, bucketId)).filter(Boolean);
+}
+
+function preloadArtifactMedia(artifact, collectionId, bucketId) {
+    preloadImageUrl(getAppwriteImageUrl(artifact.image || artifact.image_url, bucketId));
+    getArtifactGalleryUrls(artifact, bucketId, collectionId).forEach(preloadImageUrl);
+    const glbId = artifact.glbFileId || artifact.glbFileld || artifact.glb_file_id || '';
+    if (glbId && glbId.trim().length > 5) {
+        preloadGlbModel(glbId, collectionId);
     }
 }
 
-async function preloadTourismGlbModels() {
+function preloadArtifactsFromCache(artifacts, collectionId) {
+    if (!artifacts?.length) return;
+    const bucketId = getBucketByType(collectionId);
+    artifacts.forEach(artifact => preloadArtifactMedia(artifact, collectionId, bucketId));
+}
+
+async function preloadCollectionArtifacts(collectionId, bucketId) {
     if (!databases && !initAppwrite()) return;
     try {
         const queries = Query ? [Query.limit(100)] : [];
-        const response = await databases.listDocuments(
-            AppwriteConfig.databaseId,
-            AppwriteConfig.collections.tourism,
-            queries
-        );
-        (response.documents || []).forEach(artifact => {
-            const glbId = artifact.glbFileId || artifact.glbFileld || artifact.glb_file_id || '';
-            if (glbId && glbId.trim().length > 5) {
-                preloadGlbModel(glbId, AppwriteConfig.collections.tourism);
+        const response = await databases.listDocuments(AppwriteConfig.databaseId, collectionId, queries);
+        (response.documents || []).forEach(artifact => preloadArtifactMedia(artifact, collectionId, bucketId));
+    } catch (e) {
+        console.warn(`Preload skipped for ${collectionId}:`, e);
+    }
+}
+
+async function preloadGalleryCollection() {
+    if (!databases && !initAppwrite()) return;
+    try {
+        const queries = Query ? [Query.limit(100)] : [];
+        const response = await databases.listDocuments(AppwriteConfig.databaseId, 'museum_gallery', queries);
+        (response.documents || []).forEach(doc => {
+            const coverImg = doc.coverImage;
+            const file = doc.fileUrl;
+            if (coverImg && coverImg.startsWith('http')) {
+                preloadImageUrl(coverImg);
+            } else if (coverImg) {
+                preloadImageUrl(getAppwriteImageUrl(coverImg, GALLERY_BUCKET_ID));
+            } else if (file && (file.startsWith('http') || file.startsWith('assets/'))) {
+                preloadImageUrl(file);
+            } else if (file) {
+                preloadImageUrl(getAppwriteImageUrl(file, GALLERY_BUCKET_ID));
             }
         });
     } catch (e) {
-        console.warn('Tourism GLB preload skipped:', e);
+        console.warn('Gallery preload skipped:', e);
     }
 }
+
+async function preloadAllMuseumAssets() {
+    if (preloadAllStarted) return;
+    preloadAllStarted = true;
+    if (!databases && !initAppwrite()) return;
+    await Promise.allSettled([
+        preloadCollectionArtifacts(AppwriteConfig.collections.tourism, AppwriteConfig.buckets.tourism),
+        preloadCollectionArtifacts(AppwriteConfig.collections.art, AppwriteConfig.buckets.artImages),
+        preloadCollectionArtifacts(AppwriteConfig.collections.science, AppwriteConfig.buckets.scienceImages),
+        preloadCollectionArtifacts(AppwriteConfig.collections.geology, AppwriteConfig.buckets.geoImages),
+        preloadGalleryCollection()
+    ]);
+}
+
+function scheduleBackgroundPreload() {
+    const run = () => {
+        [
+            'assets/tourism-museum.jpg',
+            'assets/artt-museum.jpg',
+            'assets/science-museum.png',
+            'assets/science-museum1.png',
+            'assets/Desktop  2.png',
+            'assets/Frame 1.png',
+            'assets/Frame 2.png',
+            'assets/Frame 3.png',
+            'assets/Frame 4.png'
+        ].forEach(preloadImageUrl);
+        preloadAllMuseumAssets();
+    };
+    if ('requestIdleCallback' in window) {
+        requestIdleCallback(run, { timeout: 1200 });
+    } else {
+        setTimeout(run, 50);
+    }
+}
+
+async function preloadGeologyCollection() {
+    await preloadCollectionArtifacts(AppwriteConfig.collections.geology, AppwriteConfig.buckets.geoImages);
+}
+
+async function preloadTourismGlbModels() {
+    await preloadCollectionArtifacts(AppwriteConfig.collections.tourism, AppwriteConfig.buckets.tourism);
+}
+
+window.preloadImageUrl = preloadImageUrl;
+window.preloadAllMuseumAssets = preloadAllMuseumAssets;
+window.preloadGalleryCollection = preloadGalleryCollection;
+window.preloadArtifactsFromCache = preloadArtifactsFromCache;
 
 window.showToast = window.showToast || function showToast(message, type = 'info') {
     let toast = document.getElementById('mat7afi-toast');
@@ -301,7 +367,7 @@ function initGeologyGallery(root, urls) {
     if (prevBtn) prevBtn.onclick = () => show(-1);
     if (nextBtn) nextBtn.onclick = () => show(1);
     renderDots();
-    urls.slice(1).forEach(url => { const pre = new Image(); pre.src = url; });
+    urls.slice(1).forEach(url => preloadImageUrl(url));
 }
 
 // Helpers
@@ -532,7 +598,7 @@ const renderGeologyList = (artifacts) => {
         col.className = 'col-12 mb-3';
         col.innerHTML = `
             <a href="${artifactLink}" class="geology-list-card" style="text-decoration:none;">
-                <img src="${imageUrl}" alt="${artifactTitle}" loading="lazy">
+                <img src="${imageUrl}" alt="${artifactTitle}" loading="eager" decoding="async" fetchpriority="high">
                 <div class="geology-list-overlay"></div>
                 <div class="geology-list-title">${artifactTitle}</div>
             </a>
@@ -610,23 +676,7 @@ window.initMuseumPage = async (collectionId, museumName, museumImg) => {
         const response = await databases.listDocuments(AppwriteConfig.databaseId, collectionId, queries);
         museumArtifactsCache = response.documents || [];
         
-        // Background Preloading of Images & 3D models
-        if (museumArtifactsCache.length > 0) {
-            const bucketId = getBucketByType(collectionId);
-            setTimeout(() => {
-                museumArtifactsCache.forEach(artifact => {
-                    const imgUrl = getAppwriteImageUrl(artifact.image || artifact.image_url, bucketId);
-                    if (imgUrl) {
-                        const img = new Image();
-                        img.src = imgUrl;
-                    }
-                    const glbId = artifact.glbFileId || artifact.glbFileld || artifact.glb_file_id || '';
-                    if (glbId && glbId.trim().length > 5) {
-                        preloadGlbModel(glbId, collectionId);
-                    }
-                });
-            }, 100);
-        }
+        preloadArtifactsFromCache(museumArtifactsCache, collectionId);
         
         if (!museumArtifactsCache.length && !collectionId.includes('art_')) {
             artifactsGrid.innerHTML = `
@@ -709,7 +759,7 @@ window.renderScienceMuseums = () => {
     const museums = [
         {
             id: 'geology',
-            img: 'assets/science-museum.png',
+            img: 'assets/science-museum1.png',
             ar: 'المتحف الجيولوجي',
             en: 'Geological Museum',
             fr: 'Musée Géologique',
@@ -745,7 +795,7 @@ window.renderScienceMuseums = () => {
     });
 
     artifactsGrid.appendChild(fragment);
-    preloadGeologyCollection();
+    preloadAllMuseumAssets();
 };
 
 window.showZoologyComingSoon = () => {
@@ -832,17 +882,7 @@ window.loadScienceSubMuseum = async (subMuseumId, subMuseumTitle) => {
             return;
         }
 
-        if (subMuseumId === 'geology') {
-            setTimeout(() => {
-                docs.forEach(artifact => {
-                    const bucketId = AppwriteConfig.buckets.geoImages;
-                    const imgUrl = getAppwriteImageUrl(artifact.image || artifact.image_url, bucketId);
-                    if (imgUrl) { const img = new Image(); img.src = imgUrl; }
-                    getGeologyGalleryUrls(artifact).forEach(url => { const img = new Image(); img.src = url; });
-                });
-            }, 50);
-        }
-
+        preloadArtifactsFromCache(docs, currentMuseumCollection);
         renderArtifacts(docs);
     } catch (err) {
         console.error('Error loading science sub-museum:', err);
@@ -965,6 +1005,8 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
 
         const bucketId = getBucketByType(collectionId);
         const imgUrl = getAppwriteImageUrl(artifact.image || artifact.image_url, bucketId);
+        preloadImageUrl(imgUrl);
+        getArtifactGalleryUrls(artifact, bucketId, collectionId).forEach(preloadImageUrl);
         if (artifactImg) {
             artifactImg.src = imgUrl;
             setupImageFallback(artifactImg, artifact.image || artifact.image_url);
@@ -1845,24 +1887,5 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Aggressive Background Preloader for Images & 3D models
-    setTimeout(() => {
-        const imagesToPreload = [
-            'assets/tourism-museum.jpg',
-            'assets/artt-museum.jpg',
-            'assets/science-museum.png',
-            'assets/science-museum1.png',
-            'assets/Desktop  2.png',
-            'assets/Frame 1.png',
-            'assets/Frame 2.png',
-            'assets/Frame 3.png',
-            'assets/Frame 4.png'
-        ];
-        imagesToPreload.forEach(src => {
-            const img = new Image();
-            img.src = src;
-        });
-        preloadGeologyCollection();
-        preloadTourismGlbModels();
-    }, 2000);
+    scheduleBackgroundPreload();
 });

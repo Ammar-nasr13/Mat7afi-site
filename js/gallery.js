@@ -80,15 +80,14 @@ async function fetchGalleryData() {
                         return doc;
                     });
                     
-                    // Preload all gallery images in background
-                    setTimeout(() => {
+                    if (typeof window.preloadImageUrl === 'function') {
                         allGalleryItems.forEach(item => {
-                            if (item.actualImageUrl) {
-                                const img = new Image();
-                                img.src = item.actualImageUrl;
-                            }
+                            if (item.actualImageUrl) window.preloadImageUrl(item.actualImageUrl);
                         });
-                    }, 100);
+                    }
+                    if (typeof window.preloadAllMuseumAssets === 'function') {
+                        window.preloadAllMuseumAssets();
+                    }
                 } else {
                     allGalleryItems = [];
                 }
