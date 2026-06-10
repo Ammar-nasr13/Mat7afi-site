@@ -389,6 +389,44 @@ h1, h2, h3, h4, h5, h6 {
     .btn-360 { width: 60px; height: 60px; }
     .btn-360 i { font-size: 1.2rem; }
     .btn-360 span { font-size: 0.55rem; }
-    .audio-play-btn { width: 42px; height: 42px; font-size: 1.1rem; }
     .info-grid { grid-template-columns: 1fr; gap: 10px; }
+    
+    /* Responsive Audio Player */
+    .mobile-audio-box {
+        padding: 20px 15px 45px 15px;
+        border-radius: 20px;
+    }
+    .audio-controls {
+        gap: 12px;
+    }
+    .audio-play-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 1.1rem;
+        box-shadow: 0 4px 10px rgba(59, 36, 3, 0.15);
+    }
+    .waveform-slider-container {
+        height: 50px;
+    }
+    .waveform-slider {
+        height: 35px;
+    }
+    .waveform-bars {
+        gap: 2px;
+    }
+    .seeker-head {
+        height: 35px;
+    }
+    .seeker-line {
+        width: 1.5px;
+    }
+    .seeker-knob {
+        width: 8px;
+        height: 8px;
+        bottom: -5px;
+    }
+    .seeker-time {
+        top: 42px;
+        font-size: 0.68rem;
+    }
 }

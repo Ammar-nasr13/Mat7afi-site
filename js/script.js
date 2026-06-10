@@ -148,12 +148,14 @@ function getArtifactGalleryUrls(artifact, bucketId, collectionId) {
     return ids.map(id => getAppwriteImageUrl(id, bucketId)).filter(Boolean);
 }
 
-function preloadArtifactMedia(artifact, collectionId, bucketId) {
+function preloadArtifactMedia(artifact, collectionId, bucketId, includeGlb = false) {
     preloadImageUrl(getAppwriteImageUrl(artifact.image || artifact.image_url, bucketId));
     getArtifactGalleryUrls(artifact, bucketId, collectionId).forEach(preloadImageUrl);
-    const glbId = artifact.glbFileId || artifact.glbFileld || artifact.glb_file_id || '';
-    if (glbId && glbId.trim().length > 5) {
-        preloadGlbModel(glbId, collectionId);
+    if (includeGlb) {
+        const glbId = artifact.glbFileId || artifact.glbFileld || artifact.glb_file_id || '';
+        if (glbId && glbId.trim().length > 5) {
+            preloadGlbModel(glbId, collectionId);
+        }
     }
 }
 
@@ -546,9 +548,6 @@ const renderArtifacts = (artifacts) => {
         col.className = 'col-lg-3 col-md-4 col-6 mb-4';
 
         const glbFileId = artifact.glbFileId || artifact.glbFileld || artifact.glb_file_id || '';
-        if (glbFileId && glbFileId.trim().length > 5) {
-            preloadGlbModel(glbFileId, currentMuseumCollection);
-        }
         const btn360Html = (glbFileId && glbFileId.trim().length > 5) ? `
             <button class="btn-3d-badge" onclick="event.preventDefault(); window.location.href='${artifactLink}&show3d=true'">
                 <i class="fas fa-cube"></i> <span>3D</span>
@@ -570,6 +569,22 @@ const renderArtifacts = (artifacts) => {
                 </div>
             </a>
         `;
+
+        // Smart On-Demand Preloading (Hover/Touch)
+        const triggerPreload = () => {
+            if (glbFileId && glbFileId.trim().length > 5) {
+                preloadGlbModel(glbFileId, currentMuseumCollection);
+            }
+            const audioFileId = artifact[`audio_guide_${lang}`] || artifact[`audio_guide-${lang}`] ||
+                artifact[`audio-${lang}`] || artifact[`audio_${lang}`] || artifact['audio-ar'] || artifact.audio_ar || '';
+            if (audioFileId && audioFileId.trim().length > 5) {
+                const audioBucketId = AppwriteConfig.buckets.audio;
+                const audioUrl = getAppwriteImageUrl(audioFileId, audioBucketId);
+                fetch(audioUrl, { method: 'GET', cache: 'force-cache', mode: 'cors' }).catch(() => {});
+            }
+        };
+        col.addEventListener('mouseenter', triggerPreload, { once: true });
+        col.addEventListener('touchstart', triggerPreload, { passive: true, once: true });
 
         fragment.appendChild(col);
         const img = col.querySelector('img');
@@ -603,6 +618,24 @@ const renderGeologyList = (artifacts) => {
                 <div class="geology-list-title">${artifactTitle}</div>
             </a>
         `;
+
+        // Smart On-Demand Preloading for Geology
+        const triggerPreload = () => {
+            const glbFileId = artifact.glbFileId || artifact.glbFileld || artifact.glb_file_id || '';
+            if (glbFileId && glbFileId.trim().length > 5) {
+                preloadGlbModel(glbFileId, AppwriteConfig.collections.geology);
+            }
+            const audioFileId = artifact[`audio_guide_${lang}`] || artifact[`audio_guide-${lang}`] ||
+                artifact[`audio-${lang}`] || artifact[`audio_${lang}`] || artifact['audio-ar'] || artifact.audio_ar || '';
+            if (audioFileId && audioFileId.trim().length > 5) {
+                const audioBucketId = AppwriteConfig.buckets.audio;
+                const audioUrl = getAppwriteImageUrl(audioFileId, audioBucketId);
+                fetch(audioUrl, { method: 'GET', cache: 'force-cache', mode: 'cors' }).catch(() => {});
+            }
+        };
+        col.addEventListener('mouseenter', triggerPreload, { once: true });
+        col.addEventListener('touchstart', triggerPreload, { passive: true, once: true });
+
         fragment.appendChild(col);
         const img = col.querySelector('img');
         if (img) {
@@ -976,7 +1009,14 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
     const artifactSubtitleHero = document.getElementById('artifact-subtitle-hero');
     const infoGrid = document.getElementById('info-grid');
 
-    if (loader) loader.style.display = 'block';
+    if (loader) {
+        loader.style.display = 'block';
+        const loaderText = loader.querySelector('p');
+        if (loaderText) {
+            const lang = getCurrentLang();
+            loaderText.innerText = lang === 'en' ? 'Summoning history...' : (lang === 'fr' ? 'Évocation de l\'histoire...' : 'جاري استحضار التاريخ...');
+        }
+    }
     if (artifactContent) artifactContent.style.display = 'none';
 
     try {
@@ -987,17 +1027,17 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
         let subtitle = '';
 
         if (collectionId.includes('tourism')) {
-            subtitle = artifact[`era-${lang}`] || artifact['era-ar'] || artifact.era || 'عصر غير محدد';
+            subtitle = artifact[`era-${lang}`] || artifact['era-ar'] || artifact.era || (lang === 'en' ? 'Unspecified Era' : (lang === 'fr' ? 'Époque non spécifiée' : 'عصر غير محدد'));
         } else if (collectionId.includes('art_')) {
             const hallName = artifact[`nameh-${lang}`] || artifact['nameh-ar'] || artifact.nameh || (lang === 'en' ? `Hall ${artifact['art-id']}` : `القاعة ${artifact['art-id']}`);
             const author = artifact[`author-${lang}`] || artifact['author-ar'] || artifact.author || (lang === 'en' ? 'Unknown Artist' : (lang === 'fr' ? 'Artiste inconnu' : 'فنان غير معروف'));
             name = hallName;
             subtitle = author;
         } else if (collectionId.includes('science')) {
-            subtitle = artifact[`category-${lang}`] || artifact['category-ar'] || artifact.category || 'تصنيف علمي';
+            subtitle = artifact[`category-${lang}`] || artifact['category-ar'] || artifact.category || (lang === 'en' ? 'Scientific Category' : (lang === 'fr' ? 'Catégorie scientifique' : 'تصنيف علمي'));
         } else if (isGeologyCollection(collectionId)) {
             subtitle = artifact[`Classification-${lang}`] || artifact[`classification-${lang}`] ||
-                       artifact['Classification-ar'] || artifact['classification-ar'] || 'جيولوجيا';
+                       artifact['Classification-ar'] || artifact['classification-ar'] || (lang === 'en' ? 'Geology' : (lang === 'fr' ? 'Géologie' : 'جيولوجيا'));
         }
         
         if (artifactNameHero) artifactNameHero.innerText = name;
@@ -1024,9 +1064,13 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
                 sectionTitles[0].innerText = lang === 'en' ? 'Painting Details' : (lang === 'fr' ? 'Détails du tableau' : 'تفاصيل اللوحة');
             } else if (isGeologyCollection(collectionId)) {
                 sectionTitles[0].innerText = lang === 'en' ? 'Information Card' : (lang === 'fr' ? 'Fiche d\'information' : 'بطاقة المعلومات');
-                sectionTitles[1].innerText = lang === 'en' ? 'Quick Summary' : (lang === 'fr' ? 'Résumé rapide' : 'نبذة سريعة');
             } else {
                 sectionTitles[0].innerText = lang === 'en' ? 'Identification Card' : (lang === 'fr' ? 'Carte d\'identité' : 'بطاقة التعريف');
+            }
+
+            if (isGeologyCollection(collectionId)) {
+                sectionTitles[1].innerText = lang === 'en' ? 'Quick Summary' : (lang === 'fr' ? 'Résumé rapide' : 'نبذة سريعة');
+            } else {
                 sectionTitles[1].innerText = lang === 'en' ? 'Description' : (lang === 'fr' ? 'Description' : 'الوصف');
             }
         }
@@ -1040,8 +1084,8 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
         // Translations for labels based on language
         const labels = {
             ar: { museum: 'المتحف', category: 'التصنيف', era: 'العصر', location: 'مكان الاكتشاف', material: 'المادة', dimensions: 'الأبعاد', author: 'الفنان', serial: 'الرقم التسلسلي', size: 'المقاسات', type: 'الخامة / النوع', hall: 'القاعة' },
-            en: { museum: 'Museum: :', category: 'Category: :', era: 'data: :', location: 'Provenance: :', material: 'Material: :', dimensions: 'Dimensions: :', author: 'Artist: :', serial: 'Serial Number: :', size: 'Size: :', type: 'Type: :', hall: 'Hall: :' },
-            fr: { museum: 'Musée: :', category: 'Catégorie: :', era: 'Époque: :', location: 'Provenance: :', material: 'Matériel: :', dimensions: 'Dimensions: :', author: 'Artiste: :', serial: 'Numéro de série: :', size: 'Taille: :', type: 'Type: :', hall: 'Salle: :' }
+            en: { museum: 'Museum', category: 'Category', era: 'Era', location: 'Provenance', material: 'Material', dimensions: 'Dimensions', author: 'Artist', serial: 'Serial Number', size: 'Size', type: 'Type', hall: 'Hall' },
+            fr: { museum: 'Musée', category: 'Catégorie', era: 'Époque', location: 'Provenance', material: 'Matériel', dimensions: 'Dimensions', author: 'Artiste', serial: 'Numéro de série', size: 'Taille', type: 'Type', hall: 'Salle' }
         };
         const l = labels[lang] || labels.ar;
 
@@ -1269,6 +1313,10 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
         const glbFileId = artifact.glbFileId || artifact.glbFileld || artifact.glb_file_id || '';
         if (glbFileId && btn360Wrap && btn360Element) {
             btn360Wrap.style.display = 'block';
+            
+            // Preload GLB model immediately on details page
+            preloadGlbModel(glbFileId, collectionId);
+
             const handle360Click = () => {
                 const modelUrls = resolveGlbModelUrls(glbFileId, collectionId);
                 const primary = modelUrls[0] || getAppwriteStorageUrl(glbFileId, AppwriteConfig.buckets.arModels, 'view');

@@ -1069,10 +1069,34 @@ img {
     .section-heading { font-size: 1.7rem; }
     .btn-premium, .btn-outline-premium { padding: 12px 20px; font-size: 0.9rem; }
     
-    .artifact-card { height: 300px; }
-    .artifact-card-img { height: 150px; }
-    .artifact-card-title { font-size: 0.95rem; }
-    .artifact-card-body { padding: 10px; }
+    /* ── Wider Cards: reduce outer padding & gap so 2-col cards fill more screen width ── */
+    .museum-page main.container { padding-inline: 8px !important; }
+    .museum-page #artifacts-grid { --bs-gutter-x: 0.5rem; --bs-gutter-y: 0.5rem; gap: 8px; }
+    /* Collapse bootstrap col padding on mobile for museum page */
+    .museum-page #artifacts-grid > [class*='col'] { padding-inline: 4px; }
+
+    .artifact-card { height: 330px; border-radius: 14px; }
+    .artifact-card-img { height: 175px; margin: 10px 10px 0; }
+    .artifact-card-body { padding: 8px 10px 10px; }
+
+    /* Title: 1 line, ellipsis – no wrapping unless absolutely needed */
+    .artifact-card-title {
+        font-size: 0.85rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: block;
+        -webkit-line-clamp: unset;
+        margin-bottom: 3px;
+    }
+    /* Subtitle: 1 line ellipsis */
+    .artifact-card-subtitle {
+        font-size: 0.72rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: block;
+    }
     
     .mobile-info-card { padding: 15px; border-radius: 15px; }
     .mobile-icon-circle { width: 35px; height: 35px; margin-left: 10px; }
@@ -2493,6 +2517,7 @@ img {
     max-height: 100%;
     object-fit: contain;
     transition: transform 0.5s ease;
+    margin: 0 auto;
 }
 
 .artifact-card:hover .artifact-card-img img {
