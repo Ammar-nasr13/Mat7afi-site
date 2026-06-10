@@ -26,7 +26,7 @@
         body {
             width: 100vw;
             height: 100vh;
-            background: radial-gradient(ellipse at center, #1a2f4e 0%, #020617 100%);
+            background: #F8F9FA;
             font-family: 'Cairo', sans-serif;
             overflow: hidden;
             display: flex;
@@ -37,8 +37,8 @@
         model-viewer {
             width: 100%;
             flex: 1;
-            --poster-color: transparent;
-            background: transparent;
+            --poster-color: #F8F9FA;
+            background-color: #F8F9FA;
             min-height: 0;
         }
 
@@ -286,16 +286,14 @@
         alt="نموذج ثلاثي الأبعاد لقطعة أثرية من متاحف جامعة المنيا"
         crossorigin="anonymous"
         auto-rotate
-        auto-exposure
         camera-controls
-        shadow-intensity="1.2"
-        shadow-softness="0.6"
-        exposure="1.0"
-        environment-image="neutral"
-        tone-mapping="commerce"
+        shadow-intensity="1"
+        exposure="1.2"
+        reveal="auto"
+        loading="eager"
         min-camera-orbit="auto auto 5%"
         max-camera-orbit="auto auto 200%"
-        camera-orbit="0deg 75deg 100%"
+        camera-orbit="auto auto 100%"
         interaction-prompt="none">
     </model-viewer>
 
@@ -387,19 +385,28 @@
 
             let urlIndex = 0;
             let progressInterval;
-            let blobUrl = null;
+            let loadTimeout = null;
+            const LOAD_TIMEOUT_MS = 45000;
 
             const startProgress = () => {
                 clearInterval(progressInterval);
                 let pct = 0;
                 bar.style.width = '0%';
                 progressInterval = setInterval(() => {
-                    pct = Math.min(pct + Math.random() * 8, 88);
+                    pct = Math.min(pct + Math.random() * 8, 92);
                     bar.style.width = pct + '%';
                 }, 300);
             };
 
+            const clearLoadTimeout = () => {
+                if (loadTimeout) {
+                    clearTimeout(loadTimeout);
+                    loadTimeout = null;
+                }
+            };
+
             const onModelLoaded = () => {
+                clearLoadTimeout();
                 clearInterval(progressInterval);
                 bar.style.width = '100%';
                 setTimeout(() => {
@@ -412,20 +419,9 @@
                 }
             };
 
-            const fetchModelBlob = async (url) => {
-                const response = await fetch(url, {
-                    mode: 'cors',
-                    credentials: 'omit',
-                    cache: 'force-cache'
-                });
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const blob = await response.blob();
-                if (!blob.size) throw new Error('Empty model file');
-                return URL.createObjectURL(blob);
-            };
-
-            const tryLoadModel = async () => {
+            const tryLoadModel = () => {
                 if (urlIndex >= modelUrls.length) {
+                    clearLoadTimeout();
                     clearInterval(progressInterval);
                     overlay.style.display = 'none';
                     errDiv.style.display  = 'flex';
@@ -433,33 +429,50 @@
                 }
 
                 startProgress();
-
                 const currentUrl = modelUrls[urlIndex];
+                let settled = false;
+
+                const advance = () => {
+                    if (settled) return;
+                    settled = true;
+                    clearLoadTimeout();
+                    viewer.removeEventListener('load', onLoad);
+                    viewer.removeEventListener('error', onError);
+                    viewer.removeEventListener('progress', onProgress);
+                    urlIndex += 1;
+                    viewer.removeAttribute('src');
+                    tryLoadModel();
+                };
 
                 const onLoad = () => {
+                    if (settled) return;
+                    settled = true;
+                    clearLoadTimeout();
                     viewer.removeEventListener('error', onError);
+                    viewer.removeEventListener('progress', onProgress);
                     onModelLoaded();
                 };
-                const onError = () => {
-                    viewer.removeEventListener('load', onLoad);
-                    if (blobUrl) {
-                        URL.revokeObjectURL(blobUrl);
-                        blobUrl = null;
-                    }
-                    urlIndex += 1;
-                    tryLoadModel();
+
+                const onError = () => advance();
+
+                const onProgress = (e) => {
+                    if (!e.detail || !e.detail.totalProgress) return;
+                    const pct = Math.min(e.detail.totalProgress * 100, 95);
+                    bar.style.width = pct + '%';
                 };
 
                 viewer.addEventListener('load', onLoad, { once: true });
                 viewer.addEventListener('error', onError, { once: true });
+                viewer.addEventListener('progress', onProgress);
 
-                try {
-                    blobUrl = await fetchModelBlob(currentUrl);
-                    viewer.src = blobUrl;
-                } catch (fetchErr) {
-                    console.warn('Blob fetch failed, trying direct URL:', fetchErr);
-                    viewer.src = currentUrl;
-                }
+                loadTimeout = setTimeout(() => {
+                    console.warn('3D model load timeout, trying next URL:', currentUrl);
+                    advance();
+                }, LOAD_TIMEOUT_MS);
+
+                // Direct URL first — matches mobile app reliability (no blob/CORS hang)
+                viewer.src = currentUrl;
+                fetch(currentUrl, { mode: 'cors', credentials: 'omit', cache: 'force-cache' }).catch(() => {});
             };
 
             tryLoadModel();

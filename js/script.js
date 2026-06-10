@@ -84,6 +84,226 @@ const getArtifactDescription = (artifact) => {
 const isGeologyCollection = (collectionId) =>
     collectionId && (collectionId.includes('sceience_museum_geo') || collectionId.includes('geology'));
 
+const formatGeologyValue = (val) => {
+    if (val == null) return '';
+    if (Array.isArray(val)) {
+        return val.map(v => String(v).trim()).filter(Boolean).join('\n');
+    }
+    const text = String(val).trim();
+    return text && text.toLowerCase() !== 'null' ? text : '';
+};
+
+const getGeologyField = (artifact, lang, arKeys, enKeys) => {
+    const keys = lang === 'ar' ? arKeys : enKeys;
+    for (const key of keys) {
+        const formatted = formatGeologyValue(artifact[key]);
+        if (formatted) return formatted;
+    }
+    if (lang !== 'ar') {
+        for (const key of arKeys) {
+            const formatted = formatGeologyValue(artifact[key]);
+            if (formatted) return formatted;
+        }
+    }
+    return '';
+};
+
+const getGeologyGalleryUrls = (artifact) => {
+    const raw = artifact.images || artifact.gallery_images || [];
+    const ids = Array.isArray(raw) ? raw : [raw];
+    const bucketId = AppwriteConfig.buckets.geoImages;
+    return ids
+        .map(id => getAppwriteImageUrl(id, bucketId))
+        .filter(Boolean);
+};
+
+const glbPreloadCache = new Set();
+
+function preloadGlbModel(fileId, collectionId) {
+    if (!fileId || glbPreloadCache.has(fileId)) return;
+    glbPreloadCache.add(fileId);
+    const urls = resolveGlbModelUrls(fileId, collectionId);
+    urls.slice(0, 2).forEach(url => {
+        fetch(url, { mode: 'cors', credentials: 'omit', cache: 'force-cache' }).catch(() => {});
+    });
+}
+
+async function preloadGeologyCollection() {
+    if (!databases && !initAppwrite()) return;
+    try {
+        const queries = Query ? [Query.limit(100)] : [];
+        const response = await databases.listDocuments(
+            AppwriteConfig.databaseId,
+            AppwriteConfig.collections.geology,
+            queries
+        );
+        const docs = response.documents || [];
+        const bucketId = AppwriteConfig.buckets.geoImages;
+        docs.forEach(artifact => {
+            const imgUrl = getAppwriteImageUrl(artifact.image || artifact.image_url, bucketId);
+            if (imgUrl) {
+                const img = new Image();
+                img.src = imgUrl;
+            }
+            getGeologyGalleryUrls(artifact).forEach(url => {
+                const img = new Image();
+                img.src = url;
+            });
+            const glbId = artifact.glbFileId || artifact.glbFileld || artifact.glb_file_id || '';
+            if (glbId && glbId.trim().length > 5) {
+                preloadGlbModel(glbId, AppwriteConfig.collections.geology);
+            }
+        });
+    } catch (e) {
+        console.warn('Geology preload skipped:', e);
+    }
+}
+
+async function preloadTourismGlbModels() {
+    if (!databases && !initAppwrite()) return;
+    try {
+        const queries = Query ? [Query.limit(100)] : [];
+        const response = await databases.listDocuments(
+            AppwriteConfig.databaseId,
+            AppwriteConfig.collections.tourism,
+            queries
+        );
+        (response.documents || []).forEach(artifact => {
+            const glbId = artifact.glbFileId || artifact.glbFileld || artifact.glb_file_id || '';
+            if (glbId && glbId.trim().length > 5) {
+                preloadGlbModel(glbId, AppwriteConfig.collections.tourism);
+            }
+        });
+    } catch (e) {
+        console.warn('Tourism GLB preload skipped:', e);
+    }
+}
+
+window.showToast = window.showToast || function showToast(message, type = 'info') {
+    let toast = document.getElementById('mat7afi-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'mat7afi-toast';
+        toast.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#422006;color:#fff;padding:12px 24px;border-radius:12px;font-family:Cairo,sans-serif;font-size:0.95rem;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,0.25);opacity:0;transition:opacity 0.3s;max-width:90%;text-align:center;';
+        document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.style.opacity = '1';
+    clearTimeout(toast._hideTimer);
+    toast._hideTimer = setTimeout(() => { toast.style.opacity = '0'; }, 3500);
+};
+
+function renderGeologyExtraSections(artifact, lang) {
+    const container = document.getElementById('geology-extra-sections');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const sections = [];
+    const t = (ar, en, fr) => lang === 'en' ? en : (lang === 'fr' ? fr : ar);
+
+    const whatToSee = getGeologyField(artifact, lang,
+        ['what_you_will_see_ar', 'what_you_will_see-ar', 'what_to_see-ar', 'what_to_see_ar'],
+        ['what_you_will_see_en', 'what_you_will_see-en', 'what_to_see-en', 'what_to_see_en']
+    );
+    if (whatToSee) {
+        sections.push({ title: t('ماذا ستشاهد', 'What You Will See', 'Ce que vous verrez'), body: whatToSee });
+    }
+
+    const galleryUrls = getGeologyGalleryUrls(artifact);
+    if (galleryUrls.length) {
+        const galleryId = 'geology-gallery-' + Date.now();
+        sections.push({
+            title: t('معرض الصور', 'Image Gallery', 'Galerie photos'),
+            isGallery: true,
+            galleryId,
+            urls: galleryUrls
+        });
+    }
+
+    const journey = getGeologyField(artifact, lang,
+        ['journey_ar', 'journey-ar', 'time_journey-ar', 'time_journey_ar'],
+        ['journey_en', 'journey-en', 'time_journey-en', 'time_journey_en']
+    );
+    if (journey) {
+        sections.push({ title: t('رحلة عبر الزمن', 'Journey Through Time', 'Voyage dans le temps'), body: journey });
+    }
+
+    const importance = getGeologyField(artifact, lang,
+        ['importance_ar', 'importance-ar', 'scientific_importance-ar', 'scientific_importance_ar'],
+        ['importance_en', 'importance-en', 'scientific_importance-en', 'scientific_importance_en']
+    );
+    if (importance) {
+        sections.push({ title: t('الأهمية العلمية', 'Scientific Importance', 'Importance scientifique'), body: importance });
+    }
+
+    const didYouKnow = getGeologyField(artifact, lang,
+        ['did_you_know_ar', 'did_you_know-ar'],
+        ['did_you_know_en', 'did_you_know-en']
+    );
+    if (didYouKnow) {
+        sections.push({ title: t('هل تعلم؟', 'Did You Know?', 'Le saviez-vous ?'), body: didYouKnow });
+    }
+
+    sections.forEach(section => {
+        const block = document.createElement('div');
+        block.className = 'geology-detail-block';
+
+        if (section.isGallery) {
+            block.innerHTML = `
+                <h3 class="section-title">${section.title}</h3>
+                <div class="geology-gallery" id="${section.galleryId}">
+                    <button type="button" class="gallery-nav gallery-prev" aria-label="Previous"><i class="fas fa-chevron-right"></i></button>
+                    <div class="gallery-track-wrap"><img class="gallery-track-img" src="${section.urls[0]}" alt=""></div>
+                    <button type="button" class="gallery-nav gallery-next" aria-label="Next"><i class="fas fa-chevron-left"></i></button>
+                </div>
+                <div class="gallery-dots"></div>
+            `;
+            container.appendChild(block);
+            initGeologyGallery(block.querySelector('.geology-gallery'), section.urls);
+        } else {
+            block.innerHTML = `
+                <h3 class="section-title">${section.title}</h3>
+                <div class="description-text">${section.body.replace(/\n/g, '<br>')}</div>
+            `;
+            container.appendChild(block);
+        }
+    });
+}
+
+function initGeologyGallery(root, urls) {
+    if (!root || !urls.length) return;
+    let index = 0;
+    const img = root.querySelector('.gallery-track-img');
+    const dotsWrap = root.parentElement.querySelector('.gallery-dots');
+    const prevBtn = root.querySelector('.gallery-prev');
+    const nextBtn = root.querySelector('.gallery-next');
+
+    const renderDots = () => {
+        if (!dotsWrap) return;
+        dotsWrap.innerHTML = urls.map((_, i) =>
+            `<span class="gallery-dot${i === index ? ' active' : ''}" data-idx="${i}"></span>`
+        ).join('');
+        dotsWrap.querySelectorAll('.gallery-dot').forEach(dot => {
+            dot.onclick = () => {
+                index = Number(dot.dataset.idx);
+                img.src = urls[index];
+                renderDots();
+            };
+        });
+    };
+
+    const show = (delta) => {
+        index = (index + delta + urls.length) % urls.length;
+        img.src = urls[index];
+        renderDots();
+    };
+
+    if (prevBtn) prevBtn.onclick = () => show(-1);
+    if (nextBtn) nextBtn.onclick = () => show(1);
+    renderDots();
+    urls.slice(1).forEach(url => { const pre = new Image(); pre.src = url; });
+}
+
 // Helpers
 function resolveCollectionId(collectionId) {
     if (!collectionId) return collectionId;
@@ -165,7 +385,7 @@ function resolveGlbModelUrls(fileId, collectionId) {
     const primaryBucket = AppwriteConfig.buckets.arModels;
     const urls = [];
 
-    for (const action of ['download', 'view']) {
+    for (const action of ['view', 'download']) {
         const url = getAppwriteStorageUrl(fileId, primaryBucket, action);
         if (url && !urls.includes(url)) urls.push(url);
     }
@@ -173,7 +393,7 @@ function resolveGlbModelUrls(fileId, collectionId) {
     const buckets = getStorageBucketsForCollection(collectionId);
     for (const bucket of buckets) {
         if (bucket === primaryBucket) continue;
-        for (const action of ['download', 'view']) {
+        for (const action of ['view', 'download']) {
             const url = getAppwriteStorageUrl(fileId, bucket, action);
             if (url && !urls.includes(url)) urls.push(url);
         }
@@ -260,6 +480,9 @@ const renderArtifacts = (artifacts) => {
         col.className = 'col-lg-3 col-md-4 col-6 mb-4';
 
         const glbFileId = artifact.glbFileId || artifact.glbFileld || artifact.glb_file_id || '';
+        if (glbFileId && glbFileId.trim().length > 5) {
+            preloadGlbModel(glbFileId, currentMuseumCollection);
+        }
         const btn360Html = (glbFileId && glbFileId.trim().length > 5) ? `
             <button class="btn-3d-badge" onclick="event.preventDefault(); window.location.href='${artifactLink}&show3d=true'">
                 <i class="fas fa-cube"></i> <span>3D</span>
@@ -387,7 +610,7 @@ window.initMuseumPage = async (collectionId, museumName, museumImg) => {
         const response = await databases.listDocuments(AppwriteConfig.databaseId, collectionId, queries);
         museumArtifactsCache = response.documents || [];
         
-        // Background Preloading of Images
+        // Background Preloading of Images & 3D models
         if (museumArtifactsCache.length > 0) {
             const bucketId = getBucketByType(collectionId);
             setTimeout(() => {
@@ -396,6 +619,10 @@ window.initMuseumPage = async (collectionId, museumName, museumImg) => {
                     if (imgUrl) {
                         const img = new Image();
                         img.src = imgUrl;
+                    }
+                    const glbId = artifact.glbFileId || artifact.glbFileld || artifact.glb_file_id || '';
+                    if (glbId && glbId.trim().length > 5) {
+                        preloadGlbModel(glbId, collectionId);
                     }
                 });
             }, 100);
@@ -478,79 +705,69 @@ window.renderScienceMuseums = () => {
     artifactsGrid.innerHTML = '';
     const fragment = document.createDocumentFragment();
 
+    // Match mobile app: Geological Museum (active) + Zoology Museum (coming soon)
     const museums = [
-        { 
+        {
             id: 'geology',
             img: 'assets/science-museum.png',
-            ar: 'المتحف الجيولوجي', 
-            en: 'Geology Museum', 
-            fr: 'Musée de Géologie',
-            desc_ar: 'استكشف تاريخ الأرض وطبقاتها والمعادن النادرة.',
-            desc_en: 'Explore the history of the Earth through rock layers and rare minerals.',
-            desc_fr: 'Explorez l\'histoire de la Terre à travers les couches rocheuses et les minéraux.',
-            cat_ar: 'الجيولوجيا', cat_en: 'Geology', cat_fr: 'Géologie'
+            ar: 'المتحف الجيولوجي',
+            en: 'Geological Museum',
+            fr: 'Musée Géologique',
+            active: true
         },
-        { 
-            id: 'biology',
-            img: 'assets/science-museum1.png', 
-            ar: 'متحف البيولوجي', 
-            en: 'Biology Museum', 
-            fr: 'Musée de Biologie',
-            desc_ar: 'رحلة في أعماق الطبيعة والخلايا الحية.',
-            desc_en: 'A journey into the depths of nature and living cells.',
-            desc_fr: 'Un voyage dans les profondeurs de la nature et des cellules.',
-            cat_ar: 'البيولوجيا', cat_en: 'Biology', cat_fr: 'Biologie'
-        },
-        { 
+        {
             id: 'zoology',
-            img: 'assets/متاحف كلية علوم.png',
-            ar: 'متحف علم الحيوان', 
-            en: 'Zoology Museum', 
+            img: 'assets/science-museum1.png',
+            ar: 'متحف علم الحيوان',
+            en: 'Zoology Museum',
             fr: 'Musée de Zoologie',
-            desc_ar: 'اكتشف تنوع الكائنات الحية وتطورها عبر عينات نادرة.',
-            desc_en: 'Discover the diversity of living organisms through rare specimens.',
-            desc_fr: 'Découvrez la diversité des organismes vivants à travers des spécimens rares.',
-            cat_ar: 'علم الحيوان', cat_en: 'Zoology', cat_fr: 'Zoologie'
+            active: false
         }
     ];
 
     museums.forEach(museum => {
         const title = museum[lang] || museum.ar;
-        const desc = museum[`desc_${lang}`] || museum.desc_ar;
-        const cat = museum[`cat_${lang}`] || museum.cat_ar;
-        const exploreText = lang === 'en' ? 'Explore Pieces' : (lang === 'fr' ? 'Explorer les pièces' : 'استكشف القطع');
-        const arrowIcon = lang === 'ar' ? 'arrow-left' : 'arrow-right';
-        
         const col = document.createElement('div');
-        col.className = 'col-lg-4 col-md-6 col-12 mb-4';
-        
+        col.className = 'col-12 mb-3';
+
+        const onClick = museum.active
+            ? `loadScienceSubMuseum('${museum.id}', '${title.replace(/'/g, "\\'")}')`
+            : `showZoologyComingSoon()`;
+
         col.innerHTML = `
-            <div class="museum-card" onclick="loadScienceSubMuseum('${museum.id}', '${title.replace(/'/g, "\\'")}')">
-                <div class="card-img-wrap">
-                    <img src="${museum.img}" alt="${title}" class="card-img" loading="eager" onerror="this.src='assets/science-museum.png'">
-                    <div class="card-grey-overlay"></div>
-                    <div class="card-gradient-overlay"></div>
-                </div>
-                <div class="card-content">
-                    <span class="museum-category">${cat}</span>
-                    <h3>${title}</h3>
-                    <p>${desc}</p>
-                    <span class="learn-more">
-                        <span>${exploreText}</span>
-                        <i class="fas fa-${arrowIcon} arrow-dir"></i>
-                    </span>
-                </div>
+            <div class="geology-list-card science-sub-card" onclick="${onClick}" role="button" tabindex="0">
+                <img src="${museum.img}" alt="${title}" loading="eager" onerror="this.src='assets/science-museum.png'">
+                <div class="geology-list-overlay"></div>
+                <div class="geology-list-title">${title}</div>
             </div>
         `;
         fragment.appendChild(col);
     });
 
     artifactsGrid.appendChild(fragment);
+    preloadGeologyCollection();
+};
+
+window.showZoologyComingSoon = () => {
+    const lang = getCurrentLang();
+    const msg = lang === 'en'
+        ? 'Zoology Museum will be activated soon'
+        : (lang === 'fr' ? 'Le musée de zoologie sera bientôt disponible' : 'متحف علم الحيوان سيتم تفعيله قريباً');
+    if (typeof showToast === 'function') {
+        showToast(msg, 'info');
+    } else {
+        alert(msg);
+    }
 };
 
 // Load science sub-museum artifacts from Appwrite DB
 window.loadScienceSubMuseum = async (subMuseumId, subMuseumTitle) => {
     if (!databases) initAppwrite();
+
+    if (subMuseumId === 'zoology') {
+        showZoologyComingSoon();
+        return;
+    }
 
     const artifactsGrid = document.getElementById('artifacts-grid');
     const backToHallsBtn = document.getElementById('back-to-halls-btn');
@@ -613,6 +830,17 @@ window.loadScienceSubMuseum = async (subMuseumId, subMuseumTitle) => {
                 </div>
             `;
             return;
+        }
+
+        if (subMuseumId === 'geology') {
+            setTimeout(() => {
+                docs.forEach(artifact => {
+                    const bucketId = AppwriteConfig.buckets.geoImages;
+                    const imgUrl = getAppwriteImageUrl(artifact.image || artifact.image_url, bucketId);
+                    if (imgUrl) { const img = new Image(); img.src = imgUrl; }
+                    getGeologyGalleryUrls(artifact).forEach(url => { const img = new Image(); img.src = url; });
+                });
+            }, 50);
         }
 
         renderArtifacts(docs);
@@ -753,11 +981,12 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
             } else if (collectionId.includes('art_')) {
                 sectionTitles[0].innerText = lang === 'en' ? 'Painting Details' : (lang === 'fr' ? 'Détails du tableau' : 'تفاصيل اللوحة');
             } else if (isGeologyCollection(collectionId)) {
-                sectionTitles[0].innerText = lang === 'en' ? 'Specimen Details' : (lang === 'fr' ? 'Détails du spécimen' : 'تفاصيل العينة');
+                sectionTitles[0].innerText = lang === 'en' ? 'Information Card' : (lang === 'fr' ? 'Fiche d\'information' : 'بطاقة المعلومات');
+                sectionTitles[1].innerText = lang === 'en' ? 'Quick Summary' : (lang === 'fr' ? 'Résumé rapide' : 'نبذة سريعة');
             } else {
                 sectionTitles[0].innerText = lang === 'en' ? 'Identification Card' : (lang === 'fr' ? 'Carte d\'identité' : 'بطاقة التعريف');
+                sectionTitles[1].innerText = lang === 'en' ? 'Description' : (lang === 'fr' ? 'Description' : 'الوصف');
             }
-            sectionTitles[1].innerText = lang === 'en' ? 'Description' : (lang === 'fr' ? 'Description' : 'الوصف');
         }
         const audioTitle = document.querySelector('#audio-section h3');
         if (audioTitle) {
@@ -813,14 +1042,43 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
                 const serialVal = artifact.serial_number || artifact.serialNumber || artifact['serial-number'];
                 if (serialVal) fields.push({ label: l.serial, value: serialVal, icon: 'fas fa-hashtag' });
             } else if (isGeologyCollection(collectionId)) {
-                const classVal = getVal('Classification') || getVal('classification');
-                if (classVal) fields.push({ label: l.category, value: classVal, icon: 'fas fa-gem' });
+                const classVal = getGeologyField(artifact, lang,
+                    ['Classification-ar', 'Classification_ar', 'classification-ar', 'classification_ar'],
+                    ['Classification-en', 'Classification_en', 'classification-en', 'classification_en']
+                ) || getVal('Classification') || getVal('classification');
+                if (classVal) fields.push({
+                    label: lang === 'en' ? 'Classification' : (lang === 'fr' ? 'Classification' : 'التصنيف'),
+                    value: classVal,
+                    icon: 'fas fa-gem'
+                });
 
-                const compVal = getVal('formation') || getVal('composition');
-                if (compVal) fields.push({ label: l.material, value: compVal, icon: 'fas fa-layer-group' });
+                const compVal = getGeologyField(artifact, lang,
+                    ['formation-ar', 'formation_ar', 'composition-ar', 'composition_ar'],
+                    ['formation-en', 'formation_en', 'composition-en', 'composition_en']
+                ) || getVal('formation') || getVal('composition');
+                if (compVal) fields.push({
+                    label: lang === 'en' ? 'Composition' : (lang === 'fr' ? 'Composition' : 'التكوين'),
+                    value: compVal,
+                    icon: 'fas fa-layer-group'
+                });
 
-                const ageVal = getVal('age');
-                if (ageVal) fields.push({ label: l.era, value: ageVal, icon: 'fas fa-history' });
+                const ageVal = getGeologyField(artifact, lang,
+                    ['age_ar', 'age-ar'], ['age_en', 'age-en']
+                ) || getVal('age');
+                if (ageVal) fields.push({
+                    label: lang === 'en' ? 'Geological Age' : (lang === 'fr' ? 'Âge géologique' : 'العمر الجيولوجي'),
+                    value: ageVal,
+                    icon: 'fas fa-history'
+                });
+
+                const examplesVal = getGeologyField(artifact, lang,
+                    ['examples_ar', 'examples-ar'], ['examples_en', 'examples-en']
+                );
+                if (examplesVal) fields.push({
+                    label: lang === 'en' ? 'Key Exhibits' : (lang === 'fr' ? 'Pièces clés' : 'أبرز المعروضات'),
+                    value: examplesVal,
+                    icon: 'fas fa-list'
+                });
             }
             
             fields.forEach(f => {
@@ -950,6 +1208,17 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
                     isDragging = false;
                 });
             }
+        }
+
+        if (isGeologyCollection(collectionId)) {
+            renderGeologyExtraSections(artifact, lang);
+            const glbId = artifact.glbFileId || artifact.glbFileld || artifact.glb_file_id || '';
+            if (glbId && glbId.trim().length > 5) {
+                preloadGlbModel(glbId, collectionId);
+            }
+        } else {
+            const extra = document.getElementById('geology-extra-sections');
+            if (extra) extra.innerHTML = '';
         }
 
         // 360 GLB Model Logic
@@ -1576,24 +1845,24 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Aggressive Background Preloader for Images
+    // Aggressive Background Preloader for Images & 3D models
     setTimeout(() => {
         const imagesToPreload = [
             'assets/tourism-museum.jpg',
             'assets/artt-museum.jpg',
-            'assets/متاحف كلية علوم.png',
             'assets/science-museum.png',
             'assets/science-museum1.png',
             'assets/Desktop  2.png',
             'assets/Frame 1.png',
             'assets/Frame 2.png',
             'assets/Frame 3.png',
-            'assets/Frame 4.png',
-            'assets/Desktop  2.png'
+            'assets/Frame 4.png'
         ];
         imagesToPreload.forEach(src => {
             const img = new Image();
             img.src = src;
         });
+        preloadGeologyCollection();
+        preloadTourismGlbModels();
     }, 2000);
 });

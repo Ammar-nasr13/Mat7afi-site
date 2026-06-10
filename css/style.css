@@ -2185,6 +2185,10 @@ img {
 }
 
 /* Geology List Cards (mobile list style) */
+.science-sub-card {
+    cursor: pointer;
+}
+
 .geology-list-card {
     display: block;
     position: relative;
