@@ -10,7 +10,7 @@ window.loadMuseumArtifacts = (collectionId, museumName, museumImg) => {
 };
 
 // Protected Configuration (Obfuscated to prevent automated GitHub key scraping)
-const _aw_key = "eyJlbmRwb2ludCI6Imh0dHBzOi8vYXBwd3JpdGUuZXRpaGFkYWxtZGluYS5jb20vdjEiLCJwcm9qZWN0SWQiOiI2OWYyMWM3MzAwMDYyMTkzOTQyMiIsImRhdGFiYXNlSWQiOiI2OWY2OTk0ODAwMTBlMmZlZWE4YSIsImNvbGxlY3Rpb25zIjp7InRvdXJpc20iOiJ0b3VyaXNtX2FydGlmYWN0cyIsInNjaWVuY2UiOiJzY2llbmNlX2F0aWZhY3RzIiwiYXJ0IjoiYXJ0X2F0aWZhY3RzIiwiYWN0aXZhdGlvbiI6ImFjdGl2YXRpb25fY29kZXMifSwiYnVja2V0cyI6eyJ0b3VyaXNtIjoiNjlmN2Q2OGMwMDM4MjE5OTdkMGQiLCJhcnRpZmFjdHMiOiI2OWY2ODZlOTAwMmY5MTdlYzJhMiIsImF1ZGlvIjoiNjlmODcwYzAwMDBlYjM5NjkyNjAiLCJhcnRJbWFnZXMiOiI2OWZkZmE2NjAwMmQxYTkxMDZmNyIsInNjaWVuY2VJbWFnZXMiOiI2OWZkZmE4MDAwMmYwZGI4M2M2NyIsImFyTW9kZWxzIjoiNmExM2NmMzcwMDE3ZDRmZjcwMDYifX0=";
+const _aw_key = "eyJlbmRwb2ludCI6Imh0dHBzOi8vYXBwd3JpdGUuZXRpaGFkYWxtZGluYS5jb20vdjEiLCJwcm9qZWN0SWQiOiI2OWYyMWM3MzAwMDYyMTkzOTQyMiIsImRhdGFiYXNlSWQiOiI2OWY2OTk0ODAwMTBlMmZlZWE4YSIsImNvbGxlY3Rpb25zIjp7InRvdXJpc20iOiJ0b3VyaXNtX2FydGlmYWN0cyIsInNjaWVuY2UiOiJzY2llbmNlX2F0aWZhY3RzIiwiYXJ0IjoiYXJ0X2F0aWZhY3RzIiwiZ2VvbG9neSI6InNjZWllbmNlX211c2V1bV9nZW8iLCJhY3RpdmF0aW9uIjoiYWN0aXZhdGlvbl9jb2RlcyJ9LCJidWNrZXRzIjp7InRvdXJpc20iOiI2OWY3ZDY4YzAwMzgyMTk5N2QwZCIsImFydGlmYWN0cyI6IjY5ZjY4NmU5MDAyZjkxN2VjMmEyIiwiYXVkaW8iOiI2OWY4NzBjMDAwMGViMzk2OTI2MCIsImFydEltYWdlcyI6IjY5ZmRmYTY2MDAyZDFhOTEwNmY3Iiwic2NpZW5jZUltYWdlcyI6IjY5ZmRmYTgwMDAyZjBkYjgzYzY3IiwiYXJNb2RlbHMiOiI2YTEzY2YzNzAwMTdkNGZmNzAwNiIsImdlb0ltYWdlcyI6IjZhMjc1NjE3MDAwYzg3NjMyMDExIn19";
 const AppwriteConfig = JSON.parse(atob(_aw_key));
 // Appwrite collection ID uses legacy typo: art_atifacts (not art_artifacts)
 AppwriteConfig.collections.art = 'art_atifacts';
@@ -71,19 +71,25 @@ const getCurrentLang = () => sessionStorage.getItem('lang') || 'ar';
 
 const getArtifactTitle = (artifact) => {
     const lang = getCurrentLang();
-    return artifact[`name-${lang}`] || artifact['name-ar'] || artifact.name || artifact.title || 'قطعة أثرية';
+    return artifact[`title-${lang}`] || artifact[`title_${lang}`] ||
+           artifact[`name-${lang}`] || artifact['name-ar'] || artifact.name || artifact.title || 'قطعة أثرية';
 };
 
 const getArtifactDescription = (artifact) => {
     const lang = getCurrentLang();
-    return artifact[`description-${lang}`] || artifact['description-ar'] || artifact.description || artifact.desc || '';
+    return artifact[`overview_${lang}`] || artifact[`overview-${lang}`] ||
+           artifact[`description-${lang}`] || artifact['description-ar'] || artifact.description || artifact.desc || '';
 };
+
+const isGeologyCollection = (collectionId) =>
+    collectionId && (collectionId.includes('sceience_museum_geo') || collectionId.includes('geology'));
 
 // Helpers
 function resolveCollectionId(collectionId) {
     if (!collectionId) return collectionId;
     const id = collectionId.toLowerCase();
     if (id.includes('tourism')) return AppwriteConfig.collections.tourism;
+    if (id.includes('sceience_museum_geo') || id.includes('geology')) return AppwriteConfig.collections.geology;
     if (id.includes('science')) return AppwriteConfig.collections.science;
     if (id.includes('art')) return AppwriteConfig.collections.art;
     return collectionId;
@@ -104,6 +110,7 @@ function matchesScienceSubMuseum(doc, subMuseumId) {
 
 function getBucketByType(collectionId) {
     if (!collectionId) return AppwriteConfig.buckets.tourism;
+    if (isGeologyCollection(collectionId)) return AppwriteConfig.buckets.geoImages;
     if (collectionId.includes('science')) return AppwriteConfig.buckets.scienceImages;
     if (collectionId.includes('art')) return AppwriteConfig.buckets.artImages;
     return AppwriteConfig.buckets.tourism;
@@ -112,6 +119,7 @@ function getBucketByType(collectionId) {
 function getStorageBucketsForCollection(collectionId) {
     const buckets = [];
     if (collectionId?.includes('tourism')) buckets.push(AppwriteConfig.buckets.tourism);
+    if (isGeologyCollection(collectionId)) buckets.push(AppwriteConfig.buckets.geoImages);
     if (collectionId?.includes('science')) buckets.push(AppwriteConfig.buckets.scienceImages);
     if (collectionId?.includes('art')) buckets.push(AppwriteConfig.buckets.artImages);
     buckets.push(
@@ -119,7 +127,8 @@ function getStorageBucketsForCollection(collectionId) {
         AppwriteConfig.buckets.tourism,
         AppwriteConfig.buckets.artifacts,
         AppwriteConfig.buckets.artImages,
-        AppwriteConfig.buckets.scienceImages
+        AppwriteConfig.buckets.scienceImages,
+        AppwriteConfig.buckets.geoImages
     );
     return [...new Set(buckets.filter(Boolean))];
 }
@@ -153,17 +162,24 @@ function resolveGlbModelUrls(fileId, collectionId) {
     if (!fileId) return [];
     if (typeof fileId === 'string' && fileId.startsWith('http')) return [fileId];
 
-    const buckets = getStorageBucketsForCollection(collectionId);
+    const primaryBucket = AppwriteConfig.buckets.arModels;
     const urls = [];
 
+    for (const action of ['download', 'view']) {
+        const url = getAppwriteStorageUrl(fileId, primaryBucket, action);
+        if (url && !urls.includes(url)) urls.push(url);
+    }
+
+    const buckets = getStorageBucketsForCollection(collectionId);
     for (const bucket of buckets) {
-        for (const action of ['view', 'download']) {
+        if (bucket === primaryBucket) continue;
+        for (const action of ['download', 'view']) {
             const url = getAppwriteStorageUrl(fileId, bucket, action);
             if (url && !urls.includes(url)) urls.push(url);
         }
     }
 
-    return urls.length ? urls : [getAppwriteStorageUrl(fileId, AppwriteConfig.buckets.arModels, 'view')];
+    return urls.length ? urls : [getAppwriteStorageUrl(fileId, primaryBucket, 'download')];
 }
 
 function setupImageFallback(imgEl, fileId) {
@@ -175,6 +191,7 @@ function setupImageFallback(imgEl, fileId) {
         return;
     }
     const buckets = [
+        AppwriteConfig.buckets.geoImages,
         AppwriteConfig.buckets.artifacts,
         AppwriteConfig.buckets.tourism,
         AppwriteConfig.buckets.artImages,
@@ -211,6 +228,11 @@ const renderArtifacts = (artifacts) => {
         return;
     }
 
+    if (isGeologyCollection(currentMuseumCollection)) {
+        renderGeologyList(artifacts);
+        return;
+    }
+
     const fragment = document.createDocumentFragment();
 
     artifacts.forEach((artifact) => {
@@ -235,7 +257,7 @@ const renderArtifacts = (artifacts) => {
         const artifactLink = `artifact.html?id=${encodeURIComponent(artifactId)}&collection=${encodeURIComponent(currentMuseumCollection)}&museum=${encodeURIComponent(currentMuseumName)}`;
 
         const col = document.createElement('div');
-        col.className = 'col-lg-4 col-md-6 col-sm-6 col-12 mb-5';
+        col.className = 'col-lg-3 col-md-4 col-6 mb-4';
 
         const glbFileId = artifact.glbFileId || artifact.glbFileld || artifact.glb_file_id || '';
         const btn360Html = (glbFileId && glbFileId.trim().length > 5) ? `
@@ -263,6 +285,42 @@ const renderArtifacts = (artifacts) => {
         fragment.appendChild(col);
         const img = col.querySelector('img');
         setupImageFallback(img, artifact.image || artifact.image_url);
+    });
+
+    artifactsGrid.appendChild(fragment);
+};
+
+const renderGeologyList = (artifacts) => {
+    const artifactsGrid = document.getElementById('artifacts-grid');
+    if (!artifactsGrid) return;
+
+    artifactsGrid.innerHTML = '';
+    const fragment = document.createDocumentFragment();
+    const lang = getCurrentLang();
+    const bucketId = AppwriteConfig.buckets.geoImages;
+
+    artifacts.forEach((artifact) => {
+        const imageUrl = getAppwriteImageUrl(artifact.image || artifact.image_url, bucketId);
+        const artifactId = artifact.$id || artifact.id || '';
+        const artifactTitle = getArtifactTitle(artifact);
+        const artifactLink = `artifact.html?id=${encodeURIComponent(artifactId)}&collection=${encodeURIComponent(AppwriteConfig.collections.geology)}&museum=${encodeURIComponent(currentMuseumName)}`;
+
+        const col = document.createElement('div');
+        col.className = 'col-12 mb-3';
+        col.innerHTML = `
+            <a href="${artifactLink}" class="geology-list-card" style="text-decoration:none;">
+                <img src="${imageUrl}" alt="${artifactTitle}" loading="lazy">
+                <div class="geology-list-overlay"></div>
+                <div class="geology-list-title">${artifactTitle}</div>
+            </a>
+        `;
+        fragment.appendChild(col);
+        const img = col.querySelector('img');
+        if (img) {
+            img.onerror = () => {
+                img.src = 'assets/science-museum.png';
+            };
+        }
     });
 
     artifactsGrid.appendChild(fragment);
@@ -385,23 +443,21 @@ window.renderArtHalls = () => {
     const fragment = document.createDocumentFragment();
 
     const halls = [
-        { id: 1, color: '#0a192f', ar: 'القاعة الأولى', en: 'First Hall', fr: 'Première Salle' },
-        { id: 2, color: '#5c3a21', ar: 'القاعة الثانية', en: 'Second Hall', fr: 'Deuxième Salle' },
-        { id: 3, color: '#0a192f', ar: 'القاعة الثالثة', en: 'Third Hall', fr: 'Troisième Salle' },
-        { id: 4, color: '#5c3a21', ar: 'القاعة الرابعة', en: 'Fourth Hall', fr: 'Quatrième Salle' }
+        { id: 1, color: '#422006', ar: 'القاعة الأولى', en: 'First Hall', fr: 'Première Salle' },
+        { id: 2, color: '#0D1B2A', ar: 'القاعة الثانية', en: 'Second Hall', fr: 'Deuxième Salle' },
+        { id: 3, color: '#2E4053', ar: 'القاعة الثالثة', en: 'Third Hall', fr: 'Troisième Salle' },
+        { id: 4, color: '#5D4037', ar: 'القاعة الرابعة', en: 'Fourth Hall', fr: 'Quatrième Salle' }
     ];
 
     halls.forEach(hall => {
         const title = hall[lang] || hall.ar;
         const col = document.createElement('div');
-        col.className = 'col-md-6 col-12 mb-4';
+        col.className = 'col-12 mb-3';
         
         col.innerHTML = `
-            <a href="javascript:void(0)" onclick="filterArtByHall(${hall.id}, '${title}')" style="text-decoration:none; display: block;">
-                <div style="background-color: ${hall.color}; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; height: 160px; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.2);" 
-                     onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 10px 25px rgba(0,0,0,0.3)'; this.style.borderColor='rgba(217, 119, 6, 0.5)';" 
-                     onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 15px rgba(0,0,0,0.2)'; this.style.borderColor='rgba(255,255,255,0.1)';">
-                    <h3 style="color: #ffffff; font-size: 2rem; font-weight: 800; margin: 0; font-family: 'Cairo', sans-serif;">${title}</h3>
+            <a href="javascript:void(0)" onclick="filterArtByHall(${hall.id}, '${title}')" class="hall-card-link">
+                <div class="hall-card" style="background: linear-gradient(180deg, ${hall.color}cc 0%, ${hall.color} 100%);">
+                    <h3>${title}</h3>
                 </div>
             </a>
         `;
@@ -424,20 +480,18 @@ window.renderScienceMuseums = () => {
 
     const museums = [
         { 
-            id: 'zoology',
-            collectionFilter: 'zoology',
-            img: 'assets/science-museum.png', 
-            ar: 'متحف علم الحيوان', 
-            en: 'Zoology Museum', 
-            fr: 'Musée de Zoologie',
-            desc_ar: 'اكتشف تنوع الكائنات الحية وتطورها عبر عينات نادرة.',
-            desc_en: 'Discover the diversity of living organisms and their evolution through rare specimens.',
-            desc_fr: 'Découvrez la diversité des organismes vivants à travers des spécimens rares.',
-            cat_ar: 'علم الحيوان', cat_en: 'Zoology', cat_fr: 'Zoologie'
+            id: 'geology',
+            img: 'assets/science-museum.png',
+            ar: 'المتحف الجيولوجي', 
+            en: 'Geology Museum', 
+            fr: 'Musée de Géologie',
+            desc_ar: 'استكشف تاريخ الأرض وطبقاتها والمعادن النادرة.',
+            desc_en: 'Explore the history of the Earth through rock layers and rare minerals.',
+            desc_fr: 'Explorez l\'histoire de la Terre à travers les couches rocheuses et les minéraux.',
+            cat_ar: 'الجيولوجيا', cat_en: 'Geology', cat_fr: 'Géologie'
         },
         { 
             id: 'biology',
-            collectionFilter: 'biology',
             img: 'assets/science-museum1.png', 
             ar: 'متحف البيولوجي', 
             en: 'Biology Museum', 
@@ -448,16 +502,15 @@ window.renderScienceMuseums = () => {
             cat_ar: 'البيولوجيا', cat_en: 'Biology', cat_fr: 'Biologie'
         },
         { 
-            id: 'geology',
-            collectionFilter: 'geology',
-            img: 'assets/Desktop  2.png', 
-            ar: 'المتحف الجيولوجي', 
-            en: 'Geology Museum', 
-            fr: 'Musée de Géologie',
-            desc_ar: 'استكشف تاريخ الأرض وطبقاتها والمعادن النادرة.',
-            desc_en: 'Explore the history of the Earth through rock layers and rare minerals.',
-            desc_fr: 'Explorez l\'histoire de la Terre à travers les couches rocheuses et les minéraux.',
-            cat_ar: 'الجيولوجيا', cat_en: 'Geology', cat_fr: 'Géologie'
+            id: 'zoology',
+            img: 'assets/متاحف كلية علوم.png',
+            ar: 'متحف علم الحيوان', 
+            en: 'Zoology Museum', 
+            fr: 'Musée de Zoologie',
+            desc_ar: 'اكتشف تنوع الكائنات الحية وتطورها عبر عينات نادرة.',
+            desc_en: 'Discover the diversity of living organisms through rare specimens.',
+            desc_fr: 'Découvrez la diversité des organismes vivants à travers des spécimens rares.',
+            cat_ar: 'علم الحيوان', cat_en: 'Zoology', cat_fr: 'Zoologie'
         }
     ];
 
@@ -466,24 +519,25 @@ window.renderScienceMuseums = () => {
         const desc = museum[`desc_${lang}`] || museum.desc_ar;
         const cat = museum[`cat_${lang}`] || museum.cat_ar;
         const exploreText = lang === 'en' ? 'Explore Pieces' : (lang === 'fr' ? 'Explorer les pièces' : 'استكشف القطع');
+        const arrowIcon = lang === 'ar' ? 'arrow-left' : 'arrow-right';
         
         const col = document.createElement('div');
         col.className = 'col-lg-4 col-md-6 col-12 mb-4';
         
         col.innerHTML = `
-            <div class="museum-card" onclick="loadScienceSubMuseum('${museum.collectionFilter}', '${title}')" style="height: 100%; background: #1e293b; border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease; box-shadow: 0 8px 15px rgba(0,0,0,0.2);" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 12px 25px rgba(0,0,0,0.4)'; this.style.borderColor='rgba(217,119,6,0.4)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 8px 15px rgba(0,0,0,0.2)'; this.style.borderColor='rgba(255,255,255,0.05)';">
-                <div style="width: 100%; height: 200px; overflow: hidden; flex-shrink: 0;">
-                    <img src="${museum.img}" alt="${title}" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease;" loading="eager" fetchpriority="high" onmouseover="this.style.transform='scale(1.05)';" onmouseout="this.style.transform='scale(1)';" onerror="this.src='assets/science-museum.png'">
+            <div class="museum-card" onclick="loadScienceSubMuseum('${museum.id}', '${title.replace(/'/g, "\\'")}')">
+                <div class="card-img-wrap">
+                    <img src="${museum.img}" alt="${title}" class="card-img" loading="eager" onerror="this.src='assets/science-museum.png'">
+                    <div class="card-grey-overlay"></div>
+                    <div class="card-gradient-overlay"></div>
                 </div>
-                <div style="padding: 18px 20px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; text-align: ${lang === 'ar' ? 'right' : 'left'};">
-                    <div>
-                        <span style="color: #d4af37; font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 6px;">${cat}</span>
-                        <h3 style="color: #ffffff; font-size: 1.3rem; font-weight: 800; margin-bottom: 10px;">${title}</h3>
-                        <p style="color: rgba(255, 255, 255, 0.65); font-size: 0.9rem; line-height: 1.6; margin-bottom: 0;">${desc}</p>
-                    </div>
-                    <span style="color: #d4af37; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; font-size: 0.95rem; margin-top: 16px;">
+                <div class="card-content">
+                    <span class="museum-category">${cat}</span>
+                    <h3>${title}</h3>
+                    <p>${desc}</p>
+                    <span class="learn-more">
                         <span>${exploreText}</span>
-                        <i class="fas fa-${lang === 'ar' ? 'arrow-left' : 'arrow-right'}"></i>
+                        <i class="fas fa-${arrowIcon} arrow-dir"></i>
                     </span>
                 </div>
             </div>
@@ -501,45 +555,61 @@ window.loadScienceSubMuseum = async (subMuseumId, subMuseumTitle) => {
     const artifactsGrid = document.getElementById('artifacts-grid');
     const backToHallsBtn = document.getElementById('back-to-halls-btn');
     const lang = getCurrentLang();
+    const backArrow = lang === 'ar' ? 'right' : 'left';
 
     const backBtnText = lang === 'en' ? 'Back to Museums' : (lang === 'fr' ? 'Retour aux Musées' : 'العودة للمتاحف');
     if (backToHallsBtn) {
         backToHallsBtn.innerHTML = `
-            <button class="btn btn-outline-light rounded-pill px-4 py-2" onclick="renderScienceMuseums()">
-                <i class="fas fa-arrow-${lang === 'ar' ? 'right' : 'left'} me-2"></i> ${backBtnText}
+            <button class="btn-back-museum" onclick="renderScienceMuseums()">
+                <i class="fas fa-arrow-${backArrow} me-2"></i> ${backBtnText}
             </button>
-            <h3 class="text-white mt-3">${subMuseumTitle}</h3>
+            <h3 class="submuseum-title">${subMuseumTitle}</h3>
         `;
         backToHallsBtn.style.display = 'block';
     }
 
-    // Show loading skeleton
     artifactsGrid.innerHTML = `
         <div class="col-12 text-center py-5">
-            <i class="fas fa-spinner fa-spin fa-3x" style="color: var(--accent, #d97706);"></i>
-            <p class="text-white mt-3">${lang === 'en' ? 'Loading...' : (lang === 'fr' ? 'Chargement...' : 'جاري التحميل...')}</p>
+            <i class="fas fa-spinner fa-spin fa-3x" style="color: #422006;"></i>
+            <p class="text-muted mt-3">${lang === 'en' ? 'Loading...' : (lang === 'fr' ? 'Chargement...' : 'جاري التحميل...')}</p>
         </div>
     `;
 
     try {
-        const scienceCollId = AppwriteConfig.collections.science; // 'science_atifacts'
-        const queries = Query ? [Query.limit(100)] : [];
-        const response = await databases.listDocuments(AppwriteConfig.databaseId, scienceCollId, queries);
-        let docs = response.documents || [];
+        let docs = [];
 
-        if (subMuseumId !== 'all') {
-            const filtered = docs.filter(d => matchesScienceSubMuseum(d, subMuseumId));
-            if (filtered.length > 0) docs = filtered;
+        if (subMuseumId === 'geology') {
+            currentMuseumCollection = AppwriteConfig.collections.geology;
+            const queries = Query ? [Query.limit(100)] : [];
+            const response = await databases.listDocuments(
+                AppwriteConfig.databaseId,
+                AppwriteConfig.collections.geology,
+                queries
+            );
+            docs = response.documents || [];
+        } else {
+            currentMuseumCollection = AppwriteConfig.collections.science;
+            const queries = Query ? [Query.limit(100)] : [];
+            const response = await databases.listDocuments(
+                AppwriteConfig.databaseId,
+                AppwriteConfig.collections.science,
+                queries
+            );
+            docs = response.documents || [];
+
+            if (subMuseumId !== 'all') {
+                const filtered = docs.filter(d => matchesScienceSubMuseum(d, subMuseumId));
+                if (filtered.length > 0) docs = filtered;
+            }
         }
 
-        // Cache them so search works
         museumArtifactsCache = docs;
 
         if (!docs.length) {
             artifactsGrid.innerHTML = `
                 <div class="col-12 text-center py-5">
                     <i class="fas fa-box-open fa-3x text-warning mb-4"></i>
-                    <h3 class="text-white">${lang === 'en' ? 'No items found yet.' : (lang === 'fr' ? 'Aucune pièce trouvée.' : 'لا توجد قطع متاحة حالياً.')}</h3>
+                    <h3 class="text-dark">${lang === 'en' ? 'No items found yet.' : (lang === 'fr' ? 'Aucune pièce trouvée.' : 'لا توجد قطع متاحة حالياً.')}</h3>
                 </div>
             `;
             return;
@@ -551,7 +621,7 @@ window.loadScienceSubMuseum = async (subMuseumId, subMuseumTitle) => {
         artifactsGrid.innerHTML = `
             <div class="col-12 text-center py-5">
                 <i class="fas fa-exclamation-triangle fa-3x text-danger mb-4"></i>
-                <h3 class="text-white">${lang === 'en' ? 'Failed to load data.' : (lang === 'fr' ? 'Échec du chargement.' : 'حدث خطأ أثناء تحميل البيانات.')}</h3>
+                <h3 class="text-dark">${lang === 'en' ? 'Failed to load data.' : (lang === 'fr' ? 'Échec du chargement.' : 'حدث خطأ أثناء تحميل البيانات.')}</h3>
             </div>
         `;
     }
@@ -582,10 +652,10 @@ window.filterArtByHall = (hallId, hallTitle) => {
     const backToHallsBtn = document.getElementById('back-to-halls-btn');
     if (backToHallsBtn) {
         backToHallsBtn.innerHTML = `
-            <button class="btn btn-outline-light rounded-pill px-4 py-2" onclick="renderArtHalls()">
-                <i class="fas fa-arrow-right me-2"></i> ${backBtnText}
+            <button class="btn-back-museum" onclick="renderArtHalls()">
+                <i class="fas fa-arrow-${lang === 'ar' ? 'right' : 'left'} me-2"></i> ${backBtnText}
             </button>
-            <h3 class="text-white mt-3">${hallTitle}</h3>
+            <h3 class="submuseum-title">${hallTitle}</h3>
         `;
         backToHallsBtn.style.display = 'block';
     }
@@ -657,6 +727,9 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
             subtitle = author;
         } else if (collectionId.includes('science')) {
             subtitle = artifact[`category-${lang}`] || artifact['category-ar'] || artifact.category || 'تصنيف علمي';
+        } else if (isGeologyCollection(collectionId)) {
+            subtitle = artifact[`Classification-${lang}`] || artifact[`classification-${lang}`] ||
+                       artifact['Classification-ar'] || artifact['classification-ar'] || 'جيولوجيا';
         }
         
         if (artifactNameHero) artifactNameHero.innerText = name;
@@ -679,6 +752,8 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
                 sectionTitles[0].innerText = lang === 'en' ? 'Artifact Details' : (lang === 'fr' ? 'Détails de l\'artefact' : 'تفاصيل الأثر');
             } else if (collectionId.includes('art_')) {
                 sectionTitles[0].innerText = lang === 'en' ? 'Painting Details' : (lang === 'fr' ? 'Détails du tableau' : 'تفاصيل اللوحة');
+            } else if (isGeologyCollection(collectionId)) {
+                sectionTitles[0].innerText = lang === 'en' ? 'Specimen Details' : (lang === 'fr' ? 'Détails du spécimen' : 'تفاصيل العينة');
             } else {
                 sectionTitles[0].innerText = lang === 'en' ? 'Identification Card' : (lang === 'fr' ? 'Carte d\'identité' : 'بطاقة التعريف');
             }
@@ -737,6 +812,15 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
 
                 const serialVal = artifact.serial_number || artifact.serialNumber || artifact['serial-number'];
                 if (serialVal) fields.push({ label: l.serial, value: serialVal, icon: 'fas fa-hashtag' });
+            } else if (isGeologyCollection(collectionId)) {
+                const classVal = getVal('Classification') || getVal('classification');
+                if (classVal) fields.push({ label: l.category, value: classVal, icon: 'fas fa-gem' });
+
+                const compVal = getVal('formation') || getVal('composition');
+                if (compVal) fields.push({ label: l.material, value: compVal, icon: 'fas fa-layer-group' });
+
+                const ageVal = getVal('age');
+                if (ageVal) fields.push({ label: l.era, value: ageVal, icon: 'fas fa-history' });
             }
             
             fields.forEach(f => {
@@ -753,7 +837,8 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
         }
 
         // Audio Guide Logic
-        const audioFileId = artifact[`audio-${lang}`] || artifact[`audio_${lang}`] || artifact['audio-ar'] || artifact.audio_ar || '';
+        const audioFileId = artifact[`audio_guide_${lang}`] || artifact[`audio_guide-${lang}`] ||
+            artifact[`audio-${lang}`] || artifact[`audio_${lang}`] || artifact['audio-ar'] || artifact.audio_ar || '';
         if (audioFileId && audioSection && audioPlayer) {
             const audioBucketId = AppwriteConfig.buckets.audio;
             const audioUrl = getAppwriteImageUrl(audioFileId, audioBucketId);

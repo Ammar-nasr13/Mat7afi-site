@@ -286,11 +286,13 @@
         alt="نموذج ثلاثي الأبعاد لقطعة أثرية من متاحف جامعة المنيا"
         crossorigin="anonymous"
         auto-rotate
+        auto-exposure
         camera-controls
         shadow-intensity="1.2"
         shadow-softness="0.6"
-        exposure="1.25"
-        tone-mapping="aces"
+        exposure="1.0"
+        environment-image="neutral"
+        tone-mapping="commerce"
         min-camera-orbit="auto auto 5%"
         max-camera-orbit="auto auto 200%"
         camera-orbit="0deg 75deg 100%"
@@ -385,6 +387,7 @@
 
             let urlIndex = 0;
             let progressInterval;
+            let blobUrl = null;
 
             const startProgress = () => {
                 clearInterval(progressInterval);
@@ -409,7 +412,19 @@
                 }
             };
 
-            const tryLoadModel = () => {
+            const fetchModelBlob = async (url) => {
+                const response = await fetch(url, {
+                    mode: 'cors',
+                    credentials: 'omit',
+                    cache: 'force-cache'
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const blob = await response.blob();
+                if (!blob.size) throw new Error('Empty model file');
+                return URL.createObjectURL(blob);
+            };
+
+            const tryLoadModel = async () => {
                 if (urlIndex >= modelUrls.length) {
                     clearInterval(progressInterval);
                     overlay.style.display = 'none';
@@ -418,7 +433,8 @@
                 }
 
                 startProgress();
-                viewer.removeAttribute('environment-image');
+
+                const currentUrl = modelUrls[urlIndex];
 
                 const onLoad = () => {
                     viewer.removeEventListener('error', onError);
@@ -426,13 +442,24 @@
                 };
                 const onError = () => {
                     viewer.removeEventListener('load', onLoad);
+                    if (blobUrl) {
+                        URL.revokeObjectURL(blobUrl);
+                        blobUrl = null;
+                    }
                     urlIndex += 1;
                     tryLoadModel();
                 };
 
                 viewer.addEventListener('load', onLoad, { once: true });
                 viewer.addEventListener('error', onError, { once: true });
-                viewer.src = modelUrls[urlIndex];
+
+                try {
+                    blobUrl = await fetchModelBlob(currentUrl);
+                    viewer.src = blobUrl;
+                } catch (fetchErr) {
+                    console.warn('Blob fetch failed, trying direct URL:', fetchErr);
+                    viewer.src = currentUrl;
+                }
             };
 
             tryLoadModel();

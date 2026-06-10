@@ -2024,7 +2024,269 @@ img {
     }
 }
 
-/* Museum Page Premium Header */
+/* Museum Page - Mobile App Style */
+.museum-page {
+    background-color: #F8F9FA !important;
+    color: #422006;
+}
+
+.museum-page .museum-hero-premium {
+    position: relative;
+    height: 280px;
+    width: 100%;
+    overflow: hidden;
+    background: #000;
+}
+
+.museum-page .museum-hero-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 1;
+}
+
+.museum-page .museum-hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.1) 30%, rgba(0,0,0,0.65) 100%);
+    z-index: 2;
+}
+
+.museum-back-btn {
+    position: absolute;
+    top: 20px;
+    inset-inline-start: 20px;
+    z-index: 10;
+    width: 46px;
+    height: 46px;
+    background: #422006;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.1rem;
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    transition: var(--transition);
+}
+
+.museum-back-btn:hover {
+    transform: scale(1.08);
+    color: white;
+    background: #5B3A1B;
+}
+
+.museum-page .museum-hero-content {
+    position: absolute;
+    bottom: 24px;
+    inset-inline-start: 20px;
+    inset-inline-end: 20px;
+    z-index: 5;
+    color: white;
+    text-align: start;
+}
+
+.museum-page .museum-title-main {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    color: white;
+}
+
+.museum-page .museum-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.9rem;
+}
+
+.museum-page .museum-meta .location {
+    color: rgba(255,255,255,0.9);
+}
+
+.museum-page .search-section-museum {
+    padding: 20px 0 10px;
+    background: #F8F9FA;
+    margin-top: 0;
+    position: relative;
+    z-index: 20;
+}
+
+.museum-search-box-light {
+    background: white;
+    border: 1.2px solid #E4E4E7;
+    border-radius: 50px;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    max-width: 600px;
+    margin: 0 auto;
+    height: 50px;
+}
+
+.museum-search-box-light input {
+    border: none;
+    background: transparent;
+    padding: 0 16px;
+    width: 100%;
+    color: #09090B;
+    outline: none;
+    font-size: 0.95rem;
+    font-family: 'Cairo', sans-serif;
+    text-align: start;
+}
+
+.museum-search-box-light input::placeholder {
+    color: #A1A1AA;
+}
+
+.museum-search-box-light .search-icon-btn {
+    background: #422006;
+    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: white;
+    font-size: 0.85rem;
+}
+
+/* Art Hall Cards (mobile flat style) */
+.hall-card-link {
+    text-decoration: none !important;
+    display: block;
+}
+
+.hall-card {
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-radius: 0;
+}
+
+.hall-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+}
+
+.hall-card h3 {
+    color: #ffffff;
+    font-size: 1.25rem;
+    font-weight: 800;
+    margin: 0;
+    font-family: 'Cairo', sans-serif;
+}
+
+/* Geology List Cards (mobile list style) */
+.geology-list-card {
+    display: block;
+    position: relative;
+    height: 180px;
+    overflow: hidden;
+    box-shadow: 0 8px 15px rgba(0,0,0,0.12);
+    transition: transform 0.3s ease;
+}
+
+.geology-list-card:hover {
+    transform: translateY(-3px);
+}
+
+.geology-list-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.geology-list-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.1) 60%, rgba(0,0,0,0.85) 100%);
+}
+
+.geology-list-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(217, 217, 217, 0.2);
+    z-index: 1;
+}
+
+.geology-list-title {
+    position: absolute;
+    bottom: 20px;
+    inset-inline-start: 20px;
+    inset-inline-end: 20px;
+    color: white;
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: 'Cairo', sans-serif;
+    z-index: 2;
+    text-align: start;
+}
+
+/* Back navigation button */
+.btn-back-museum {
+    background: transparent;
+    border: 1.5px solid #422006;
+    color: #422006;
+    padding: 8px 20px;
+    border-radius: 50px;
+    font-family: 'Cairo', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-back-museum:hover {
+    background: #422006;
+    color: white;
+}
+
+.submuseum-title {
+    color: #422006;
+    font-weight: 800;
+    font-size: 1.3rem;
+    margin-top: 12px;
+    font-family: 'Cairo', sans-serif;
+}
+
+#back-to-halls-btn {
+    padding: 10px 0;
+}
+
+/* Science sub-museum cards on museum page use #museums cream bg override fix */
+.museum-page #artifacts-grid .museum-card {
+    min-height: 380px;
+}
+
+.museum-page #artifacts-grid .card-content h3 {
+    font-size: 1.15rem;
+}
+
+@media (max-width: 768px) {
+    .museum-page .museum-hero-premium {
+        height: 220px;
+    }
+    .museum-page .museum-title-main {
+        font-size: 1.2rem;
+    }
+    .hall-card {
+        height: 80px;
+    }
+    .hall-card h3 {
+        font-size: 1.1rem;
+    }
+}
+
+/* Legacy museum hero (non museum-page) */
 .museum-hero-premium {
     position: relative;
     height: 450px;
