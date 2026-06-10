@@ -800,7 +800,7 @@ window.renderScienceMuseums = () => {
         },
         {
             id: 'zoology',
-            img: 'assets/science-museum1.png',
+            img: 'assets/science-museum.png',
             ar: 'متحف علم الحيوان',
             en: 'Zoology Museum',
             fr: 'Musée de Zoologie',
