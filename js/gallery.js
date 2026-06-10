@@ -1,10 +1,21 @@
-// Dictionary for display names
-const museumNames = {
-    'tourism_museum': 'متحف كلية السياحة والفنادق',
-    'science_museum': 'متحف العلوم',
-    'modern_art_museum': 'متحف الفن الحديث',
-    'all': 'جميع المتاحف'
+// Dictionary for display names — multilingual
+const museumNamesMap = {
+    'tourism_museum': { ar: 'متحف كلية السياحة والفنادق', en: 'Tourism Faculty Museum', fr: 'Musée de la Faculté de Tourisme' },
+    'science_museum': { ar: 'متحف العلوم', en: 'Science Museum', fr: 'Musée des Sciences' },
+    'modern_art_museum': { ar: 'متحف الفن الحديث', en: 'Modern Art Museum', fr: 'Musée d\'Art Moderne' },
+    'all': { ar: 'جميع المتاحف', en: 'All Museums', fr: 'Tous les musées' }
 };
+const getMuseumName = (key) => {
+    const lang = sessionStorage.getItem('lang') || 'ar';
+    return (museumNamesMap[key] && museumNamesMap[key][lang]) || museumNamesMap[key]?.ar || key;
+};
+// Keep backwards compat
+const museumNames = new Proxy(museumNamesMap, {
+    get(target, prop) {
+        const lang = sessionStorage.getItem('lang') || 'ar';
+        return target[prop] ? target[prop][lang] || target[prop]['ar'] : prop;
+    }
+});
 
 const categoryBadges = {
     'image': { icon: 'fa-image', text: 'صورة' },
@@ -112,16 +123,16 @@ function renderGrid() {
     
     filteredItems.forEach((item, index) => {
         const badgeInfo = categoryBadges[item.category] || categoryBadges['image'];
-        const museumName = museumNames[item.museum] || item.museum;
+        const museumName = getMuseumName(item.museum) || item.museum;
         const isFav = isFavorite(item.$id);
         
-        let title = item.titleAr || item.title || 'مجهول';
-        if(lang === 'en' && item.titleEn) title = item.titleEn;
-        if(lang === 'fr' && item.titleFr) title = item.titleFr;
+        let title = item.titleAr || item.title || (lang === 'en' ? 'Unknown' : (lang === 'fr' ? 'Inconnu' : 'مجهول'));
+        if (lang === 'en' && item.titleEn)   title = item.titleEn;
+        if (lang === 'fr' && item.titleFr)   title = item.titleFr;
         
         let desc = item.shortDescriptionAr || item.description || '';
-        if(lang === 'en' && item.shortDescriptionEn) desc = item.shortDescriptionEn;
-        if(lang === 'fr' && item.shortDescriptionFr) desc = item.shortDescriptionFr;
+        if (lang === 'en' && item.shortDescriptionEn) desc = item.shortDescriptionEn;
+        if (lang === 'fr' && item.shortDescriptionFr) desc = item.shortDescriptionFr;
         
         let actionsHtml = '';
         if (item.category === 'file') {
@@ -151,21 +162,27 @@ function renderGrid() {
             `;
         }
         
+        const badgeText = lang === 'en'
+            ? ({ image: 'Image', artifact_card: 'Artifact Card', file: 'PDF File' }[item.category] || 'Image')
+            : lang === 'fr'
+            ? ({ image: 'Image', artifact_card: 'Carte archéologique', file: 'Fichier PDF' }[item.category] || 'Image')
+            : badgeInfo.text;
+
         const cardHtml = `
-            <div class="store-card" data-aos="fade-up" data-aos-delay="${(index % 4) * 100}">
+            <div class="store-card" data-aos="fade-up" data-aos-delay="${(index % 3) * 100}">
                 <img src="${item.actualImageUrl}" alt="${title}" loading="eager" fetchpriority="high" onerror="this.style.display='none'; this.closest('.store-card').classList.add('no-image');">
                 <div class="store-card-content">
-                    <span class="item-badge"><i class="fas ${badgeInfo.icon} me-1"></i> ${badgeInfo.text}</span>
+                    <span class="item-badge"><i class="fas ${badgeInfo.icon} me-1"></i> ${badgeText}</span>
                     <h3 class="item-title">${title}</h3>
                     <p class="item-museum"><i class="fas fa-landmark me-1"></i> ${museumName}</p>
-                    ${desc ? `<p style="font-size:0.85rem; color:rgba(255,255,255,0.7); margin-bottom:15px; flex-grow:1;">${desc}</p>` : ''}
+                    ${desc ? `<p style="font-size:0.85rem; color:rgba(255,255,255,0.75); margin-bottom:12px; flex-grow:1; line-height:1.6;">${desc}</p>` : ''}
                     
                     <div class="item-actions">
                         ${actionsHtml}
-                        <button onclick="shareItem('${item.$id}', '${title}')" class="item-btn" title="مشاركة">
+                        <button onclick="shareItem('${item.$id}', '${title.replace(/'/g, &quot;\\'&quot;)}')" class="item-btn" title="${lang === 'en' ? 'Share' : (lang === 'fr' ? 'Partager' : 'مشاركة')}">
                             <i class="fas fa-share-nodes"></i>
                         </button>
-                        <button onclick="toggleFavorite('${item.$id}', this)" class="item-btn favorite-btn ${isFav ? 'active' : ''}" title="إضافة للمفضلة">
+                        <button onclick="toggleFavorite('${item.$id}', this)" class="item-btn favorite-btn ${isFav ? 'active' : ''}" title="${lang === 'en' ? 'Add to Favorites' : (lang === 'fr' ? 'Ajouter aux favoris' : 'إضافة للمفضلة')}">
                             <i class="fas fa-heart"></i>
                         </button>
                     </div>
@@ -323,39 +340,33 @@ function shareItem(id, title) {
     }
 }
 
-// Favorites Logic
-function initFavorites() {
-    if (!sessionStorage.getItem('mat7afi_favorites')) {
-        sessionStorage.setItem('mat7afi_favorites', JSON.stringify([]));
-    }
-}
+// Favorites — stored in localStorage so they persist across sessions
+const FAV_KEY = 'mat7afi_favorites';
+
+function setupFavoritesSystem() { /* no-op — localStorage is always available */ }
 
 function getFavorites() {
-    try {
-        return JSON.parse(sessionStorage.getItem('mat7afi_favorites')) || [];
-    } catch {
-        return [];
-    }
+    try { return JSON.parse(localStorage.getItem(FAV_KEY)) || []; }
+    catch { return []; }
 }
 
 function isFavorite(id) {
-    const favs = getFavorites();
-    return favs.includes(id);
+    return getFavorites().includes(id);
 }
 
 function toggleFavorite(id, btnElement) {
     let favs = getFavorites();
     if (favs.includes(id)) {
-        favs = favs.filter(favId => favId !== id);
+        favs = favs.filter(f => f !== id);
         btnElement.classList.remove('active');
     } else {
         favs.push(id);
         btnElement.classList.add('active');
-        
-        // Animate heart
         const icon = btnElement.querySelector('i');
-        icon.style.transform = 'scale(1.3)';
-        setTimeout(() => icon.style.transform = 'scale(1)', 200);
+        if (icon) {
+            icon.style.transform = 'scale(1.4)';
+            setTimeout(() => icon.style.transform = 'scale(1)', 250);
+        }
     }
-    sessionStorage.setItem('mat7afi_favorites', JSON.stringify(favs));
+    localStorage.setItem(FAV_KEY, JSON.stringify(favs));
 }

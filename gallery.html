@@ -6,16 +6,33 @@
     <title>معرض متحفي | استكشاف متاحف جامعة المنيا بصرياً</title>
     <meta name="description" content="استكشف الصور والبطاقات الأثرية والملفات الرقمية الخاصة بمتاحف جامعة المنيا في معرض متحفي بتصميم بصري جذاب.">
     <meta name="keywords" content="معرض متحفي, متاحف المنيا, صور أثرية, بطاقات أثرية, متاحف جامعة المنيا, Mat7afi Gallery">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://mat7afi.site/gallery.html">
+    <meta property="og:site_name" content="متحفي - Mat7afi">
     <meta property="og:title" content="معرض متحفي | متاحف جامعة المنيا">
     <meta property="og:description" content="استكشف الصور والبطاقات الأثرية والملفات الرقمية الخاصة بمتاحف جامعة المنيا في معرض متحفي.">
     <meta property="og:image" content="https://mat7afi.site/assets/Cover.png">
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://mat7afi.site/gallery.html">
+    <meta property="twitter:title" content="معرض متحفي | متاحف جامعة المنيا">
+    <meta property="twitter:description" content="استكشف الصور والبطاقات الأثرية والملفات الرقمية الخاصة بمتاحف جامعة المنيا في معرض متحفي.">    
+    <meta property="twitter:image" content="https://mat7afi.site/assets/Cover.png">
     <link rel="icon" type="image/png" href="assets/icon.png">
-    
+    <link rel="canonical" href="https://mat7afi.site/gallery.html">
+
+    <!-- Performance: preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://appwrite.etihadalmdina.com">
+
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
     <link id="bootstrap-css" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet"></noscript>
+    <link rel="stylesheet" href="css/style.css?v=3">
     <style>
         /* Specific Styles for Gallery Page */
         .gallery-page-header {
@@ -100,12 +117,18 @@
             color: var(--accent);
         }
 
-        /* Store Grid */
+        /* Responsive Gallery Grid — bigger cards */
         .store-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 15px;
-            padding: 20px 0 80px;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 20px;
+            padding: 24px 0 100px;
+        }
+        @media (max-width: 575px) {
+            .store-grid { grid-template-columns: 1fr; }
+        }
+        @media (min-width: 576px) and (max-width: 991px) {
+            .store-grid { grid-template-columns: repeat(2, 1fr); }
         }
         
         .store-card {
@@ -126,12 +149,14 @@
         }
         .store-card img {
             width: 100%;
-            height: 160px;
-            object-fit: contain;
-            background: rgba(0,0,0,0.5); /* Helps to blend contain images */
+            height: 220px;
+            object-fit: cover;
+            background: rgba(0,0,0,0.3);
             display: block;
             border-bottom: 1px solid rgba(255,255,255,0.05);
+            transition: transform 0.4s ease;
         }
+        .store-card:hover img { transform: scale(1.04); }
         .store-card-content {
             padding: 15px;
             flex-grow: 1;

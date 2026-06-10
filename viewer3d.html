@@ -4,76 +4,123 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>عرض ثلاثي الأبعاد 360° | متاحف جامعة المنيا</title>
-    
+    <meta name="description" content="عرض النماذج ثلاثية الأبعاد للقطع الأثرية في متاحف جامعة المنيا">
+
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Google Model Viewer component -->
+
+    <!-- Google Model Viewer -->
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
 
     <style>
         :root {
-            --navy-dark: #0a192f;
+            --navy: #0a192f;
             --accent: #d97706;
+            --accent-light: #f59e0b;
+            --glass: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.15);
         }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
         body {
-            margin: 0;
-            padding: 0;
             width: 100vw;
             height: 100vh;
-            background: radial-gradient(circle at center, #1e293b 0%, #020617 100%);
+            background: radial-gradient(ellipse at center, #1a2f4e 0%, #020617 100%);
             font-family: 'Cairo', sans-serif;
             overflow: hidden;
             display: flex;
-            align-items: center;
-            justify-content: center;
+            flex-direction: column;
         }
-        
-        /* 3D Viewer Element */
+
+        /* ── Model Viewer ─────────────────────────────────────────────── */
         model-viewer {
             width: 100%;
-            height: 100%;
-            background-color: transparent;
+            flex: 1;
             --poster-color: transparent;
+            background: transparent;
+            min-height: 0;
         }
-        
-        /* Top Navigation Overlay */
+
+        /* ── Loading Overlay ──────────────────────────────────────────── */
+        #loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: #020617;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            color: white;
+            transition: opacity 0.6s ease;
+        }
+        #loading-overlay.hidden { opacity: 0; pointer-events: none; }
+
+        .loader-ring {
+            width: 80px;
+            height: 80px;
+            border: 3px solid rgba(217, 119, 6, 0.2);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 24px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .loader-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: rgba(255,255,255,0.85);
+            margin-bottom: 8px;
+        }
+        .loader-sub {
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.4);
+        }
+
+        #loading-progress {
+            width: 200px;
+            height: 3px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+        #loading-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--accent-light));
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* ── Top Header ───────────────────────────────────────────────── */
         .viewer-header {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            padding: 20px 30px;
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            padding: 16px 20px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            z-index: 10;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+            z-index: 20;
+            background: linear-gradient(to bottom, rgba(2,6,23,0.9), transparent);
             pointer-events: none;
         }
-        
-        .viewer-title {
-            color: white;
-            margin: 0;
-            font-weight: 900;
-            font-size: 1.5rem;
-            text-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            pointer-events: auto;
-        }
-        
+
         .btn-back {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
             color: white;
-            width: 50px;
-            height: 50px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.2rem;
+            font-size: 1rem;
             cursor: pointer;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(12px);
             transition: all 0.3s;
             pointer-events: auto;
             text-decoration: none;
@@ -82,118 +129,369 @@
             background: var(--accent);
             border-color: var(--accent);
             transform: scale(1.1);
+            color: white;
         }
-        
-        /* Loading Overlay */
-        #loading-overlay {
-            position: absolute;
-            inset: 0;
-            background: #020617;
+
+        .viewer-title {
+            color: white;
+            font-weight: 900;
+            font-size: clamp(1rem, 4vw, 1.5rem);
+            text-shadow: 0 2px 12px rgba(0,0,0,0.7);
+            pointer-events: auto;
+            text-align: center;
+            flex: 1;
+            padding: 0 12px;
+        }
+
+        .header-spacer { width: 44px; }
+
+        /* ── Controls Panel (Bottom) ──────────────────────────────────── */
+        .controls-panel {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            padding: 16px 20px 24px;
+            background: linear-gradient(to top, rgba(2,6,23,0.95), transparent);
+            z-index: 20;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            z-index: 20;
-            color: white;
-            transition: opacity 0.5s;
+            gap: 14px;
+            pointer-events: none;
         }
-        .spinner {
-            font-size: 3rem;
-            color: var(--accent);
-            animation: spin 1s infinite linear;
-            margin-bottom: 20px;
-        }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-        
-        /* Controls Info */
+
+        /* Hint Bar */
         .controls-hint {
-            position: absolute;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.6);
+            background: rgba(0,0,0,0.5);
             backdrop-filter: blur(10px);
-            color: white;
-            padding: 10px 20px;
+            color: rgba(255,255,255,0.75);
+            padding: 8px 18px;
             border-radius: 30px;
-            font-size: 0.9rem;
+            font-size: 0.82rem;
             display: flex;
             align-items: center;
-            gap: 15px;
-            pointer-events: none;
+            gap: 18px;
             border: 1px solid rgba(255,255,255,0.1);
         }
+        .controls-hint span { display: flex; align-items: center; gap: 6px; }
         .controls-hint i { color: var(--accent); }
+
+        /* Action Buttons Row */
+        .ctrl-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            pointer-events: auto;
+        }
+
+        .ctrl-btn {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 10px 18px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 700;
+            cursor: pointer;
+            backdrop-filter: blur(12px);
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            min-height: 40px;
+        }
+        .ctrl-btn:hover, .ctrl-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(217,119,6,0.4);
+        }
+        .ctrl-btn i { font-size: 0.9rem; }
+
+        /* Zoom Cluster */
+        .zoom-cluster {
+            display: flex;
+            border: 1px solid var(--glass-border);
+            border-radius: 30px;
+            overflow: hidden;
+            backdrop-filter: blur(12px);
+        }
+        .zoom-btn {
+            background: var(--glass);
+            border: none;
+            color: white;
+            width: 44px;
+            height: 40px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-family: 'Cairo', sans-serif;
+        }
+        .zoom-btn:hover { background: var(--accent); }
+        .zoom-divider { width: 1px; background: var(--glass-border); }
+
+        /* Error State */
+        #error-overlay {
+            position: fixed;
+            inset: 0;
+            background: #020617;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            color: white;
+            text-align: center;
+            padding: 30px;
+        }
+        #error-overlay i { font-size: 3rem; color: #ef4444; margin-bottom: 20px; }
+        #error-overlay h3 { font-size: 1.2rem; margin-bottom: 10px; }
+        #error-overlay p { color: rgba(255,255,255,0.5); font-size: 0.9rem; }
     </style>
 </head>
 <body>
 
+    <!-- Loading Overlay -->
     <div id="loading-overlay">
-        <i class="fas fa-cube spinner"></i>
-        <h3 id="loading-text">جاري استحضار النموذج ثلاثي الأبعاد...</h3>
+        <div class="loader-ring"></div>
+        <p class="loader-title" id="loading-title">جاري استحضار النموذج ثلاثي الأبعاد...</p>
+        <p class="loader-sub">قد يستغرق التحميل بضع ثوانٍ</p>
+        <div id="loading-progress"><div id="loading-bar"></div></div>
     </div>
 
-    <div class="viewer-header">
-        <a href="javascript:history.back()" class="btn-back" title="عودة">
-            <i class="fas fa-arrow-right"></i>
+    <!-- Error Overlay -->
+    <div id="error-overlay">
+        <i class="fas fa-exclamation-triangle"></i>
+        <h3 id="error-title">تعذّر تحميل النموذج</h3>
+        <p id="error-msg">تأكد من اتصالك بالإنترنت وحاول مجدداً.</p>
+        <button onclick="history.back()" style="margin-top:24px; background:var(--accent); border:none; color:#000; padding:10px 24px; border-radius:20px; font-family:Cairo,sans-serif; font-weight:700; cursor:pointer;">
+            <i class="fas fa-arrow-right me-1"></i> عودة
+        </button>
+    </div>
+
+    <!-- Top Header -->
+    <header class="viewer-header">
+        <a href="javascript:history.back()" class="btn-back" id="btn-back" title="عودة">
+            <i class="fas fa-arrow-right" id="back-icon"></i>
         </a>
         <h2 class="viewer-title" id="model-title">قطعة أثرية</h2>
-        <div style="width: 50px;"></div> <!-- spacer -->
-    </div>
+        <div class="header-spacer"></div>
+    </header>
 
-    <model-viewer 
+    <!-- 3D Model Viewer -->
+    <model-viewer
         id="artifact-viewer"
-        src="" 
-        alt="A 3D model of an artifact" 
-        auto-rotate 
+        src=""
+        alt="نموذج ثلاثي الأبعاد لقطعة أثرية من متاحف جامعة المنيا"
+        auto-rotate
         camera-controls
-        shadow-intensity="1"
-        exposure="1.2">
+        shadow-intensity="1.5"
+        shadow-softness="0.8"
+        exposure="1.0"
+        tone-mapping="commerce"
+        environment-image="neutral"
+        min-camera-orbit="auto auto 5%"
+        max-camera-orbit="auto auto 200%"
+        camera-orbit="0deg 75deg 100%"
+        interaction-prompt="none">
     </model-viewer>
 
-    <div class="controls-hint">
-        <span><i class="fas fa-hand-pointer"></i> اسحب للتدوير</span>
-        <span><i class="fas fa-search-plus"></i> كبّر للتفاصيل</span>
+    <!-- Bottom Controls Panel -->
+    <div class="controls-panel">
+        <div class="controls-hint">
+            <span><i class="fas fa-hand-pointer"></i> اسحب للتدوير</span>
+            <span><i class="fas fa-search-plus"></i> قرص للتكبير</span>
+            <span><i class="fas fa-arrows-alt"></i> إصبعان للتحريك</span>
+        </div>
+
+        <div class="ctrl-buttons">
+            <!-- Zoom -->
+            <div class="zoom-cluster" title="تكبير / تصغير">
+                <button class="zoom-btn" id="btn-zoom-in" title="تكبير">+</button>
+                <div class="zoom-divider"></div>
+                <button class="zoom-btn" id="btn-zoom-out" title="تصغير">−</button>
+            </div>
+
+            <!-- Auto Rotate Toggle -->
+            <button class="ctrl-btn active" id="btn-rotate" title="تشغيل / إيقاف الدوران">
+                <i class="fas fa-sync-alt"></i>
+                <span id="rotate-label">إيقاف الدوران</span>
+            </button>
+
+            <!-- Reset View -->
+            <button class="ctrl-btn" id="btn-reset" title="إعادة ضبط الزاوية">
+                <i class="fas fa-redo-alt"></i>
+                <span>إعادة ضبط</span>
+            </button>
+
+            <!-- AR Button (shown only on supported devices) -->
+            <button class="ctrl-btn" id="btn-ar" title="عرض الواقع المعزز" style="display:none">
+                <i class="fas fa-vr-cardboard"></i>
+                <span>عرض AR</span>
+            </button>
+
+            <!-- Fullscreen -->
+            <button class="ctrl-btn" id="btn-fullscreen" title="ملء الشاشة">
+                <i class="fas fa-expand"></i>
+                <span id="fs-label">ملء الشاشة</span>
+            </button>
+        </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const modelUrl = urlParams.get('url');
-            const modelTitle = urlParams.get('title');
-            
-            if (modelTitle) {
-                document.getElementById('model-title').innerText = modelTitle;
-            }
-            
-            const viewer = document.getElementById('artifact-viewer');
-            const loadingOverlay = document.getElementById('loading-overlay');
-            
-            if (modelUrl) {
-                viewer.src = modelUrl;
-                
-                viewer.addEventListener('load', () => {
-                    loadingOverlay.style.opacity = '0';
-                    setTimeout(() => loadingOverlay.remove(), 500);
-                });
-                
-                viewer.addEventListener('error', (e) => {
-                    document.getElementById('loading-text').innerText = 'حدث خطأ أثناء تحميل النموذج. تأكد من صحة الرابط.';
-                    document.querySelector('.spinner').className = 'fas fa-exclamation-triangle spinner';
-                    document.querySelector('.spinner').style.animation = 'none';
-                    document.querySelector('.spinner').style.color = '#ef4444';
-                    console.error('Model Viewer Error:', e);
-                });
-            } else {
-                document.getElementById('loading-text').innerText = 'لم يتم العثور على رابط النموذج.';
-            }
-            
-            // Adjust back button direction based on language
-            const lang = sessionStorage.getItem('lang') || 'ar';
+            const urlParams   = new URLSearchParams(window.location.search);
+            const modelUrl    = urlParams.get('url');
+            const modelTitle  = urlParams.get('title') || 'قطعة أثرية';
+            const lang        = sessionStorage.getItem('lang') || 'ar';
+
+            // ── Language / Direction ────────────────────────────────────
             if (lang !== 'ar') {
                 document.documentElement.dir = 'ltr';
-                document.querySelector('.btn-back i').className = 'fas fa-arrow-left';
+                document.documentElement.lang = lang;
+                document.getElementById('back-icon').className = 'fas fa-arrow-left';
             }
+
+            // ── Localise Loading Text ────────────────────────────────────
+            const loadingTitle = document.getElementById('loading-title');
+            if (lang === 'en') {
+                loadingTitle.textContent = 'Loading 3D Model...';
+                document.getElementById('error-title').textContent  = 'Failed to Load Model';
+                document.getElementById('error-msg').textContent    = 'Check your internet and try again.';
+                document.getElementById('rotate-label').textContent = 'Stop Rotation';
+                document.getElementById('fs-label').textContent     = 'Fullscreen';
+            } else if (lang === 'fr') {
+                loadingTitle.textContent = 'Chargement du modèle 3D...';
+                document.getElementById('rotate-label').textContent = 'Arrêter la rotation';
+                document.getElementById('fs-label').textContent     = 'Plein écran';
+            }
+
+            // ── Set Title ───────────────────────────────────────────────
+            document.getElementById('model-title').textContent = modelTitle;
+            document.title = `${modelTitle} | عرض 3D - Mat7afi`;
+
+            const viewer  = document.getElementById('artifact-viewer');
+            const overlay = document.getElementById('loading-overlay');
+            const errDiv  = document.getElementById('error-overlay');
+            const bar     = document.getElementById('loading-bar');
+
+            if (!modelUrl) {
+                overlay.style.display = 'none';
+                errDiv.style.display  = 'flex';
+                return;
+            }
+
+            // ── Load Model ──────────────────────────────────────────────
+            viewer.src = modelUrl;
+
+            // Progress bar simulation (model-viewer doesn't expose granular progress)
+            let pct = 0;
+            const progressInterval = setInterval(() => {
+                pct = Math.min(pct + Math.random() * 8, 88);
+                bar.style.width = pct + '%';
+            }, 300);
+
+            viewer.addEventListener('load', () => {
+                clearInterval(progressInterval);
+                bar.style.width = '100%';
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                    setTimeout(() => overlay.remove(), 600);
+                }, 300);
+
+                // Show AR button if supported
+                if (viewer.canActivateAR) {
+                    document.getElementById('btn-ar').style.display = 'flex';
+                }
+            });
+
+            viewer.addEventListener('error', () => {
+                clearInterval(progressInterval);
+                overlay.style.display = 'none';
+                errDiv.style.display  = 'flex';
+            });
+
+            // ── Controls ────────────────────────────────────────────────
+
+            // Zoom
+            const ZOOM_STEP = 0.15;
+
+            document.getElementById('btn-zoom-in').addEventListener('click', () => {
+                const orbit = viewer.getCameraOrbit();
+                const newR  = Math.max(orbit.radius * (1 - ZOOM_STEP), 0.5);
+                viewer.cameraOrbit = `${orbit.theta}rad ${orbit.phi}rad ${newR}m`;
+            });
+
+            document.getElementById('btn-zoom-out').addEventListener('click', () => {
+                const orbit = viewer.getCameraOrbit();
+                const newR  = orbit.radius * (1 + ZOOM_STEP);
+                viewer.cameraOrbit = `${orbit.theta}rad ${orbit.phi}rad ${newR}m`;
+            });
+
+            // Auto-rotate toggle
+            let rotating = true;
+            const rotateBtn   = document.getElementById('btn-rotate');
+            const rotateLabel = document.getElementById('rotate-label');
+            const rotateLabels = {
+                ar: ['إيقاف الدوران', 'تشغيل الدوران'],
+                en: ['Stop Rotation', 'Start Rotation'],
+                fr: ['Arrêter', 'Démarrer']
+            };
+            const rl = rotateLabels[lang] || rotateLabels.ar;
+
+            rotateBtn.addEventListener('click', () => {
+                rotating = !rotating;
+                viewer.autoRotate = rotating;
+                rotateLabel.textContent = rotating ? rl[0] : rl[1];
+                rotateBtn.classList.toggle('active', rotating);
+            });
+
+            // Reset
+            document.getElementById('btn-reset').addEventListener('click', () => {
+                viewer.cameraOrbit  = '0deg 75deg 100%';
+                viewer.fieldOfView  = 'auto';
+                if (!rotating) {
+                    rotating = true;
+                    viewer.autoRotate = true;
+                    rotateLabel.textContent = rl[0];
+                    rotateBtn.classList.add('active');
+                }
+            });
+
+            // AR
+            document.getElementById('btn-ar').addEventListener('click', () => {
+                viewer.activateAR();
+            });
+
+            // Fullscreen
+            const fsBtn   = document.getElementById('btn-fullscreen');
+            const fsLabel = document.getElementById('fs-label');
+            const fsLabels = {
+                ar: ['ملء الشاشة', 'تصغير'],
+                en: ['Fullscreen', 'Exit'],
+                fr: ['Plein écran', 'Réduire']
+            };
+            const fl = fsLabels[lang] || fsLabels.ar;
+
+            fsBtn.addEventListener('click', () => {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(() => {});
+                    fsBtn.querySelector('i').className = 'fas fa-compress';
+                    fsLabel.textContent = fl[1];
+                } else {
+                    document.exitFullscreen().catch(() => {});
+                    fsBtn.querySelector('i').className = 'fas fa-expand';
+                    fsLabel.textContent = fl[0];
+                }
+            });
+
+            document.addEventListener('fullscreenchange', () => {
+                if (!document.fullscreenElement) {
+                    fsBtn.querySelector('i').className = 'fas fa-expand';
+                    fsLabel.textContent = fl[0];
+                }
+            });
         });
     </script>
 </body>

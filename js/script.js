@@ -352,26 +352,40 @@ window.renderScienceMuseums = () => {
 
     const museums = [
         { 
-            id: 'zoology', 
+            id: 'zoology',
+            collectionFilter: 'zoology',
             img: 'assets/science-museum.png', 
             ar: 'متحف علم الحيوان', 
             en: 'Zoology Museum', 
             fr: 'Musée de Zoologie',
-            desc_ar: 'اكتشف تنوع الكائنات الحية وتطورها. <span style="display:block; font-size:0.75rem; opacity:0.4; margin-top:5px;">* نماذج محاكاة رقمية للعرض</span>',
-            desc_en: 'Discover the diversity of living organisms. <span style="display:block; font-size:0.75rem; opacity:0.4; margin-top:5px;">* Digital simulation models</span>',
-            desc_fr: 'Découvrez la diversité des organismes vivants. <span style="display:block; font-size:0.75rem; opacity:0.4; margin-top:5px;">* Modèles de simulation numérique</span>',
+            desc_ar: 'اكتشف تنوع الكائنات الحية وتطورها عبر عينات نادرة.',
+            desc_en: 'Discover the diversity of living organisms and their evolution through rare specimens.',
+            desc_fr: 'Découvrez la diversité des organismes vivants à travers des spécimens rares.',
             cat_ar: 'علم الحيوان', cat_en: 'Zoology', cat_fr: 'Zoologie'
         },
         { 
-            id: 'biology', 
+            id: 'biology',
+            collectionFilter: 'biology',
             img: 'assets/science-museum1.png', 
             ar: 'متحف البيولوجي', 
             en: 'Biology Museum', 
             fr: 'Musée de Biologie',
-            desc_ar: 'رحلة في أعماق الطبيعة والخلايا الحية. <span style="display:block; font-size:0.75rem; opacity:0.4; margin-top:5px;">* نماذج محاكاة رقمية للعرض</span>',
-            desc_en: 'A journey into the depths of nature and living cells. <span style="display:block; font-size:0.75rem; opacity:0.4; margin-top:5px;">* Digital simulation models</span>',
-            desc_fr: 'Un voyage dans les profondeurs de la nature et des cellules. <span style="display:block; font-size:0.75rem; opacity:0.4; margin-top:5px;">* Modèles de simulation numérique</span>',
+            desc_ar: 'رحلة في أعماق الطبيعة والخلايا الحية.',
+            desc_en: 'A journey into the depths of nature and living cells.',
+            desc_fr: 'Un voyage dans les profondeurs de la nature et des cellules.',
             cat_ar: 'البيولوجيا', cat_en: 'Biology', cat_fr: 'Biologie'
+        },
+        { 
+            id: 'geology',
+            collectionFilter: 'geology',
+            img: 'assets/متاحف كلية علوم.png', 
+            ar: 'المتحف الجيولوجي', 
+            en: 'Geology Museum', 
+            fr: 'Musée de Géologie',
+            desc_ar: 'استكشف تاريخ الأرض وطبقاتها والمعادن النادرة.',
+            desc_en: 'Explore the history of the Earth through rock layers and rare minerals.',
+            desc_fr: 'Explorez l\'histoire de la Terre à travers les couches rocheuses et les minéraux.',
+            cat_ar: 'الجيولوجيا', cat_en: 'Geology', cat_fr: 'Géologie'
         }
     ];
 
@@ -382,20 +396,22 @@ window.renderScienceMuseums = () => {
         const exploreText = lang === 'en' ? 'Explore Pieces' : (lang === 'fr' ? 'Explorer les pièces' : 'استكشف القطع');
         
         const col = document.createElement('div');
-        col.className = 'col-lg-5 col-md-6 col-12 mb-5 mx-auto';
+        col.className = 'col-lg-4 col-md-6 col-12 mb-4';
         
         col.innerHTML = `
-            <div class="museum-card" onclick="showScienceComingSoon('${title}')" style="min-height: 450px; height: 100%; background: #1e293b; border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease;" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 12px 25px rgba(0,0,0,0.4)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 8px 15px rgba(0,0,0,0.2)';">
-                <div style="width: 100%; height: 250px; overflow: hidden; flex-shrink: 0;">
-                    <img src="${museum.img}" alt="${title}" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease;" loading="eager" fetchpriority="high" onmouseover="this.style.transform='scale(1.05)';" onmouseout="this.style.transform='scale(1)';">
+            <div class="museum-card" onclick="loadScienceSubMuseum('${museum.collectionFilter}', '${title}')" style="height: 100%; background: #1e293b; border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease; box-shadow: 0 8px 15px rgba(0,0,0,0.2);" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 12px 25px rgba(0,0,0,0.4)'; this.style.borderColor='rgba(217,119,6,0.4)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 8px 15px rgba(0,0,0,0.2)'; this.style.borderColor='rgba(255,255,255,0.05)';">
+                <div style="width: 100%; height: 200px; overflow: hidden; flex-shrink: 0;">
+                    <img src="${museum.img}" alt="${title}" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease;" loading="eager" fetchpriority="high" onmouseover="this.style.transform='scale(1.05)';" onmouseout="this.style.transform='scale(1)';" onerror="this.src='assets/science-museum.png'">
                 </div>
-                <div style="padding: 20px 25px; flex-grow: 1; display: flex; flex-direction: column; justify-content: center; text-align: right;">
-                    <span style="color: #d4af37; font-size: 0.9rem; font-weight: 700; display: block; margin-bottom: 8px;">${cat}</span>
-                    <h3 style="color: #ffffff; font-size: 1.5rem; font-weight: 800; margin-bottom: 12px;">${title}</h3>
-                    <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.95rem; line-height: 1.6; margin-bottom: 20px;">${desc}</p>
-                    <span style="color: #d4af37; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; font-size: 1rem; margin-top: auto;">
-                        <span>${exploreText}</span> 
-                        <i class="fas fa-arrow-left"></i>
+                <div style="padding: 18px 20px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; text-align: ${lang === 'ar' ? 'right' : 'left'};">
+                    <div>
+                        <span style="color: #d4af37; font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 6px;">${cat}</span>
+                        <h3 style="color: #ffffff; font-size: 1.3rem; font-weight: 800; margin-bottom: 10px;">${title}</h3>
+                        <p style="color: rgba(255, 255, 255, 0.65); font-size: 0.9rem; line-height: 1.6; margin-bottom: 0;">${desc}</p>
+                    </div>
+                    <span style="color: #d4af37; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; font-size: 0.95rem; margin-top: 16px;">
+                        <span>${exploreText}</span>
+                        <i class="fas fa-${lang === 'ar' ? 'arrow-left' : 'arrow-right'}"></i>
                     </span>
                 </div>
             </div>
@@ -406,10 +422,85 @@ window.renderScienceMuseums = () => {
     artifactsGrid.appendChild(fragment);
 };
 
-window.showScienceComingSoon = (museumTitle) => {
+// Load science sub-museum artifacts from Appwrite DB
+window.loadScienceSubMuseum = async (subMuseumId, subMuseumTitle) => {
     const artifactsGrid = document.getElementById('artifacts-grid');
     const backToHallsBtn = document.getElementById('back-to-halls-btn');
     const lang = getCurrentLang();
+
+    const backBtnText = lang === 'en' ? 'Back to Museums' : (lang === 'fr' ? 'Retour aux Musées' : 'العودة للمتاحف');
+    if (backToHallsBtn) {
+        backToHallsBtn.innerHTML = `
+            <button class="btn btn-outline-light rounded-pill px-4 py-2" onclick="renderScienceMuseums()">
+                <i class="fas fa-arrow-${lang === 'ar' ? 'right' : 'left'} me-2"></i> ${backBtnText}
+            </button>
+            <h3 class="text-white mt-3">${subMuseumTitle}</h3>
+        `;
+        backToHallsBtn.style.display = 'block';
+    }
+
+    // Show loading skeleton
+    artifactsGrid.innerHTML = `
+        <div class="col-12 text-center py-5">
+            <i class="fas fa-spinner fa-spin fa-3x" style="color: var(--accent, #d97706);"></i>
+            <p class="text-white mt-3">${lang === 'en' ? 'Loading...' : (lang === 'fr' ? 'Chargement...' : 'جاري التحميل...')}</p>
+        </div>
+    `;
+
+    try {
+        const scienceCollId = AppwriteConfig.collections.science; // 'science_atifacts'
+        const queries = Query ? [Query.limit(100)] : [];
+        const response = await databases.listDocuments(AppwriteConfig.databaseId, scienceCollId, queries);
+        let docs = response.documents || [];
+
+        // Filter by sub-museum if category data exists
+        if (subMuseumId !== 'all') {
+            const filtered = docs.filter(d => {
+                const cat = (d['category-ar'] || d.category || d.category_ar || '').toLowerCase();
+                return cat.includes(subMuseumId) || (d.sub_museum || '').toLowerCase().includes(subMuseumId);
+            });
+            // Only use filter if there are results, otherwise show all
+            if (filtered.length > 0) docs = filtered;
+        }
+
+        // Cache them so search works
+        museumArtifactsCache = docs;
+
+        if (!docs.length) {
+            artifactsGrid.innerHTML = `
+                <div class="col-12 text-center py-5">
+                    <i class="fas fa-box-open fa-3x text-warning mb-4"></i>
+                    <h3 class="text-white">${lang === 'en' ? 'No items found yet.' : (lang === 'fr' ? 'Aucune pièce trouvée.' : 'لا توجد قطع متاحة حالياً.')}</h3>
+                </div>
+            `;
+            return;
+        }
+
+        renderArtifacts(docs);
+    } catch (err) {
+        console.error('Error loading science sub-museum:', err);
+        artifactsGrid.innerHTML = `
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-exclamation-triangle fa-3x text-danger mb-4"></i>
+                <h3 class="text-white">${lang === 'en' ? 'Failed to load data.' : (lang === 'fr' ? 'Échec du chargement.' : 'حدث خطأ أثناء تحميل البيانات.')}</h3>
+            </div>
+        `;
+    }
+};
+
+// Keep showScienceComingSoon as fallback (not used for science but kept for safety)
+window.showScienceComingSoon = (museumTitle) => {
+    const artifactsGrid = document.getElementById('artifacts-grid');
+    const lang = getCurrentLang();
+    artifactsGrid.innerHTML = `
+        <div class="col-12 text-center py-5">
+            <div style="background: rgba(0,0,0,0.05); padding: 50px 30px; border-radius: 20px;">
+                <i class="fas fa-tools text-warning mb-4" style="font-size: 4rem;"></i>
+                <h2 class="text-dark mb-3" style="font-weight: bold;">${lang === 'en' ? 'Coming Soon' : (lang === 'fr' ? 'Bientôt disponible' : 'قريباً')}</h2>
+            </div>
+        </div>
+    `;
+};
     
     const backBtnText = lang === 'en' ? 'Back to Museums' : (lang === 'fr' ? 'Retour aux Musées' : 'العودة للمتاحف');
     if (backToHallsBtn) {
