@@ -179,7 +179,7 @@ function renderGrid() {
                     
                     <div class="item-actions">
                         ${actionsHtml}
-                        <button onclick="shareItem('${item.$id}', '${title.replace(/'/g, &quot;\\'&quot;)}')" class="item-btn" title="${lang === 'en' ? 'Share' : (lang === 'fr' ? 'Partager' : 'مشاركة')}">
+                        <button onclick="shareItem('${item.$id}', '${title.replace(/'/g, "\\'")}')" class="item-btn" title="${lang === 'en' ? 'Share' : (lang === 'fr' ? 'Partager' : 'مشاركة')}">
                             <i class="fas fa-share-nodes"></i>
                         </button>
                         <button onclick="toggleFavorite('${item.$id}', this)" class="item-btn favorite-btn ${isFav ? 'active' : ''}" title="${lang === 'en' ? 'Add to Favorites' : (lang === 'fr' ? 'Ajouter aux favoris' : 'إضافة للمفضلة')}">

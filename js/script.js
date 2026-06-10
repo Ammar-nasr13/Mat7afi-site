@@ -211,6 +211,13 @@ window.initMuseumPage = async (collectionId, museumName, museumImg) => {
     const museumHeroImg = document.getElementById('museum-hero-img');
 
     if (!artifactsGrid) return;
+
+    if (!databases) initAppwrite();
+    if (!databases) {
+        artifactsGrid.innerHTML = `<div class="col-12 text-center py-5"><h3 class="text-dark">جاري تحميل البيانات...</h3></div>`;
+        await new Promise(r => setTimeout(r, 500));
+        if (!databases) initAppwrite();
+    }
     
     currentMuseumCollection = collectionId;
     currentMuseumName = museumName;
@@ -497,41 +504,6 @@ window.showScienceComingSoon = (museumTitle) => {
             <div style="background: rgba(0,0,0,0.05); padding: 50px 30px; border-radius: 20px;">
                 <i class="fas fa-tools text-warning mb-4" style="font-size: 4rem;"></i>
                 <h2 class="text-dark mb-3" style="font-weight: bold;">${lang === 'en' ? 'Coming Soon' : (lang === 'fr' ? 'Bientôt disponible' : 'قريباً')}</h2>
-            </div>
-        </div>
-    `;
-};
-    
-    const backBtnText = lang === 'en' ? 'Back to Museums' : (lang === 'fr' ? 'Retour aux Musées' : 'العودة للمتاحف');
-    if (backToHallsBtn) {
-        backToHallsBtn.innerHTML = `
-            <button class="btn btn-outline-light rounded-pill px-4 py-2" onclick="renderScienceMuseums()">
-                <i class="fas fa-arrow-right me-2"></i> ${backBtnText}
-            </button>
-            <h3 class="text-white mt-3">${museumTitle}</h3>
-        `;
-        backToHallsBtn.style.display = 'block';
-    }
-
-    const targetDate = new Date();
-    targetDate.setDate(targetDate.getDate() + 2);
-    
-    const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
-    const formattedDate = targetDate.toLocaleDateString(
-        lang === 'en' ? 'en-US' : (lang === 'fr' ? 'fr-FR' : 'ar-EG'), 
-        dateOptions
-    );
-
-    const soonMsg = lang === 'en' ? `The museum pieces will be available soon by ${formattedDate}` : 
-                    (lang === 'fr' ? `Les pièces du musée seront bientôt disponibles d'ici le ${formattedDate}` : 
-                    `سيتم توفير قطع المتحف قريباً بحلول ${formattedDate}`);
-
-    artifactsGrid.innerHTML = `
-        <div class="col-12 text-center py-5">
-            <div class="mobile-info-card" style="background: rgba(0,0,0,0.05); padding: 50px 30px; border-radius: 20px;">
-                <i class="fas fa-tools text-warning mb-4" style="font-size: 4rem;"></i>
-                <h2 class="text-dark mb-3" style="font-weight: bold;">${soonMsg}</h2>
-                <p class="text-secondary">نعمل بجد لإضافة القطع الخاصة بهذا المتحف لتجربة مميزة.</p>
             </div>
         </div>
     `;
