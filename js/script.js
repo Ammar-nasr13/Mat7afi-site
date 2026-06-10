@@ -219,6 +219,7 @@ function scheduleBackgroundPreload() {
             'assets/artt-museum.jpg',
             'assets/science-museum.png',
             'assets/science-museum1.png',
+            'assets/متاحف كلية علوم.png',
             'assets/Desktop  2.png',
             'assets/Frame 1.png',
             'assets/Frame 2.png',
@@ -695,7 +696,7 @@ window.initMuseumPage = async (collectionId, museumName, museumImg) => {
             // Fallback sync logic
             if (collectionId.includes('tourism')) museumHeroImg.src = 'assets/tourism-museum.jpg';
             else if (collectionId.includes('art_')) museumHeroImg.src = 'assets/artt-museum.jpg';
-            else if (collectionId.includes('science')) museumHeroImg.src = 'assets/science-museum.png';
+            else if (collectionId.includes('science')) museumHeroImg.src = 'assets/متاحف كلية علوم.png';
         }
     }
 
