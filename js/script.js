@@ -1,9 +1,12 @@
 // Mat7afi - AI Chatbot & UI Logic
 // All functions are global to avoid DOMContentLoaded race conditions
 
-window.loadMuseumArtifacts = (collectionId, museumName) => {
-    window.location.href =
-        `museum.html?id=${collectionId}&name=${encodeURIComponent(museumName)}`;
+window.loadMuseumArtifacts = (collectionId, museumName, museumImg) => {
+    let url = `museum.html?id=${collectionId}&name=${encodeURIComponent(museumName)}`;
+    if (museumImg && museumImg !== 'null' && museumImg !== 'undefined') {
+        url += `&img=${encodeURIComponent(museumImg)}`;
+    }
+    window.location.href = url;
 };
 
 // Protected Configuration (Obfuscated to prevent automated GitHub key scraping)
@@ -220,16 +223,21 @@ window.initMuseumPage = async (collectionId, museumName, museumImg) => {
         else if (collectionId.includes('art')) titleKey = 'art_title';
         else if (collectionId.includes('science')) titleKey = 'science_title';
         
-        if (titleKey && translations[lang] && translations[lang][titleKey]) {
-            museumTitleHero.innerText = translations[lang][titleKey];
-        } else {
+        try {
+            const trans = typeof translations !== 'undefined' ? translations : (window.translations || null);
+            if (titleKey && trans && trans[lang] && trans[lang][titleKey]) {
+                museumTitleHero.innerText = trans[lang][titleKey];
+            } else {
+                museumTitleHero.innerText = museumName;
+            }
+        } catch (e) {
             museumTitleHero.innerText = museumName;
         }
     }
     
     // Set Hero Image
     if (museumHeroImg) {
-        if (museumImg) {
+        if (museumImg && museumImg !== 'null' && museumImg !== 'undefined') {
             museumHeroImg.src = museumImg;
         } else {
             // Fallback sync logic
@@ -1194,6 +1202,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 "museum_search_placeholder": "Rechercher dans les collections de ce musée..."
             }
         };
+        window.translations = translations;
 
         const updateLanguage = (lang) => {
             document.documentElement.lang = lang;
