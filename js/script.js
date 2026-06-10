@@ -12,6 +12,8 @@ window.loadMuseumArtifacts = (collectionId, museumName, museumImg) => {
 // Protected Configuration (Obfuscated to prevent automated GitHub key scraping)
 const _aw_key = "eyJlbmRwb2ludCI6Imh0dHBzOi8vYXBwd3JpdGUuZXRpaGFkYWxtZGluYS5jb20vdjEiLCJwcm9qZWN0SWQiOiI2OWYyMWM3MzAwMDYyMTkzOTQyMiIsImRhdGFiYXNlSWQiOiI2OWY2OTk0ODAwMTBlMmZlZWE4YSIsImNvbGxlY3Rpb25zIjp7InRvdXJpc20iOiJ0b3VyaXNtX2FydGlmYWN0cyIsInNjaWVuY2UiOiJzY2llbmNlX2F0aWZhY3RzIiwiYXJ0IjoiYXJ0X2F0aWZhY3RzIiwiYWN0aXZhdGlvbiI6ImFjdGl2YXRpb25fY29kZXMifSwiYnVja2V0cyI6eyJ0b3VyaXNtIjoiNjlmN2Q2OGMwMDM4MjE5OTdkMGQiLCJhcnRpZmFjdHMiOiI2OWY2ODZlOTAwMmY5MTdlYzJhMiIsImF1ZGlvIjoiNjlmODcwYzAwMDBlYjM5NjkyNjAiLCJhcnRJbWFnZXMiOiI2OWZkZmE2NjAwMmQxYTkxMDZmNyIsInNjaWVuY2VJbWFnZXMiOiI2OWZkZmE4MDAwMmYwZGI4M2M2NyIsImFyTW9kZWxzIjoiNmExM2NmMzcwMDE3ZDRmZjcwMDYifX0=";
 const AppwriteConfig = JSON.parse(atob(_aw_key));
+// Appwrite collection ID uses legacy typo: art_atifacts (not art_artifacts)
+AppwriteConfig.collections.art = 'art_atifacts';
 
 let databases;
 let museumArtifactsCache = [];
@@ -78,12 +80,48 @@ const getArtifactDescription = (artifact) => {
 };
 
 // Helpers
+function resolveCollectionId(collectionId) {
+    if (!collectionId) return collectionId;
+    const id = collectionId.toLowerCase();
+    if (id.includes('tourism')) return AppwriteConfig.collections.tourism;
+    if (id.includes('science')) return AppwriteConfig.collections.science;
+    if (id.includes('art')) return AppwriteConfig.collections.art;
+    return collectionId;
+}
+
+const SCIENCE_SUBMUSEUM_FILTERS = {
+    zoology: ['zoology', 'zoologie', 'علم الحيوان', 'حيوان', 'حيوانات'],
+    biology: ['biology', 'biologie', 'البيولوجيا', 'بيولوج', 'بيولوجيا'],
+    geology: ['geology', 'geologie', 'الجيولوجيا', 'جيولوج', 'معادن', 'صخور']
+};
+
+function matchesScienceSubMuseum(doc, subMuseumId) {
+    const cat = (doc['category-ar'] || doc.category || doc.category_ar || doc['category-en'] || '').toLowerCase();
+    const sub = (doc.sub_museum || doc.subMuseum || '').toLowerCase();
+    const keywords = SCIENCE_SUBMUSEUM_FILTERS[subMuseumId] || [subMuseumId];
+    return keywords.some(kw => cat.includes(kw.toLowerCase()) || sub.includes(kw.toLowerCase()));
+}
+
 function getBucketByType(collectionId) {
     if (!collectionId) return AppwriteConfig.buckets.tourism;
-    if (collectionId.includes('science') || collectionId.includes('art_')) {
-        return AppwriteConfig.buckets.artifacts; 
-    }
+    if (collectionId.includes('science')) return AppwriteConfig.buckets.scienceImages;
+    if (collectionId.includes('art')) return AppwriteConfig.buckets.artImages;
     return AppwriteConfig.buckets.tourism;
+}
+
+function getStorageBucketsForCollection(collectionId) {
+    const buckets = [];
+    if (collectionId?.includes('tourism')) buckets.push(AppwriteConfig.buckets.tourism);
+    if (collectionId?.includes('science')) buckets.push(AppwriteConfig.buckets.scienceImages);
+    if (collectionId?.includes('art')) buckets.push(AppwriteConfig.buckets.artImages);
+    buckets.push(
+        AppwriteConfig.buckets.arModels,
+        AppwriteConfig.buckets.tourism,
+        AppwriteConfig.buckets.artifacts,
+        AppwriteConfig.buckets.artImages,
+        AppwriteConfig.buckets.scienceImages
+    );
+    return [...new Set(buckets.filter(Boolean))];
 }
 
 function getAppwriteImageUrl(fileId, bucketId) {
@@ -100,6 +138,32 @@ function getAppwriteImageUrl(fileId, bucketId) {
                            fileId.toLowerCase().endsWith('.pdf');
     const action = isViewableType ? 'view' : 'preview';
     return `${AppwriteConfig.endpoint}/storage/buckets/${bucketId}/files/${fileId}/${action}?project=${AppwriteConfig.projectId}`;
+}
+
+function getAppwriteStorageUrl(fileId, bucketId, action) {
+    if (!fileId) return '';
+    if (Array.isArray(fileId)) fileId = fileId[0];
+    if (typeof fileId === 'string' && (fileId.startsWith('http') || fileId.startsWith('assets/'))) {
+        return fileId;
+    }
+    return `${AppwriteConfig.endpoint}/storage/buckets/${bucketId}/files/${fileId.toString().trim()}/${action}?project=${AppwriteConfig.projectId}`;
+}
+
+function resolveGlbModelUrls(fileId, collectionId) {
+    if (!fileId) return [];
+    if (typeof fileId === 'string' && fileId.startsWith('http')) return [fileId];
+
+    const buckets = getStorageBucketsForCollection(collectionId);
+    const urls = [];
+
+    for (const bucket of buckets) {
+        for (const action of ['view', 'download']) {
+            const url = getAppwriteStorageUrl(fileId, bucket, action);
+            if (url && !urls.includes(url)) urls.push(url);
+        }
+    }
+
+    return urls.length ? urls : [getAppwriteStorageUrl(fileId, AppwriteConfig.buckets.arModels, 'view')];
 }
 
 function setupImageFallback(imgEl, fileId) {
@@ -219,6 +283,7 @@ window.initMuseumPage = async (collectionId, museumName, museumImg) => {
         if (!databases) initAppwrite();
     }
     
+    collectionId = resolveCollectionId(collectionId);
     currentMuseumCollection = collectionId;
     currentMuseumName = museumName;
     museumArtifactsCache = [];
@@ -385,7 +450,7 @@ window.renderScienceMuseums = () => {
         { 
             id: 'geology',
             collectionFilter: 'geology',
-            img: 'assets/متاحف كلية علوم.png', 
+            img: 'assets/Desktop  2.png', 
             ar: 'المتحف الجيولوجي', 
             en: 'Geology Museum', 
             fr: 'Musée de Géologie',
@@ -431,6 +496,8 @@ window.renderScienceMuseums = () => {
 
 // Load science sub-museum artifacts from Appwrite DB
 window.loadScienceSubMuseum = async (subMuseumId, subMuseumTitle) => {
+    if (!databases) initAppwrite();
+
     const artifactsGrid = document.getElementById('artifacts-grid');
     const backToHallsBtn = document.getElementById('back-to-halls-btn');
     const lang = getCurrentLang();
@@ -460,13 +527,8 @@ window.loadScienceSubMuseum = async (subMuseumId, subMuseumTitle) => {
         const response = await databases.listDocuments(AppwriteConfig.databaseId, scienceCollId, queries);
         let docs = response.documents || [];
 
-        // Filter by sub-museum if category data exists
         if (subMuseumId !== 'all') {
-            const filtered = docs.filter(d => {
-                const cat = (d['category-ar'] || d.category || d.category_ar || '').toLowerCase();
-                return cat.includes(subMuseumId) || (d.sub_museum || '').toLowerCase().includes(subMuseumId);
-            });
-            // Only use filter if there are results, otherwise show all
+            const filtered = docs.filter(d => matchesScienceSubMuseum(d, subMuseumId));
             if (filtered.length > 0) docs = filtered;
         }
 
@@ -559,6 +621,9 @@ window.filterArtByHall = (hallId, hallTitle) => {
 };
 
 window.initArtifactPage = async (documentId, collectionId, museumName) => {
+    collectionId = resolveCollectionId(collectionId);
+    if (!databases) initAppwrite();
+
     const loader = document.getElementById('loader');
     const artifactContent = document.getElementById('artifact-content');
     const artifactDesc = document.getElementById('artifact-desc');
@@ -809,11 +874,14 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
         if (glbFileId && btn360Wrap && btn360Element) {
             btn360Wrap.style.display = 'block';
             const handle360Click = () => {
-                const modelBucketId = AppwriteConfig.buckets.arModels;
-                const modelUrl = getAppwriteImageUrl(glbFileId, modelBucketId);
-                window.location.href = `viewer3d.html?url=${encodeURIComponent(modelUrl)}&title=${encodeURIComponent(name)}`;
+                const modelUrls = resolveGlbModelUrls(glbFileId, collectionId);
+                const primary = modelUrls[0] || getAppwriteStorageUrl(glbFileId, AppwriteConfig.buckets.arModels, 'view');
+                const fallbacks = modelUrls.slice(1).join('|');
+                let viewerUrl = `viewer3d.html?url=${encodeURIComponent(primary)}&title=${encodeURIComponent(name)}&collection=${encodeURIComponent(collectionId)}`;
+                if (fallbacks) viewerUrl += `&fallbacks=${encodeURIComponent(fallbacks)}`;
+                window.location.href = viewerUrl;
             };
-            btn360Element.onclick = handle360Click;
+            btn360Element.onclick = () => { handle360Click(); };
 
             // Auto-redirect if show3d is true
             const urlParams = new URLSearchParams(window.location.search);
@@ -1382,7 +1450,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (typeof renderArtifacts === 'function' && typeof museumArtifactsCache !== 'undefined' && museumArtifactsCache.length > 0) {
                 renderArtifacts(museumArtifactsCache);
             }
-            if (typeof renderScienceMuseums === 'function' && typeof currentMuseumCollection !== 'undefined' && currentMuseumCollection.includes('science')) {
+            if (typeof renderScienceMuseums === 'function' && typeof currentMuseumCollection !== 'undefined' && currentMuseumCollection.includes('science') && (!museumArtifactsCache || museumArtifactsCache.length === 0)) {
                 renderScienceMuseums();
             }
             if (typeof renderArtHalls === 'function' && typeof currentMuseumCollection !== 'undefined' && currentMuseumCollection.includes('art_')) {
@@ -1431,6 +1499,7 @@ document.addEventListener('DOMContentLoaded', () => {
             'assets/متاحف كلية علوم.png',
             'assets/science-museum.png',
             'assets/science-museum1.png',
+            'assets/Desktop  2.png',
             'assets/Frame 1.png',
             'assets/Frame 2.png',
             'assets/Frame 3.png',

@@ -284,13 +284,13 @@
         id="artifact-viewer"
         src=""
         alt="نموذج ثلاثي الأبعاد لقطعة أثرية من متاحف جامعة المنيا"
+        crossorigin="anonymous"
         auto-rotate
         camera-controls
-        shadow-intensity="1.5"
-        shadow-softness="0.8"
-        exposure="1.0"
-        tone-mapping="commerce"
-        environment-image="neutral"
+        shadow-intensity="1.2"
+        shadow-softness="0.6"
+        exposure="1.25"
+        tone-mapping="aces"
         min-camera-orbit="auto auto 5%"
         max-camera-orbit="auto auto 200%"
         camera-orbit="0deg 75deg 100%"
@@ -342,9 +342,10 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const urlParams   = new URLSearchParams(window.location.search);
-            const modelUrl    = urlParams.get('url');
             const modelTitle  = urlParams.get('title') || 'قطعة أثرية';
             const lang        = sessionStorage.getItem('lang') || 'ar';
+            const fallbackParam = urlParams.get('fallbacks') || '';
+            const modelUrls   = [urlParams.get('url'), ...fallbackParam.split('|').filter(Boolean)].filter(Boolean);
 
             // ── Language / Direction ────────────────────────────────────
             if (lang !== 'ar') {
@@ -376,23 +377,26 @@
             const errDiv  = document.getElementById('error-overlay');
             const bar     = document.getElementById('loading-bar');
 
-            if (!modelUrl) {
+            if (!modelUrls.length) {
                 overlay.style.display = 'none';
                 errDiv.style.display  = 'flex';
                 return;
             }
 
-            // ── Load Model ──────────────────────────────────────────────
-            viewer.src = modelUrl;
+            let urlIndex = 0;
+            let progressInterval;
 
-            // Progress bar simulation (model-viewer doesn't expose granular progress)
-            let pct = 0;
-            const progressInterval = setInterval(() => {
-                pct = Math.min(pct + Math.random() * 8, 88);
-                bar.style.width = pct + '%';
-            }, 300);
+            const startProgress = () => {
+                clearInterval(progressInterval);
+                let pct = 0;
+                bar.style.width = '0%';
+                progressInterval = setInterval(() => {
+                    pct = Math.min(pct + Math.random() * 8, 88);
+                    bar.style.width = pct + '%';
+                }, 300);
+            };
 
-            viewer.addEventListener('load', () => {
+            const onModelLoaded = () => {
                 clearInterval(progressInterval);
                 bar.style.width = '100%';
                 setTimeout(() => {
@@ -400,17 +404,38 @@
                     setTimeout(() => overlay.remove(), 600);
                 }, 300);
 
-                // Show AR button if supported
                 if (viewer.canActivateAR) {
                     document.getElementById('btn-ar').style.display = 'flex';
                 }
-            });
+            };
 
-            viewer.addEventListener('error', () => {
-                clearInterval(progressInterval);
-                overlay.style.display = 'none';
-                errDiv.style.display  = 'flex';
-            });
+            const tryLoadModel = () => {
+                if (urlIndex >= modelUrls.length) {
+                    clearInterval(progressInterval);
+                    overlay.style.display = 'none';
+                    errDiv.style.display  = 'flex';
+                    return;
+                }
+
+                startProgress();
+                viewer.removeAttribute('environment-image');
+
+                const onLoad = () => {
+                    viewer.removeEventListener('error', onError);
+                    onModelLoaded();
+                };
+                const onError = () => {
+                    viewer.removeEventListener('load', onLoad);
+                    urlIndex += 1;
+                    tryLoadModel();
+                };
+
+                viewer.addEventListener('load', onLoad, { once: true });
+                viewer.addEventListener('error', onError, { once: true });
+                viewer.src = modelUrls[urlIndex];
+            };
+
+            tryLoadModel();
 
             // ── Controls ────────────────────────────────────────────────
 
