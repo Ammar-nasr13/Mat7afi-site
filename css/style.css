@@ -2268,13 +2268,37 @@ img {
     position: absolute;
     bottom: 20px;
     inset-inline-start: 20px;
-    inset-inline-end: 20px;
+    inset-inline-end: 60px;
     color: white;
     font-size: 1rem;
     font-weight: 700;
     font-family: 'Cairo', sans-serif;
     z-index: 2;
     text-align: start;
+}
+
+/* Outward arrow on science/geology cards */
+.geology-list-card .geology-list-arrow {
+    position: absolute;
+    bottom: 18px;
+    inset-inline-end: 18px;
+    width: 36px;
+    height: 36px;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(6px);
+    border: 1.5px solid rgba(255,255,255,0.35);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 0.85rem;
+    z-index: 3;
+    transition: background 0.25s, transform 0.25s;
+}
+.geology-list-card:hover .geology-list-arrow {
+    background: rgba(255,255,255,0.28);
+    transform: scale(1.12);
 }
 
 /* Back navigation button */
@@ -2902,9 +2926,22 @@ img {
     padding: 10px 0;
     gap: 15px;
     scrollbar-width: none; /* Firefox */
+    justify-content: flex-start; /* mobile: scroll from start */
 }
 .highlights-container::-webkit-scrollbar {
     display: none; /* Chrome/Safari */
+}
+
+/* On desktop, center highlights if they fit within viewport */
+@media (min-width: 992px) {
+    #highlights-section h4 {
+        text-align: center;
+    }
+    .highlights-container {
+        justify-content: center;
+        overflow-x: visible;
+        flex-wrap: wrap;
+    }
 }
 
 /* Highlight Avatar */
@@ -2925,7 +2962,7 @@ img {
     height: 70px;
     border-radius: 50%;
     padding: 3px;
-    background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+    background: linear-gradient(135deg, #5B3A1B 0%, #D4AF37 50%, #FDE68A 80%, #5B3A1B 100%);
     margin-bottom: 8px;
     position: relative;
 }
@@ -2936,8 +2973,9 @@ img {
     width: 100%;
     height: 100%;
     border-radius: 50%;
-    border: 3px solid var(--bg-light);
+    border: 3px solid #fff;
     object-fit: cover;
+    display: block;
 }
 .highlight-title {
     font-size: 0.75rem;
@@ -3066,6 +3104,8 @@ img {
     align-items: center;
     position: relative;
     height: 100%;
+    overflow: hidden;
+    background: #000;
 }
 .story-content img, .story-content video {
     max-width: 100%;
@@ -3216,11 +3256,90 @@ img {
     margin-bottom: 14px !important;
 }
 
-/* Highlight ring hover glow */
+/* Highlight ring hover glow — brown/gold to match mobile app */
 .highlight-item:hover .highlight-ring:not(.viewed) {
-    box-shadow: 0 0 0 3px white, 0 0 12px rgba(220, 39, 67, 0.5);
+    box-shadow: 0 0 0 3px #fff, 0 0 14px rgba(212, 175, 55, 0.7);
     transition: box-shadow 0.2s ease;
 }
 
+/* Story Video Loader (spinner while video buffers) */
+.story-video-loader {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+    background: rgba(0,0,0,0.4);
+    border-radius: 50%;
+    width: 72px;
+    height: 72px;
+}
+
+/* Story Video Error State */
+.story-video-error {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: rgba(255, 255, 255, 0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    text-align: center;
+    z-index: 5;
+    font-family: 'Cairo', sans-serif;
+}
+.story-video-error i {
+    font-size: 2.5rem;
+    color: #f59e0b;
+}
+.story-video-error span {
+    font-size: 0.95rem;
+    background: rgba(0,0,0,0.5);
+    border-radius: 8px;
+    padding: 6px 14px;
+}
+
+/* ==========================================================================
+   Performance Optimizations (GPU Accelerations, Render containment)
+   ========================================================================== */
+
+/* Hardware acceleration for animated elements */
+.highlight-ring, 
+.highlight-item, 
+.story-modal-inner-wrapper, 
+.store-card, 
+.btn-outline-premium, 
+.navbar,
+.floating-assistant-btn {
+    transform: translateZ(0);
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+}
+
+/* Contain layout and paint for independent containers to minimize layout thrashing */
+.highlights-container {
+    contain: layout style;
+}
+
+.store-grid, 
+.store-card {
+    content-visibility: auto;
+    contain-intrinsic-size: 300px;
+}
+
+/* Optimize font rendering and text painting */
+body {
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
 
 

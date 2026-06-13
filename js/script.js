@@ -24,6 +24,7 @@ let databases;
 let museumArtifactsCache = [];
 let currentMuseumCollection = '';
 let currentMuseumName = '';
+let currentScienceSubMuseumId = null;
 
 let isTtsActive = true;
 let isMainRecording = false;
@@ -978,6 +979,7 @@ window.renderArtHalls = () => {
 };
 
 window.renderScienceMuseums = () => {
+    currentScienceSubMuseumId = null;
     const artifactsGrid = document.getElementById('artifacts-grid');
     const backToHallsBtn = document.getElementById('back-to-halls-btn');
     if (!artifactsGrid) return;
@@ -1017,11 +1019,16 @@ window.renderScienceMuseums = () => {
             ? `loadScienceSubMuseum('${museum.id}', '${title.replace(/'/g, "\\'")}')`
             : `showZoologyComingSoon()`;
 
+        // In RTL (Arabic): outward arrow = chevron-left (points left on screen = outward)
+        // In LTR (English/French): outward arrow = chevron-right (points right on screen = outward)
+        const arrowIcon = lang === 'ar' ? 'fa-chevron-left' : 'fa-chevron-right';
+
         col.innerHTML = `
             <div class="geology-list-card science-sub-card" onclick="${onClick}" role="button" tabindex="0">
                 <img src="${museum.img}" alt="${title}" loading="eager" onerror="this.src='assets/science-museum.png'">
                 <div class="geology-list-overlay"></div>
                 <div class="geology-list-title">${title}</div>
+                <div class="geology-list-arrow"><i class="fas ${arrowIcon}"></i></div>
             </div>
         `;
         fragment.appendChild(col);
@@ -1045,6 +1052,7 @@ window.showZoologyComingSoon = () => {
 
 // Load science sub-museum artifacts from Appwrite DB
 window.loadScienceSubMuseum = async (subMuseumId, subMuseumTitle) => {
+    currentScienceSubMuseumId = subMuseumId;
     if (!databases) initAppwrite();
 
     const artifactsGrid = document.getElementById('artifacts-grid');
@@ -1971,6 +1979,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 "nav_features": "Features",
                 "nav_assistant": "AI Assistant",
                 "nav_download": "Download App",
+                "featured_stories": "Highlights",
                 "brand_subtitle": "Minia University Museums",
                 "hero_badge": "Future of Digital Tourism",
                 "hero_slogan": "The past... like never seen before",
@@ -2021,7 +2030,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 "download_title": "Carry the Museums in your Pocket",
                 "download_desc": "Get the full experience through the official app. Available soon on official stores and available now for direct download.",
                 "download_direct": "Direct Download (Device Versions)",
-                "download_direct_desc": "You can download the appropriate file for your device and install it directly.",
+                "download_direct_desc": "Download the appropriate file for your device and install it directly.",
+                "apk_universal": "Universal APK (~55 MB)",
+                "apk_arm64": "ARM64-v8a APK",
+                "apk_armv7": "ARMv7 APK",
                 "footer_desc": "The official digital project to document and display the treasures of Minia University museums using the latest technologies.",
                 "footer_links_title": "Quick Links",
                 "footer_privacy": "Privacy Policy",
@@ -2057,6 +2069,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 "nav_features": "المميزات",
                 "nav_assistant": "المساعد الذكي",
                 "nav_download": "تحميل التطبيق",
+                "featured_stories": "أبرز القصص",
                 "brand_subtitle": "متاحف جامعة المنيا",
                 "hero_badge": "مستقبل السياحة الرقمية",
                 "hero_slogan": "الماضي... بشكل عمره ما اتشاف",
@@ -2108,6 +2121,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 "download_desc": "احصل على التجربة الكاملة عبر التطبيق الرسمي. متوفر قريباً على المتاجر الرسمية ومتاح الآن للتحميل المباشر.",
                 "download_direct": "تحميل مباشر (إصدارات الأجهزة)",
                 "download_direct_desc": "يمكنك تحميل الملف المناسب لنوع جهازك وتثبيته مباشرة.",
+                "apk_universal": "تحميل Universal APK (~55 ميجا)",
+                "apk_arm64": "تحميل ARM64-v8a APK",
+                "apk_armv7": "تحميل ARMv7 APK",
                 "footer_desc": "المشروع الرقمي الرسمي لتوثيق وعرض كنوز متاحف جامعة المنيا باستخدام أحدث التقنيات.",
                 "footer_links_title": "روابط سريعة",
                 "footer_privacy": "سياسة الخصوصية",
@@ -2143,6 +2159,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 "nav_features": "Fonctionnalités",
                 "nav_assistant": "Assistant IA",
                 "nav_download": "Télécharger",
+                "featured_stories": "Faits Saillants",
                 "brand_subtitle": "Musées de l'Université de Minia",
                 "hero_badge": "L'Avenir du Tourisme Numérique",
                 "hero_slogan": "Le passé... comme jamais vu auparavant",
@@ -2192,8 +2209,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 "ai_placeholder": "Interrogez-moi sur n'importe quel artefact...",
                 "download_title": "Transportez les Musées dans votre Poche",
                 "download_desc": "Obtenez l'expérience complète via l'application officielle. Disponible bientôt.",
-                "download_direct": "Téléchargement Direct",
-                "download_direct_desc": "Vous pouvez télécharger le fichier approprié pour votre appareil et l'installer directement.",
+                "download_direct": "Téléchargement Direct (Versions Appareils)",
+                "download_direct_desc": "Téléchargez le fichier approprié pour votre appareil et installez-le directement.",
+                "apk_universal": "APK Universel (~55 Mo)",
+                "apk_arm64": "APK ARM64-v8a",
+                "apk_armv7": "APK ARMv7",
                 "footer_desc": "Le projet numérique officiel pour documenter et exposer les trésors des musées de l'Université de Minia.",
                 "footer_links_title": "Liens Rapides",
                 "footer_privacy": "Politique de Confidentialité",
@@ -2307,101 +2327,83 @@ document.addEventListener('DOMContentLoaded', () => {
                     el.placeholder = translations[lang][key];
                 }
             });
+        }; // end updateLanguage
 
-            // Switch Bootstrap CSS based on language
-            const bsLinkLtr = document.getElementById('bootstrap-css-ltr');
-            const bsLinkRtl = document.getElementById('bootstrap-css-rtl');
-            if (bsLinkLtr && bsLinkRtl) {
-                bsLinkLtr.disabled = lang === 'ar';
-                bsLinkRtl.disabled = lang !== 'ar';
-            } else {
-                const bsLink = document.getElementById('bootstrap-css');
-                if (bsLink) {
-                    const newHref = lang === 'ar' 
-                        ? 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css' 
-                        : 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css';
-                    if (bsLink.getAttribute('href') !== newHref) {
-                        bsLink.href = newHref;
+        // Wire up language switch buttons
+        langSwitches.forEach(sw => {
+            sw.addEventListener('click', () => {
+                const lang = sw.getAttribute('data-lang');
+                if (lang) {
+                    sessionStorage.setItem('lang', lang);
+                    updateLanguage(lang);
+                    // Re-render highlights with new language
+                    const container = document.getElementById('highlights-container');
+                    if (container && highlightsData.length > 0) renderHighlights(container);
+
+                    // Re-render museum page elements if we are on museum.html
+                    if (document.getElementById('artifacts-grid')) {
+                        if (typeof currentMuseumCollection !== 'undefined' && currentMuseumCollection) {
+                            if (currentMuseumCollection.includes('science')) {
+                                if (typeof currentScienceSubMuseumId !== 'undefined' && currentScienceSubMuseumId) {
+                                    const subNames = {
+                                        geology: { ar: 'المتحف الجيولوجي', en: 'Geological Museum', fr: 'Musée Géologique' },
+                                        zoology: { ar: 'متحف علم الحيوان', en: 'Zoology Museum', fr: 'Musée de Zoologie' }
+                                    };
+                                    const subTitle = subNames[currentScienceSubMuseumId] ? subNames[currentScienceSubMuseumId][lang] : '';
+                                    loadScienceSubMuseum(currentScienceSubMuseumId, subTitle);
+                                } else {
+                                    renderScienceMuseums();
+                                }
+                            } else {
+                                if (typeof museumArtifactsCache !== 'undefined' && museumArtifactsCache && museumArtifactsCache.length > 0) {
+                                    renderArtifacts(museumArtifactsCache);
+                                }
+                            }
+                        }
+                    }
+
+                    // Refresh dynamic elements on other pages if they exist
+                    if (typeof window.renderGalleryGrid === 'function') {
+                        window.renderGalleryGrid();
+                    }
+                    if (typeof window.renderFavorites === 'function') {
+                        window.renderFavorites();
+                    }
+                    if (typeof window.renderItemDetails === 'function') {
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const itemId = urlParams.get('id');
+                        if (itemId) window.renderItemDetails(itemId);
                     }
                 }
-            }
-            
-            // Adjust icons direction if needed
-            const heroArrow = document.getElementById('hero-arrow');
-            if (heroArrow) {
-                heroArrow.className = lang === 'ar' ? 'fas fa-arrow-left ms-2' : 'fas fa-arrow-right ms-2';
-            }
-            
-            const cardArrows = document.querySelectorAll('.arrow-dir');
-            cardArrows.forEach(arrow => {
-                arrow.className = lang === 'ar' ? 'fas fa-arrow-left arrow-dir' : 'fas fa-arrow-right arrow-dir';
             });
+        });
 
-            // Re-render currently viewed artifacts/halls to update language immediately
-            if (typeof renderArtifacts === 'function' && typeof museumArtifactsCache !== 'undefined' && museumArtifactsCache.length > 0) {
-                renderArtifacts(museumArtifactsCache);
-            }
-            if (typeof renderScienceMuseums === 'function' && typeof currentMuseumCollection !== 'undefined' && currentMuseumCollection.includes('science') && (!museumArtifactsCache || museumArtifactsCache.length === 0)) {
-                renderScienceMuseums();
-            }
-            if (typeof renderArtHalls === 'function' && typeof currentMuseumCollection !== 'undefined' && currentMuseumCollection.includes('art_')) {
-                renderArtHalls();
-            }
-            
-            // If we are on artifact page, we need to re-render info grid
-            if (window.location.pathname.includes('artifact.html')) {
-                const urlParams = new URLSearchParams(window.location.search);
-                const documentId = urlParams.get('id');
-                const collectionId = urlParams.get('collection');
-                const museumName = urlParams.get('museum');
-                if (window.initArtifactPage) {
-                    window.initArtifactPage(documentId, collectionId, museumName);
-                }
-            }
-        };
-
-        // Default to Arabic
+        // Apply saved language on page load
         const savedLang = sessionStorage.getItem('lang') || 'ar';
         updateLanguage(savedLang);
 
-        langSwitches.forEach(sw => {
-            sw.addEventListener('click', (e) => {
-                e.preventDefault();
-                const newLang = sw.getAttribute('data-lang');
-                sessionStorage.setItem('lang', newLang);
-                updateLanguage(newLang);
-            });
-        });
+        // ========================================================
+        // HIGHLIGHTS / STORIES SYSTEM
+        // ========================================================
+        const STORY_COLLECTIONS = [
+            { id: 'minya_university_story', name: { en: 'Minia Univ', ar: 'جامعة المنيا', fr: 'Univ de Minia' } },
+            { id: 'tourism_university_story', name: { en: 'Tourism', ar: 'السياحة', fr: 'Tourisme' } },
+            { id: 'art_university_story', name: { en: 'Arts', ar: 'الفنون', fr: 'Arts' } },
+            { id: 'zoology_story', name: { en: 'Zoology', ar: 'علم الحيوان', fr: 'Zoologie' } },
+            { id: 'geo_story', name: { en: 'Geology', ar: 'الجيولوجيا', fr: 'Géologie' } },
+            { id: 'store_story', name: { en: 'Store', ar: 'المتجر', fr: 'Boutique' } },
+            { id: 'map_story', name: { en: 'Map', ar: 'الخريطة', fr: 'Carte' } }
+        ];
+        const STORY_IMG_BUCKET = '69f897e70035d17ec988';
+        const STORY_VID_BUCKET = '69f8980600284abc5d0d';
+        const STORY_DURATION_MS = 30 * 60 * 1000; // 30 minutes
 
-    // Mobile Bottom Nav Instant Active State
-    const bottomNavItems = document.querySelectorAll('.nav-item-bottom');
-    bottomNavItems.forEach(item => {
-        item.addEventListener('click', function() {
-            bottomNavItems.forEach(nav => nav.classList.remove('active'));
-            this.classList.add('active');
-        });
-    });
-
-    // Highlights / Stories Logic
-    const STORY_COLLECTIONS = [
-        { id: 'minya_university_story', name: { en: 'Minia Univ', ar: 'جامعة المنيا', fr: 'Univ de Minia' } },
-        { id: 'tourism_university_story', name: { en: 'Tourism', ar: 'السياحة', fr: 'Tourisme' } },
-        { id: 'art_university_story', name: { en: 'Arts', ar: 'الفنون', fr: 'Arts' } },
-        { id: 'zoology_story', name: { en: 'Zoology', ar: 'علم الحيوان', fr: 'Zoologie' } },
-        { id: 'geo_story', name: { en: 'Geology', ar: 'الجيولوجيا', fr: 'Géologie' } },
-        { id: 'store_story', name: { en: 'Store', ar: 'المتجر', fr: 'Boutique' } },
-        { id: 'map_story', name: { en: 'Map', ar: 'الخريطة', fr: 'Carte' } }
-    ];
-    const STORY_IMG_BUCKET = '69f897e70035d17ec988';
-    const STORY_VID_BUCKET = '69f8980600284abc5d0d';
-    const STORY_DURATION_MS = 30 * 60 * 1000; // 30 minutes
-
-    let highlightsData = [];
-    let currentHighlightIndex = -1;
-    let currentSlideIndex = 0;
-    let storyTimeout = null;
-    let progressInterval = null;
-    let currentStartTime = 0;
+        let highlightsData = [];
+        let currentHighlightIndex = -1;
+        let currentSlideIndex = 0;
+        let storyTimeout = null;
+        let progressInterval = null;
+        let currentStartTime = 0;
 
     // Show skeleton placeholders immediately for instant UX
     function showHighlightSkeletons() {
@@ -2419,36 +2421,123 @@ document.addEventListener('DOMContentLoaded', () => {
         `).join('');
     }
 
+    // Video preload cache to avoid re-fetching
+    const videoPreloadCache = new Set();
+
+    // Preload a video URL using a hidden <video> element for browser buffering
+    function preloadVideoUrl(url) {
+        if (!url || videoPreloadCache.has(url)) return;
+        videoPreloadCache.add(url);
+        try {
+            const v = document.createElement('video');
+            v.preload = 'auto';
+            v.src = url;
+            v.load();
+            // Remove from DOM after metadata loaded to free resources
+            v.addEventListener('loadedmetadata', () => { v.src = ''; }, { once: true });
+        } catch(e) {
+            console.warn('Video preload failed:', url, e);
+        }
+    }
+
+    // Preload all media (images + videos) for a story
+    function preloadStoryMedia(story) {
+        if (!story || !story.slides) return;
+        const lang = sessionStorage.getItem('lang') || 'ar';
+        story.slides.forEach(slide => {
+            if (slide.isVideo) {
+                preloadVideoUrl(slide.url);
+            } else {
+                let imgUrl = slide.url;
+                if (lang === 'en' && slide.urlEn) imgUrl = slide.urlEn;
+                else if (lang === 'fr' && slide.urlFr) imgUrl = slide.urlFr;
+                preloadImageUrl(imgUrl);
+            }
+        });
+
+        let cover = story.coverUrl;
+        if (lang === 'en' && story.coverUrlEn) cover = story.coverUrlEn;
+        else if (lang === 'fr' && story.coverUrlFr) cover = story.coverUrlFr;
+        if (cover) preloadImageUrl(cover);
+    }
+
     // Process one story collection's documents into slides + cover
     function processStoryDocs(docs) {
         let slides = [];
         let coverUrl = null;
+        let coverUrlEn = null;
+        let coverUrlFr = null;
+
         for (const doc of docs) {
             const isCover = doc['is_cover'];
             if (!coverUrl && isCover && isCover.length > 5) {
                 coverUrl = `${AppwriteConfig.endpoint}/storage/buckets/${STORY_IMG_BUCKET}/files/${isCover}/preview?project=${AppwriteConfig.projectId}&width=200&height=200&gravity=center&quality=70`;
+                
+                // Check if this cover has English/French versions in the document
+                const isCoverEn = doc['image-en'] || doc['Image-en'] || doc['image_en'] || doc['Image_en'];
+                if (isCoverEn && isCoverEn.length > 5) {
+                    coverUrlEn = `${AppwriteConfig.endpoint}/storage/buckets/${STORY_IMG_BUCKET}/files/${isCoverEn}/preview?project=${AppwriteConfig.projectId}&width=200&height=200&gravity=center&quality=70`;
+                }
+                const isCoverFr = doc['image-fr'] || doc['image_fr'];
+                if (isCoverFr && isCoverFr.length > 5) {
+                    coverUrlFr = `${AppwriteConfig.endpoint}/storage/buckets/${STORY_IMG_BUCKET}/files/${isCoverFr}/preview?project=${AppwriteConfig.projectId}&width=200&height=200&gravity=center&quality=70`;
+                }
             }
-            // Images
-            const imgId = doc['image-ar'] || doc['image'] || doc['image_ar'] || doc['image-en'];
-            if (imgId && imgId.length > 5) {
-                slides.push({ url: `${AppwriteConfig.endpoint}/storage/buckets/${STORY_IMG_BUCKET}/files/${imgId}/view?project=${AppwriteConfig.projectId}`, isVideo: false });
+
+            // Slide Image
+            const imgArId = doc['image-ar'] || doc['image'] || doc['image_ar'];
+            const imgEnId = doc['Image-en'] || doc['image-en'] || doc['image_en'] || doc['Image_en'];
+            const imgFrId = doc['image-fr'] || doc['image_fr'];
+
+            if (imgArId && imgArId.length > 5) {
+                const urlAr = `${AppwriteConfig.endpoint}/storage/buckets/${STORY_IMG_BUCKET}/files/${imgArId}/view?project=${AppwriteConfig.projectId}`;
+                const urlEn = imgEnId && imgEnId.length > 5 ? `${AppwriteConfig.endpoint}/storage/buckets/${STORY_IMG_BUCKET}/files/${imgEnId}/view?project=${AppwriteConfig.projectId}` : null;
+                const urlFr = imgFrId && imgFrId.length > 5 ? `${AppwriteConfig.endpoint}/storage/buckets/${STORY_IMG_BUCKET}/files/${imgFrId}/view?project=${AppwriteConfig.projectId}` : null;
+
+                slides.push({
+                    url: urlAr,
+                    urlEn: urlEn,
+                    urlFr: urlFr,
+                    isVideo: false
+                });
             }
-            // Videos — check all known field names
-            const vidCandidates = ['video', 'vedio', 'video-id', 'videoId', 'video_url', 'video-url', 'videoFile', 'video_file', 'file', 'files', 'video_ar', 'video-en'];
-            for (const key of vidCandidates) {
+
+            // Slide Video
+            let vidArId = null;
+            const arVidKeys = ['video', 'vedio', 'video-id', 'videoId', 'video_url', 'video-url', 'videoFile', 'video_file', 'file', 'files', 'video_ar', 'video-en'];
+            for (const key of arVidKeys) {
                 let v = doc[key];
                 if (typeof v !== 'string') v = Array.isArray(v) && v.length > 0 ? v[0] : null;
                 if (v && typeof v === 'string' && v.length > 5) {
-                    slides.push({ url: `${AppwriteConfig.endpoint}/storage/buckets/${STORY_VID_BUCKET}/files/${v}/view?project=${AppwriteConfig.projectId}`, isVideo: true });
+                    vidArId = v;
                     break;
                 }
             }
+
+            if (vidArId) {
+                const urlAr = `${AppwriteConfig.endpoint}/storage/buckets/${STORY_VID_BUCKET}/files/${vidArId}/view?project=${AppwriteConfig.projectId}`;
+                slides.push({
+                    url: urlAr,
+                    urlEn: null,
+                    urlFr: null,
+                    isVideo: true
+                });
+            }
         }
+
+        // Cover fallback
         if (!coverUrl && slides.length > 0) {
             const firstImg = slides.find(s => !s.isVideo);
-            coverUrl = firstImg ? firstImg.url : null;
+            if (firstImg) {
+                coverUrl = firstImg.url;
+                coverUrlEn = firstImg.urlEn;
+                coverUrlFr = firstImg.urlFr;
+            } else {
+                coverUrl = slides[0].url;
+            }
         }
-        return { slides, coverUrl };
+
+        return { slides, coverUrl, coverUrlEn, coverUrlFr };
     }
 
     async function loadHighlights() {
@@ -2466,37 +2555,75 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = document.getElementById('highlights-container');
         if (!container) return;
 
-        // Show skeletons immediately for visual responsiveness
-        showHighlightSkeletons();
-
-        // Fetch ALL story collections in PARALLEL (not sequential)
-        const results = await Promise.allSettled(
-            STORY_COLLECTIONS.map(coll =>
-                databases.listDocuments(AppwriteConfig.databaseId, coll.id)
-                    .then(res => ({ coll, docs: res.documents || [] }))
-                    .catch(() => ({ coll, docs: [] }))
-            )
-        );
-
-        // Process results preserving STORY_COLLECTIONS order
-        const newData = [];
-        for (const result of results) {
-            if (result.status !== 'fulfilled') continue;
-            const { coll, docs } = result.value;
-            if (!docs.length) continue;
-            const { slides, coverUrl } = processStoryDocs(docs);
-            if (slides.length > 0) {
-                newData.push({ title: coll.name, coverUrl, slides, viewed: false });
+        // Try load from Cache
+        const cachedHighlights = localStorage.getItem('cached_highlights_v1');
+        if (cachedHighlights) {
+            try {
+                highlightsData = JSON.parse(cachedHighlights);
+                if (highlightsData && highlightsData.length > 0) {
+                    document.getElementById('highlights-section').style.display = 'block';
+                    renderHighlights(container);
+                    // Background preload cached media in background
+                    setTimeout(() => {
+                        highlightsData.forEach(story => preloadStoryMedia(story));
+                    }, 200);
+                }
+            } catch (e) {
+                console.warn('Failed to parse cached highlights:', e);
             }
         }
 
-        highlightsData = newData;
+        if (highlightsData.length === 0) {
+            showHighlightSkeletons();
+        }
 
-        if (highlightsData.length > 0) {
-            document.getElementById('highlights-section').style.display = 'block';
-            renderHighlights(container);
-        } else {
-            document.getElementById('highlights-section').style.display = 'none';
+        try {
+            // Fetch ALL story collections in PARALLEL
+            const results = await Promise.allSettled(
+                STORY_COLLECTIONS.map(coll =>
+                    databases.listDocuments(AppwriteConfig.databaseId, coll.id)
+                        .then(res => ({ coll, docs: res.documents || [] }))
+                        .catch(() => ({ coll, docs: [] }))
+                )
+            );
+
+            // Process results preserving STORY_COLLECTIONS order
+            const newData = [];
+            for (const result of results) {
+                if (result.status !== 'fulfilled') continue;
+                const { coll, docs } = result.value;
+                if (!docs.length) continue;
+                const { slides, coverUrl, coverUrlEn, coverUrlFr } = processStoryDocs(docs);
+                if (slides.length > 0) {
+                    newData.push({
+                        title: coll.name,
+                        coverUrl,
+                        coverUrlEn,
+                        coverUrlFr,
+                        slides,
+                        viewed: false
+                    });
+                }
+            }
+
+            const dataString = JSON.stringify(newData);
+            if (dataString !== JSON.stringify(highlightsData)) {
+                highlightsData = newData;
+                localStorage.setItem('cached_highlights_v1', dataString);
+
+                if (highlightsData.length > 0) {
+                    document.getElementById('highlights-section').style.display = 'block';
+                    renderHighlights(container);
+                    // Background preload story media (images + videos) after render
+                    setTimeout(() => {
+                        highlightsData.forEach(story => preloadStoryMedia(story));
+                    }, 500);
+                } else {
+                    document.getElementById('highlights-section').style.display = 'none';
+                }
+            }
+        } catch (err) {
+            console.error('Highlights Appwrite load failed:', err);
         }
     }
 
@@ -2504,11 +2631,15 @@ document.addEventListener('DOMContentLoaded', () => {
         container.innerHTML = '';
         const lang = sessionStorage.getItem('lang') || 'ar';
         highlightsData.forEach((story, idx) => {
+            let currentCover = story.coverUrl;
+            if (lang === 'en' && story.coverUrlEn) currentCover = story.coverUrlEn;
+            else if (lang === 'fr' && story.coverUrlFr) currentCover = story.coverUrlFr;
+
             const el = document.createElement('div');
             el.className = 'highlight-item';
             el.innerHTML = `
                 <div class="highlight-ring ${story.viewed ? 'viewed' : ''}" id="ring-${idx}">
-                    <img src="${story.coverUrl}" alt="${story.title[lang]}">
+                    <img src="${currentCover}" alt="${story.title[lang]}">
                 </div>
                 <div class="highlight-title">${story.title[lang]}</div>
             `;
@@ -2533,7 +2664,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const lang = sessionStorage.getItem('lang') || 'ar';
         document.getElementById('story-title').innerText = story.title[lang];
-        document.getElementById('story-avatar').src = story.coverUrl;
+
+        let currentCover = story.coverUrl;
+        if (lang === 'en' && story.coverUrlEn) currentCover = story.coverUrlEn;
+        else if (lang === 'fr' && story.coverUrlFr) currentCover = story.coverUrlFr;
+        document.getElementById('story-avatar').src = currentCover;
 
         setupProgressBars(story.slides.length);
         renderSlide();
@@ -2559,40 +2694,125 @@ document.addEventListener('DOMContentLoaded', () => {
         // Reset all progress bars up to current
         for (let i = 0; i < story.slides.length; i++) {
             const fill = document.getElementById(`progress-fill-${i}`);
+            if (!fill) continue;
             if (i < currentSlideIndex) fill.style.width = '100%';
-            else if (i > currentSlideIndex) fill.style.width = '0%';
             else fill.style.width = '0%';
         }
 
         clearTimeout(storyTimeout);
         clearInterval(progressInterval);
 
+        const lang = sessionStorage.getItem('lang') || 'ar';
+
         if (slide.isVideo) {
             const video = document.createElement('video');
-            video.src = slide.url;
+            video.preload = 'auto';
             video.autoplay = true;
-            video.loop = true;
+            video.loop = false; // Do not loop to allow ended event to fire
             video.muted = false;
             video.playsInline = true;
+            video.controls = false;
+            
+            // Add loading spinner overlaid on top of video
+            contentArea.innerHTML = '<div class="story-video-loader"><i class="fas fa-spinner fa-spin"></i></div>';
             contentArea.appendChild(video);
+
+            const loader = contentArea.querySelector('.story-video-loader');
+            
+            video.addEventListener('playing', () => {
+                if (loader) loader.remove();
+            }, { once: true });
+
+            video.addEventListener('canplay', () => {
+                if (loader) loader.remove();
+                video.play().catch(err => {
+                    // Autoplay blocked — mute and retry
+                    console.warn('Autoplay blocked, muting:', err);
+                    video.muted = true;
+                    video.play().catch(e2 => console.warn('Muted play failed:', e2));
+                });
+            }, { once: true });
+            
+            video.addEventListener('error', (e) => {
+                // Video failed: show error and advance to next slide
+                console.warn('Story video error, skipping slide:', slide.url, video.error);
+                contentArea.innerHTML = '<div class="story-video-error"><i class="fas fa-exclamation-triangle"></i><span>تعذّر تشغيل الفيديو</span></div>';
+                setTimeout(() => nextSlide(), 2000);
+            }, { once: true });
+
+            // Listen to metadata to setup dynamic progress interval
+            video.addEventListener('loadedmetadata', () => {
+                const duration = video.duration || 10;
+                clearInterval(progressInterval);
+                progressInterval = setInterval(() => {
+                    if (video.paused) return;
+                    let pct = (video.currentTime / duration) * 100;
+                    if (pct > 100) pct = 100;
+                    const fill = document.getElementById(`progress-fill-${currentSlideIndex}`);
+                    if (fill) fill.style.width = pct + '%';
+                }, 50);
+            });
+
+            // Update on timeupdate for high precision
+            video.addEventListener('timeupdate', () => {
+                if (video.duration) {
+                    let pct = (video.currentTime / video.duration) * 100;
+                    if (pct > 100) pct = 100;
+                    const fill = document.getElementById(`progress-fill-${currentSlideIndex}`);
+                    if (fill) fill.style.width = pct + '%';
+                }
+            });
+
+            // Auto advance when video ends
+            video.addEventListener('ended', () => {
+                nextSlide();
+            });
+            
+            video.src = slide.url;
+            video.load();
         } else {
+            // Get lang-specific image URL
+            let imgUrl = slide.url;
+            if (lang === 'en' && slide.urlEn) imgUrl = slide.urlEn;
+            else if (lang === 'fr' && slide.urlFr) imgUrl = slide.urlFr;
+
             const img = document.createElement('img');
-            img.src = slide.url;
+            img.src = imgUrl;
+            img.onerror = () => {
+                console.warn('Story image error, skipping slide:', imgUrl);
+                setTimeout(() => nextSlide(), 1000);
+            };
             contentArea.appendChild(img);
+
+            // Set fixed 7s duration for images
+            const slideDuration = 7000;
+            currentStartTime = Date.now();
+            progressInterval = setInterval(() => {
+                const elapsed = Date.now() - currentStartTime;
+                let pct = (elapsed / slideDuration) * 100;
+                if (pct > 100) pct = 100;
+                const fill = document.getElementById(`progress-fill-${currentSlideIndex}`);
+                if (fill) fill.style.width = pct + '%';
+            }, 50);
+
+            storyTimeout = setTimeout(() => {
+                nextSlide();
+            }, slideDuration);
         }
 
-        currentStartTime = Date.now();
-        progressInterval = setInterval(() => {
-            const elapsed = Date.now() - currentStartTime;
-            let pct = (elapsed / STORY_DURATION_MS) * 100;
-            if (pct > 100) pct = 100;
-            const fill = document.getElementById(`progress-fill-${currentSlideIndex}`);
-            if (fill) fill.style.width = pct + '%';
-        }, 100);
-
-        storyTimeout = setTimeout(() => {
-            nextSlide();
-        }, STORY_DURATION_MS);
+        // Preload next slide proactively
+        const nextIdx = currentSlideIndex + 1;
+        if (nextIdx < story.slides.length) {
+            const nextSlideData = story.slides[nextIdx];
+            if (nextSlideData.isVideo) {
+                preloadVideoUrl(nextSlideData.url);
+            } else {
+                let nextImgUrl = nextSlideData.url;
+                if (lang === 'en' && nextSlideData.urlEn) nextImgUrl = nextSlideData.urlEn;
+                else if (lang === 'fr' && nextSlideData.urlFr) nextImgUrl = nextSlideData.urlFr;
+                preloadImageUrl(nextImgUrl);
+            }
+        }
     }
 
     function nextSlide() {

@@ -369,3 +369,5 @@ function toggleFavorite(id, btnElement) {
     }
     localStorage.setItem(FAV_KEY, JSON.stringify(favs));
 }
+
+window.renderGalleryGrid = renderGrid;
