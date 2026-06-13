@@ -29,7 +29,8 @@ const server = http.createServer((req, res) => {
         '.jpeg': 'image/jpeg',
         '.gif': 'image/gif',
         '.svg': 'image/svg+xml',
-        '.webp': 'image/webp'
+        '.webp': 'image/webp',
+        '.apk': 'application/vnd.android.package-archive'
     };
 
     const contentType = mimeTypes[extname] || 'application/octet-stream';
@@ -52,7 +53,7 @@ const server = http.createServer((req, res) => {
                 'Content-Type': contentType
             });
 
-            res.end(content, 'utf-8');
+            res.end(content);
         }
     });
 });
