@@ -44,7 +44,8 @@
             <i class="fas fa-pen-nib fa-spin me-2"></i> القطعة تكتب الآن...
         </div>
         <div class="chat-input-wrap">
-            <input type="text" id="chat-input-field" class="chat-input" placeholder="تحدث مع القطعة..." autocomplete="off">
+            <button id="artifact-mic-btn" class="btn-mic" style="background:transparent; border:none; color:#D4AF37; padding:0 10px; font-size:1.2rem; cursor:pointer;" title="تحدث بصوتك"><i class="fas fa-microphone"></i></button>
+            <input type="text" id="chat-input-field" class="chat-input" placeholder="تحدث مع القطعة..." autocomplete="off" style="flex:1;">
             <button id="chat-send-btn" class="btn-chat-send"><i class="fas fa-paper-plane"></i></button>
         </div>
     </footer>
@@ -84,6 +85,8 @@
                 artifactNameEl.innerText = nameAr;
                 
                 function getBucket(cId) {
+                    if (cId.includes('zoology')) return AppwriteConfig.buckets.zoologyImages;
+                    if (cId.includes('geo') || cId.includes('sceience')) return AppwriteConfig.buckets.geoImages;
                     if (cId.includes('science')) return AppwriteConfig.buckets.scienceImages;
                     if (cId.includes('art')) return AppwriteConfig.buckets.artImages;
                     return AppwriteConfig.buckets.tourism;
@@ -112,6 +115,9 @@
             }
 
             async function sendMessage() {
+                if (isRecording && recognition) {
+                    recognition.stop();
+                }
                 const text = inputField.value.trim();
                 if (!text || typingIndicator.style.display === 'block') return;
 
@@ -177,6 +183,50 @@
             document.getElementById('tts-toggle').onclick = function() {
                 this.classList.toggle('active');
                 this.style.color = this.classList.contains('active') ? '#D4AF37' : 'white';
+                if (!this.classList.contains('active')) {
+                    window.speechSynthesis.cancel();
+                }
+            };
+
+            // Speech Recognition (STT) for artifact-chat.html
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            let recognition = null;
+            let isRecording = false;
+
+            if (SpeechRecognition) {
+                recognition = new SpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = 'ar-EG';
+
+                recognition.onresult = (event) => {
+                    const speechToText = event.results[0][0].transcript;
+                    inputField.value = speechToText;
+                };
+
+                recognition.onend = () => {
+                    isRecording = false;
+                    document.getElementById('artifact-mic-btn').innerHTML = '<i class="fas fa-microphone"></i>';
+                    document.getElementById('artifact-mic-btn').style.color = '#D4AF37';
+                };
+
+                recognition.onerror = (event) => {
+                    console.error('Speech recognition error:', event.error);
+                };
+            }
+
+            document.getElementById('artifact-mic-btn').onclick = function() {
+                if (!recognition) {
+                    alert('عذراً، متصفحك لا يدعم التعرف على الصوت.');
+                    return;
+                }
+                if (isRecording) {
+                    recognition.stop();
+                } else {
+                    isRecording = true;
+                    this.innerHTML = '<i class="fas fa-circle fa-beat text-danger"></i>';
+                    recognition.start();
+                }
             };
         });
     </script>

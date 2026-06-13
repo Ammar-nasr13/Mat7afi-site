@@ -14,11 +14,71 @@ const _aw_key = "eyJlbmRwb2ludCI6Imh0dHBzOi8vYXBwd3JpdGUuZXRpaGFkYWxtZGluYS5jb20
 const AppwriteConfig = JSON.parse(atob(_aw_key));
 // Appwrite collection ID uses legacy typo: art_atifacts (not art_artifacts)
 AppwriteConfig.collections.art = 'art_atifacts';
+AppwriteConfig.collections.zoology = 'zoology_museum';
+AppwriteConfig.buckets.zoologyImages = '6a2b23370034e082f5f3';
+AppwriteConfig.buckets.artImages2 = '6a2cc2830001aa980e0a';
+AppwriteConfig.buckets.artImages3 = '6a2cc3b7001e1b2b7197';
+AppwriteConfig.buckets.artImages4 = '6a2cc3de001cf973b559';
 
 let databases;
 let museumArtifactsCache = [];
 let currentMuseumCollection = '';
 let currentMuseumName = '';
+
+let isTtsActive = true;
+let isMainRecording = false;
+let mainRecognition = null;
+
+function toggleWebTTS() {
+    isTtsActive = !isTtsActive;
+    const ttsToggle = document.getElementById('tts-toggle');
+    if (ttsToggle) {
+        if (isTtsActive) {
+            ttsToggle.innerHTML = '<i class="fas fa-volume-up"></i>';
+            ttsToggle.style.color = 'white';
+        } else {
+            ttsToggle.innerHTML = '<i class="fas fa-volume-mute"></i>';
+            ttsToggle.style.color = 'rgba(255,255,255,0.4)';
+            window.speechSynthesis.cancel();
+        }
+    }
+}
+
+function extractSearchQuery(text) {
+    let cleaned = text.toLowerCase();
+    cleaned = cleaned.replace(/[؟\?!\.,;\(\)\[\]"“‘\-\+\*\/_#@$]/g, ' ');
+
+    const stopWords = new Set([
+        // Arabic conversational/stop words
+        'ما', 'هو', 'هي', 'من', 'أين', 'كيف', 'لماذا', 'في', 'على', 'عن', 'منذ', 'إلى', 
+        'أريد', 'معلومات', 'حول', 'كلمني', 'صف', 'متحف', 'المتحف', 'أخبرني', 'تحدث', 
+        'حدثني', 'تعرف', 'ايه', 'شنو', 'عايز', 'ابغى', 'بدّي', 'شو', 'كيفية', 'يا', 
+        'صديقي', 'صحبي', 'صاحبي', 'بالله', 'ممكن', 'لو', 'سمحت', 'ورينا', 'فرجني', 
+        'شغل', 'افتح', 'روح', 'اذهب', 'ادخل', 'هات', 'جيب', 'عرض', 'توضيح', 'تفاصيل',
+        'القطع', 'القطعة', 'الآثار', 'الاثار', 'تحفة', 'التحف', 'الجدول', 'المعروضة', 
+        'معروضات', 'المعروضات',
+        // English conversational/stop words
+        'what', 'is', 'are', 'who', 'where', 'how', 'why', 'in', 'on', 'about', 'to', 
+        'from', 'tell', 'me', 'describe', 'museum', 'artifact', 'show', 'find', 'search', 
+        'please', 'can', 'you', 'give', 'details', 'of', 'the', 'an', 'a', 'info', 'information'
+    ]);
+
+    let words = cleaned.split(/\s+/);
+    let filtered = [];
+    for (let word of words) {
+        let cleanWord = word.trim();
+        if (!cleanWord) continue;
+        if (!stopWords.has(cleanWord)) {
+            filtered.push(cleanWord);
+        }
+    }
+
+    if (filtered.length === 0) {
+        return text.replace(/[؟\?!\.,;\(\)\[\]"“‘\-\+\*\/_#@$]/g, ' ').trim();
+    }
+    
+    return filtered.join(' ');
+}
 
 let Query;
 // Appwrite initialization helper (deferred to DOMContentLoaded to avoid race)
@@ -84,6 +144,25 @@ const getArtifactDescription = (artifact) => {
 const isGeologyCollection = (collectionId) =>
     collectionId && (collectionId.includes('sceience_museum_geo') || collectionId.includes('geology'));
 
+const isZoologyCollection = (collectionId) =>
+    collectionId && (collectionId.includes('zoology_museum') || collectionId.includes('zoology'));
+
+const resolveArtifactImageBucket = (artifact, defaultBucketId) => {
+    if (!artifact) return defaultBucketId;
+    const explicitBucket = artifact.image_bucket_id || artifact.imageBucketId || 
+                           artifact.image_bucket || artifact.imageBucket || 
+                           artifact.bucket_id || artifact.bucketId || artifact.bucket;
+    if (explicitBucket) return explicitBucket;
+
+    if (defaultBucketId === AppwriteConfig.buckets.artImages) {
+        const hallId = String(artifact['art-id'] || artifact.artId || '').trim();
+        if (hallId === '2') return AppwriteConfig.buckets.artImages2;
+        if (hallId === '3') return AppwriteConfig.buckets.artImages3;
+        if (hallId === '4') return AppwriteConfig.buckets.artImages4;
+    }
+    return defaultBucketId;
+};
+
 const formatGeologyValue = (val) => {
     if (val == null) return '';
     if (Array.isArray(val)) {
@@ -143,14 +222,16 @@ function getArtifactGalleryUrls(artifact, bucketId, collectionId) {
     if (collectionId && isGeologyCollection(collectionId)) {
         return getGeologyGalleryUrls(artifact);
     }
+    const resolvedBucket = resolveArtifactImageBucket(artifact, bucketId);
     const raw = artifact.images || artifact.gallery_images || artifact.gallery || [];
     const ids = Array.isArray(raw) ? raw : (raw ? [raw] : []);
-    return ids.map(id => getAppwriteImageUrl(id, bucketId)).filter(Boolean);
+    return ids.map(id => getAppwriteImageUrl(id, resolvedBucket)).filter(Boolean);
 }
 
 function preloadArtifactMedia(artifact, collectionId, bucketId, includeGlb = false) {
-    preloadImageUrl(getAppwriteImageUrl(artifact.image || artifact.image_url, bucketId));
-    getArtifactGalleryUrls(artifact, bucketId, collectionId).forEach(preloadImageUrl);
+    const resolvedBucket = resolveArtifactImageBucket(artifact, bucketId);
+    preloadImageUrl(getAppwriteImageUrl(artifact.image || artifact.image_url, resolvedBucket));
+    getArtifactGalleryUrls(artifact, resolvedBucket, collectionId).forEach(preloadImageUrl);
     if (includeGlb) {
         const glbId = artifact.glbFileId || artifact.glbFileld || artifact.glb_file_id || '';
         if (glbId && glbId.trim().length > 5) {
@@ -339,6 +420,91 @@ function renderGeologyExtraSections(artifact, lang) {
     });
 }
 
+function renderZoologyExtraSections(artifact, lang) {
+    const container = document.getElementById('geology-extra-sections');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const t = (ar, en, fr) => lang === 'en' ? en : (lang === 'fr' ? fr : ar);
+
+    const getFieldVal = (arKeys, enKeys, frKeys) => {
+        const keys = lang === 'en' ? enKeys : (lang === 'fr' ? frKeys : arKeys);
+        for (const key of keys) {
+            if (artifact[key] && artifact[key].toString().trim().toLowerCase() !== 'null' && artifact[key].toString().trim() !== '') {
+                return artifact[key].toString().trim();
+            }
+        }
+        if (lang !== 'ar') {
+            for (const key of arKeys) {
+                if (artifact[key] && artifact[key].toString().trim().toLowerCase() !== 'null' && artifact[key].toString().trim() !== '') {
+                    return artifact[key].toString().trim();
+                }
+            }
+        }
+        return '';
+    };
+
+    const sections = [];
+
+    const habitat = getFieldVal(
+        ['distribution_ar', 'distribution-ar'],
+        ['distribution_en', 'distribution-en'],
+        ['distribution_fr', 'distribution-fr']
+    );
+    if (habitat) {
+        sections.push({
+            title: t('الموطن والتوزيع الجغرافي', 'Habitat & Distribution', 'Habitat et distribution'),
+            body: habitat
+        });
+    }
+
+    const characteristics = getFieldVal(
+        ['characteristics_ar', 'characteristics-ar'],
+        ['characteristics_en', 'characteristics-en'],
+        ['characteristics_fr', 'characteristics-fr']
+    );
+    if (characteristics) {
+        sections.push({
+            title: t('الصفات المميزة', 'Distinctive Characteristics', 'Caractéristiques distinctives'),
+            body: characteristics
+        });
+    }
+
+    const reproduction = getFieldVal(
+        ['reproduction_ar', 'reproduction-ar', 'Reproduction-AR'],
+        ['reproduction_en', 'reproduction-en', 'Reproduction-En'],
+        ['reproduction_fr', 'reproduction-fr', 'Reproduction-Fr']
+    );
+    if (reproduction) {
+        sections.push({
+            title: t('التكاثر', 'Reproduction', 'Reproduction'),
+            body: reproduction
+        });
+    }
+
+    const diet = getFieldVal(
+        ['diet_behavior_ar', 'diet_behavior-ar', 'diet-behavior-ar'],
+        ['diet_behavior_en', 'diet_behavior-en', 'diet-behavior-en'],
+        ['diet_behavior_fr', 'diet_behavior-fr', 'diet-behavior-fr']
+    );
+    if (diet) {
+        sections.push({
+            title: t('الغذاء والسلوك', 'Diet & Behavior', 'Alimentation et comportement'),
+            body: diet
+        });
+    }
+
+    sections.forEach(section => {
+        const block = document.createElement('div');
+        block.className = 'geology-detail-block Zoology-detail-block';
+        block.innerHTML = `
+            <h3 class="section-title">${section.title}</h3>
+            <div class="description-text">${section.body.replace(/\n/g, '<br>')}</div>
+        `;
+        container.appendChild(block);
+    });
+}
+
 function initGeologyGallery(root, urls) {
     if (!root || !urls.length) return;
     let index = 0;
@@ -378,6 +544,7 @@ function resolveCollectionId(collectionId) {
     if (!collectionId) return collectionId;
     const id = collectionId.toLowerCase();
     if (id.includes('tourism')) return AppwriteConfig.collections.tourism;
+    if (id.includes('zoology')) return AppwriteConfig.collections.zoology;
     if (id.includes('sceience_museum_geo') || id.includes('geology')) return AppwriteConfig.collections.geology;
     if (id.includes('science')) return AppwriteConfig.collections.science;
     if (id.includes('art')) return AppwriteConfig.collections.art;
@@ -399,6 +566,7 @@ function matchesScienceSubMuseum(doc, subMuseumId) {
 
 function getBucketByType(collectionId) {
     if (!collectionId) return AppwriteConfig.buckets.tourism;
+    if (isZoologyCollection(collectionId)) return AppwriteConfig.buckets.zoologyImages;
     if (isGeologyCollection(collectionId)) return AppwriteConfig.buckets.geoImages;
     if (collectionId.includes('science')) return AppwriteConfig.buckets.scienceImages;
     if (collectionId.includes('art')) return AppwriteConfig.buckets.artImages;
@@ -408,6 +576,7 @@ function getBucketByType(collectionId) {
 function getStorageBucketsForCollection(collectionId) {
     const buckets = [];
     if (collectionId?.includes('tourism')) buckets.push(AppwriteConfig.buckets.tourism);
+    if (isZoologyCollection(collectionId)) buckets.push(AppwriteConfig.buckets.zoologyImages);
     if (isGeologyCollection(collectionId)) buckets.push(AppwriteConfig.buckets.geoImages);
     if (collectionId?.includes('science')) buckets.push(AppwriteConfig.buckets.scienceImages);
     if (collectionId?.includes('art')) buckets.push(AppwriteConfig.buckets.artImages);
@@ -417,7 +586,8 @@ function getStorageBucketsForCollection(collectionId) {
         AppwriteConfig.buckets.artifacts,
         AppwriteConfig.buckets.artImages,
         AppwriteConfig.buckets.scienceImages,
-        AppwriteConfig.buckets.geoImages
+        AppwriteConfig.buckets.geoImages,
+        AppwriteConfig.buckets.zoologyImages
     );
     return [...new Set(buckets.filter(Boolean))];
 }
@@ -480,10 +650,14 @@ function setupImageFallback(imgEl, fileId) {
         return;
     }
     const buckets = [
+        AppwriteConfig.buckets.zoologyImages,
         AppwriteConfig.buckets.geoImages,
         AppwriteConfig.buckets.artifacts,
         AppwriteConfig.buckets.tourism,
         AppwriteConfig.buckets.artImages,
+        AppwriteConfig.buckets.artImages2,
+        AppwriteConfig.buckets.artImages3,
+        AppwriteConfig.buckets.artImages4,
         AppwriteConfig.buckets.scienceImages
     ];
     let currentIdx = 0;
@@ -518,14 +692,18 @@ const renderArtifacts = (artifacts) => {
     }
 
     if (isGeologyCollection(currentMuseumCollection)) {
-        renderGeologyList(artifacts);
+        renderZoologyGeologyList(artifacts, false);
+        return;
+    }
+    if (isZoologyCollection(currentMuseumCollection)) {
+        renderZoologyGeologyList(artifacts, true);
         return;
     }
 
     const fragment = document.createDocumentFragment();
 
     artifacts.forEach((artifact) => {
-        const bucketId = getBucketByType(currentMuseumCollection);
+        const bucketId = resolveArtifactImageBucket(artifact, getBucketByType(currentMuseumCollection));
         const imageUrl = getAppwriteImageUrl(artifact.image || artifact.image_url, bucketId);
         const artifactId = artifact.$id || artifact.id || '';
         let artifactTitle = getArtifactTitle(artifact);
@@ -595,36 +773,43 @@ const renderArtifacts = (artifacts) => {
     artifactsGrid.appendChild(fragment);
 };
 
-const renderGeologyList = (artifacts) => {
+const renderZoologyGeologyList = (artifacts, isZoology) => {
     const artifactsGrid = document.getElementById('artifacts-grid');
     if (!artifactsGrid) return;
 
     artifactsGrid.innerHTML = '';
     const fragment = document.createDocumentFragment();
     const lang = getCurrentLang();
-    const bucketId = AppwriteConfig.buckets.geoImages;
+    const bucketId = isZoology ? AppwriteConfig.buckets.zoologyImages : AppwriteConfig.buckets.geoImages;
+    const colId = isZoology ? AppwriteConfig.collections.zoology : AppwriteConfig.collections.geology;
 
     artifacts.forEach((artifact) => {
         const imageUrl = getAppwriteImageUrl(artifact.image || artifact.image_url, bucketId);
         const artifactId = artifact.$id || artifact.id || '';
         const artifactTitle = getArtifactTitle(artifact);
-        const artifactLink = `artifact.html?id=${encodeURIComponent(artifactId)}&collection=${encodeURIComponent(AppwriteConfig.collections.geology)}&museum=${encodeURIComponent(currentMuseumName)}`;
+        const artifactLink = `artifact.html?id=${encodeURIComponent(artifactId)}&collection=${encodeURIComponent(colId)}&museum=${encodeURIComponent(currentMuseumName)}`;
 
         const col = document.createElement('div');
-        col.className = 'col-12 mb-3';
+        col.className = 'col-lg-3 col-md-4 col-6 mb-4';
+        
         col.innerHTML = `
-            <a href="${artifactLink}" class="geology-list-card" style="text-decoration:none;">
-                <img src="${imageUrl}" alt="${artifactTitle}" loading="eager" decoding="async" fetchpriority="high">
-                <div class="geology-list-overlay"></div>
-                <div class="geology-list-title">${artifactTitle}</div>
+            <a href="${artifactLink}" class="zoology-geology-card-link" style="text-decoration:none;">
+                <div class="zoology-geology-card">
+                    <div class="zoology-geology-card-img">
+                        <img src="${imageUrl}" alt="${artifactTitle}" loading="eager" decoding="async" fetchpriority="high">
+                    </div>
+                    <div class="zoology-geology-card-body">
+                        <h3 class="zoology-geology-card-title">${artifactTitle}</h3>
+                    </div>
+                </div>
             </a>
         `;
 
-        // Smart On-Demand Preloading for Geology
+        // Smart On-Demand Preloading
         const triggerPreload = () => {
             const glbFileId = artifact.glbFileId || artifact.glbFileld || artifact.glb_file_id || '';
             if (glbFileId && glbFileId.trim().length > 5) {
-                preloadGlbModel(glbFileId, AppwriteConfig.collections.geology);
+                preloadGlbModel(glbFileId, colId);
             }
             const audioFileId = artifact[`audio_guide_${lang}`] || artifact[`audio_guide-${lang}`] ||
                 artifact[`audio-${lang}`] || artifact[`audio_${lang}`] || artifact['audio-ar'] || artifact.audio_ar || '';
@@ -640,9 +825,7 @@ const renderGeologyList = (artifacts) => {
         fragment.appendChild(col);
         const img = col.querySelector('img');
         if (img) {
-            img.onerror = () => {
-                img.src = 'assets/science-museum.png';
-            };
+            setupImageFallback(img, artifact.image || artifact.image_url);
         }
     });
 
@@ -805,7 +988,7 @@ window.renderScienceMuseums = () => {
             ar: 'متحف علم الحيوان',
             en: 'Zoology Museum',
             fr: 'Musée de Zoologie',
-            active: false
+            active: true
         }
     ];
 
@@ -848,11 +1031,6 @@ window.showZoologyComingSoon = () => {
 window.loadScienceSubMuseum = async (subMuseumId, subMuseumTitle) => {
     if (!databases) initAppwrite();
 
-    if (subMuseumId === 'zoology') {
-        showZoologyComingSoon();
-        return;
-    }
-
     const artifactsGrid = document.getElementById('artifacts-grid');
     const backToHallsBtn = document.getElementById('back-to-halls-btn');
     const lang = getCurrentLang();
@@ -885,6 +1063,15 @@ window.loadScienceSubMuseum = async (subMuseumId, subMuseumTitle) => {
             const response = await databases.listDocuments(
                 AppwriteConfig.databaseId,
                 AppwriteConfig.collections.geology,
+                queries
+            );
+            docs = response.documents || [];
+        } else if (subMuseumId === 'zoology') {
+            currentMuseumCollection = AppwriteConfig.collections.zoology;
+            const queries = Query ? [Query.limit(100)] : [];
+            const response = await databases.listDocuments(
+                AppwriteConfig.databaseId,
+                AppwriteConfig.collections.zoology,
                 queries
             );
             docs = response.documents || [];
@@ -1039,12 +1226,14 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
         } else if (isGeologyCollection(collectionId)) {
             subtitle = artifact[`Classification-${lang}`] || artifact[`classification-${lang}`] ||
                        artifact['Classification-ar'] || artifact['classification-ar'] || (lang === 'en' ? 'Geology' : (lang === 'fr' ? 'Géologie' : 'جيولوجيا'));
+        } else if (isZoologyCollection(collectionId)) {
+            subtitle = artifact['scientific-name'] || artifact.scientific_name || (lang === 'en' ? 'Zoology' : (lang === 'fr' ? 'Zoologie' : 'علم الحيوان'));
         }
         
         if (artifactNameHero) artifactNameHero.innerText = name;
         if (artifactSubtitleHero) artifactSubtitleHero.innerText = subtitle;
 
-        const bucketId = getBucketByType(collectionId);
+        const bucketId = resolveArtifactImageBucket(artifact, getBucketByType(collectionId));
         const imgUrl = getAppwriteImageUrl(artifact.image || artifact.image_url, bucketId);
         preloadImageUrl(imgUrl);
         getArtifactGalleryUrls(artifact, bucketId, collectionId).forEach(preloadImageUrl);
@@ -1065,6 +1254,8 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
                 sectionTitles[0].innerText = lang === 'en' ? 'Painting Details' : (lang === 'fr' ? 'Détails du tableau' : 'تفاصيل اللوحة');
             } else if (isGeologyCollection(collectionId)) {
                 sectionTitles[0].innerText = lang === 'en' ? 'Information Card' : (lang === 'fr' ? 'Fiche d\'information' : 'بطاقة المعلومات');
+            } else if (isZoologyCollection(collectionId)) {
+                sectionTitles[0].innerText = lang === 'en' ? 'Basic Information' : (lang === 'fr' ? 'Informations de base' : 'المعلومات الأساسية');
             } else {
                 sectionTitles[0].innerText = lang === 'en' ? 'Identification Card' : (lang === 'fr' ? 'Carte d\'identité' : 'بطاقة التعريف');
             }
@@ -1094,91 +1285,175 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
         if (infoGrid) {
             infoGrid.innerHTML = '';
             
-            const getVal = (key) => artifact[`${key}_${lang}`] || artifact[`${key}${lang.charAt(0).toUpperCase() + lang.slice(1)}`] || artifact[`${key}-${lang}`] || artifact[`${key}_ar`] || artifact[`${key}Ar`] || artifact[`${key}-ar`] || artifact[key];
-
-            const fields = [];
-
-            if (collectionId.includes('tourism')) {
-                const eraVal = getVal('era');
-                if (eraVal) fields.push({ label: l.era, value: eraVal, icon: 'fas fa-history' });
-
-                const matVal = getVal('material');
-                if (matVal) fields.push({ label: l.material, value: matVal, icon: 'fas fa-cube' });
-
-                const dimVal = getVal('dimensions');
-                if (dimVal) fields.push({ label: l.dimensions, value: dimVal, icon: 'fas fa-ruler-combined' });
+            if (isZoologyCollection(collectionId)) {
+                infoGrid.style.display = 'block'; // Clear grid layout for custom cards
                 
-                const locVal = getVal('location');
-                if (locVal) fields.push({ label: l.location, value: locVal, icon: 'fas fa-map-marker-alt' });
-            } else if (collectionId.includes('art_')) {
-                const authorVal = getVal('author');
-                if (authorVal) fields.push({ label: l.author, value: authorVal, icon: 'fas fa-palette' });
+                let basicInfoHtml = `
+                    <div class="zoology-detail-card">
+                        <div class="zoology-detail-row">
+                            <div class="zoology-detail-icon"><i class="fas fa-info-circle"></i></div>
+                            <div class="zoology-detail-content">
+                                <span class="zoology-detail-label">${lang === 'en' ? 'Name' : (lang === 'fr' ? 'Nom' : 'الاسم')}:</span>
+                                <span class="zoology-detail-value">${getArtifactTitle(artifact)}</span>
+                            </div>
+                        </div>
+                `;
+                
+                const sciName = artifact['scientific-name'] || artifact.scientific_name || '';
+                if (sciName && sciName.toLowerCase() !== 'null' && sciName.trim() !== '') {
+                    basicInfoHtml += `
+                        <div class="zoology-detail-divider"></div>
+                        <div class="zoology-detail-row">
+                            <div class="zoology-detail-icon"><i class="fas fa-microscope"></i></div>
+                            <div class="zoology-detail-content">
+                                <span class="zoology-detail-label">${lang === 'en' ? 'Scientific Name' : (lang === 'fr' ? 'Nom scientifique' : 'الاسم العلمي')}:</span>
+                                <span class="zoology-detail-value scientific">${sciName}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+                basicInfoHtml += `</div>`;
+                infoGrid.innerHTML = basicInfoHtml;
 
-                const serialVal = artifact.serial_number || artifact.serialNumber || artifact['serial-number'];
-                if (serialVal) fields.push({ label: l.serial, value: serialVal, icon: 'fas fa-hashtag' });
-
-                const sizeVal = getVal('size');
-                if (sizeVal) fields.push({ label: l.size, value: sizeVal, icon: 'fas fa-ruler-combined' });
-
-                const typeVal = getVal('type');
-                if (typeVal) fields.push({ label: l.type, value: typeVal, icon: 'fas fa-paint-brush' });
-            } else if (collectionId.includes('science')) {
-                fields.push({ label: l.museum, value: museumName, icon: 'fas fa-museum' });
-                fields.push({ label: l.category, value: lang==='en'?'Science':(lang==='fr'?'Science':'علوم'), icon: 'fas fa-tags' });
-
-                const serialVal = artifact.serial_number || artifact.serialNumber || artifact['serial-number'];
-                if (serialVal) fields.push({ label: l.serial, value: serialVal, icon: 'fas fa-hashtag' });
-            } else if (isGeologyCollection(collectionId)) {
-                const classVal = getGeologyField(artifact, lang,
-                    ['Classification-ar', 'Classification_ar', 'classification-ar', 'classification_ar'],
-                    ['Classification-en', 'Classification_en', 'classification-en', 'classification_en']
-                ) || getVal('Classification') || getVal('classification');
-                if (classVal) fields.push({
-                    label: lang === 'en' ? 'Classification' : (lang === 'fr' ? 'Classification' : 'التصنيف'),
-                    value: classVal,
-                    icon: 'fas fa-gem'
+                // Scientific Classification
+                const classificationTitleText = lang === 'en' ? 'Scientific Classification' : (lang === 'fr' ? 'Classification scientifique' : 'التصنيف العلمي');
+                
+                let classCardHtml = `
+                    <h3 class="section-title">${classificationTitleText}</h3>
+                    <div class="zoology-detail-card">
+                `;
+                
+                const classFields = [
+                    { key: 'phylum', icon: 'fas fa-project-diagram', ar: 'الشعبة', en: 'Phylum', fr: 'Phylum' },
+                    { key: 'subphylum', icon: 'fas fa-sitemap', ar: 'الشعيبة', en: 'Subphylum', fr: 'Sous-phylum' },
+                    { key: 'superclass', icon: 'fas fa-th-large', ar: 'فوق طائفة', en: 'Superclass', fr: 'Super-classe' },
+                    { key: 'class', icon: 'fas fa-tags', ar: 'الطائفة', en: 'Class', fr: 'Classe' },
+                    { key: 'subclass', icon: 'fas fa-th', ar: 'الطويئفة', en: 'Subclass', fr: 'Sous-classe' },
+                    { key: 'order', icon: 'fas fa-list-ul', ar: 'الرتبة', en: 'Order', fr: 'Ordre' },
+                    { key: 'family', icon: 'fas fa-users-cog', ar: 'الفصيلة', en: 'Family', fr: 'Famille' }
+                ];
+                
+                let addedAnyClassField = false;
+                classFields.forEach((f) => {
+                    let val = artifact[f.key] || '';
+                    if (f.key === 'class') {
+                        val = artifact['class'] || artifact['classVal'] || '';
+                    }
+                    if (f.key === 'superclass') {
+                        val = artifact['superclass'] || artifact['super_class'] || artifact['super-class'] || '';
+                    }
+                    
+                    if (val && val.toLowerCase() !== 'null' && val.trim() !== '' && val.trim() !== 'N/A' && val.trim() !== '-') {
+                        if (addedAnyClassField) {
+                            classCardHtml += `<div class="zoology-detail-divider"></div>`;
+                        }
+                        const labelText = lang === 'en' ? f.en : (lang === 'fr' ? f.fr : f.ar);
+                        classCardHtml += `
+                            <div class="zoology-detail-row">
+                                <div class="zoology-detail-icon"><i class="${f.icon}"></i></div>
+                                <div class="zoology-detail-content">
+                                    <span class="zoology-detail-label">${labelText}:</span>
+                                    <span class="zoology-detail-value">${val}</span>
+                                </div>
+                            </div>
+                        `;
+                        addedAnyClassField = true;
+                    }
                 });
+                classCardHtml += `</div>`;
 
-                const compVal = getGeologyField(artifact, lang,
-                    ['formation-ar', 'formation_ar', 'composition-ar', 'composition_ar'],
-                    ['formation-en', 'formation_en', 'composition-en', 'composition_en']
-                ) || getVal('formation') || getVal('composition');
-                if (compVal) fields.push({
-                    label: lang === 'en' ? 'Composition' : (lang === 'fr' ? 'Composition' : 'التكوين'),
-                    value: compVal,
-                    icon: 'fas fa-layer-group'
-                });
+                if (addedAnyClassField) {
+                    infoGrid.insertAdjacentHTML('afterend', classCardHtml);
+                }
+            } else {
+                infoGrid.style.display = 'grid'; // Restore grid for other types
+                
+                const getVal = (key) => artifact[`${key}_${lang}`] || artifact[`${key}${lang.charAt(0).toUpperCase() + lang.slice(1)}`] || artifact[`${key}-${lang}`] || artifact[`${key}_ar`] || artifact[`${key}Ar`] || artifact[`${key}-ar`] || artifact[key];
 
-                const ageVal = getGeologyField(artifact, lang,
-                    ['age_ar', 'age-ar'], ['age_en', 'age-en']
-                ) || getVal('age');
-                if (ageVal) fields.push({
-                    label: lang === 'en' ? 'Geological Age' : (lang === 'fr' ? 'Âge géologique' : 'العمر الجيولوجي'),
-                    value: ageVal,
-                    icon: 'fas fa-history'
-                });
+                const fields = [];
 
-                const examplesVal = getGeologyField(artifact, lang,
-                    ['examples_ar', 'examples-ar'], ['examples_en', 'examples-en']
-                );
-                if (examplesVal) fields.push({
-                    label: lang === 'en' ? 'Key Exhibits' : (lang === 'fr' ? 'Pièces clés' : 'أبرز المعروضات'),
-                    value: examplesVal,
-                    icon: 'fas fa-list'
+                if (collectionId.includes('tourism')) {
+                    const eraVal = getVal('era');
+                    if (eraVal) fields.push({ label: l.era, value: eraVal, icon: 'fas fa-history' });
+
+                    const matVal = getVal('material');
+                    if (matVal) fields.push({ label: l.material, value: matVal, icon: 'fas fa-cube' });
+
+                    const dimVal = getVal('dimensions');
+                    if (dimVal) fields.push({ label: l.dimensions, value: dimVal, icon: 'fas fa-ruler-combined' });
+                    
+                    const locVal = getVal('location');
+                    if (locVal) fields.push({ label: l.location, value: locVal, icon: 'fas fa-map-marker-alt' });
+                } else if (collectionId.includes('art_')) {
+                    const authorVal = getVal('author');
+                    if (authorVal) fields.push({ label: l.author, value: authorVal, icon: 'fas fa-palette' });
+
+                    const serialVal = artifact.serial_number || artifact.serialNumber || artifact['serial-number'];
+                    if (serialVal) fields.push({ label: l.serial, value: serialVal, icon: 'fas fa-hashtag' });
+
+                    const sizeVal = getVal('size');
+                    if (sizeVal) fields.push({ label: l.size, value: sizeVal, icon: 'fas fa-ruler-combined' });
+
+                    const typeVal = getVal('type');
+                    if (typeVal) fields.push({ label: l.type, value: typeVal, icon: 'fas fa-paint-brush' });
+                } else if (collectionId.includes('science')) {
+                    fields.push({ label: l.museum, value: museumName, icon: 'fas fa-museum' });
+                    fields.push({ label: l.category, value: lang==='en'?'Science':(lang==='fr'?'Science':'علوم'), icon: 'fas fa-tags' });
+
+                    const serialVal = artifact.serial_number || artifact.serialNumber || artifact['serial-number'];
+                    if (serialVal) fields.push({ label: l.serial, value: serialVal, icon: 'fas fa-hashtag' });
+                } else if (isGeologyCollection(collectionId)) {
+                    const classVal = getGeologyField(artifact, lang,
+                        ['Classification-ar', 'Classification_ar', 'classification-ar', 'classification_ar'],
+                        ['Classification-en', 'Classification_en', 'classification-en', 'classification_en']
+                    ) || getVal('Classification') || getVal('classification');
+                    if (classVal) fields.push({
+                        label: lang === 'en' ? 'Classification' : (lang === 'fr' ? 'Classification' : 'التصنيف'),
+                        value: classVal,
+                        icon: 'fas fa-gem'
+                    });
+
+                    const compVal = getGeologyField(artifact, lang,
+                        ['formation-ar', 'formation_ar', 'composition-ar', 'composition_ar'],
+                        ['formation-en', 'formation_en', 'composition-en', 'composition_en']
+                    ) || getVal('formation') || getVal('composition');
+                    if (compVal) fields.push({
+                        label: lang === 'en' ? 'Composition' : (lang === 'fr' ? 'Composition' : 'التكوين'),
+                        value: compVal,
+                        icon: 'fas fa-layer-group'
+                    });
+
+                    const ageVal = getGeologyField(artifact, lang,
+                        ['age_ar', 'age-ar'], ['age_en', 'age-en']
+                    ) || getVal('age');
+                    if (ageVal) fields.push({
+                        label: lang === 'en' ? 'Geological Age' : (lang === 'fr' ? 'Âge géologique' : 'العمر الجيولوجي'),
+                        value: ageVal,
+                        icon: 'fas fa-history'
+                    });
+
+                    const examplesVal = getGeologyField(artifact, lang,
+                        ['examples_ar', 'examples-ar'], ['examples_en', 'examples-en']
+                    );
+                    if (examplesVal) fields.push({
+                        label: lang === 'en' ? 'Key Exhibits' : (lang === 'fr' ? 'Pièces clés' : 'أبرز المعروضات'),
+                        value: examplesVal,
+                        icon: 'fas fa-list'
+                    });
+                }
+                
+                fields.forEach(f => {
+                    infoGrid.innerHTML += `
+                        <div class="info-item">
+                            <div class="info-icon"><i class="${f.icon}"></i></div>
+                            <div class="info-content">
+                                <span class="label">${f.label}</span>
+                                <span class="value">${f.value}</span>
+                            </div>
+                        </div>
+                    `;
                 });
             }
-            
-            fields.forEach(f => {
-                infoGrid.innerHTML += `
-                    <div class="info-item">
-                        <div class="info-icon"><i class="${f.icon}"></i></div>
-                        <div class="info-content">
-                            <span class="label">${f.label}</span>
-                            <span class="value">${f.value}</span>
-                        </div>
-                    </div>
-                `;
-            });
         }
 
         // Audio Guide Logic
@@ -1303,6 +1578,8 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
             if (glbId && glbId.trim().length > 5) {
                 preloadGlbModel(glbId, collectionId);
             }
+        } else if (isZoologyCollection(collectionId)) {
+            renderZoologyExtraSections(artifact, lang);
         } else {
             const extra = document.getElementById('geology-extra-sections');
             if (extra) extra.innerHTML = '';
@@ -1406,6 +1683,50 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sendBtn && userInput) {
         sendBtn.onclick = handleChat;
         userInput.onkeypress = (e) => { if (e.key === 'Enter') handleChat(); };
+
+        // Initialize Speech Recognition for main chat
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            mainRecognition = new SpeechRecognition();
+            mainRecognition.continuous = false;
+            mainRecognition.interimResults = false;
+            mainRecognition.lang = 'ar-EG';
+
+            mainRecognition.onresult = (event) => {
+                const speechToText = event.results[0][0].transcript;
+                userInput.value = speechToText;
+            };
+
+            mainRecognition.onend = () => {
+                isMainRecording = false;
+                const micBtn = document.getElementById('mic-btn');
+                if (micBtn) {
+                    micBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+                    micBtn.style.color = '#B8860B';
+                }
+            };
+
+            mainRecognition.onerror = (event) => {
+                console.error('Main speech recognition error:', event.error);
+            };
+        }
+
+        const micBtn = document.getElementById('mic-btn');
+        if (micBtn) {
+            micBtn.onclick = () => {
+                if (!mainRecognition) {
+                    alert('عذراً، متصفحك لا يدعم التعرف على الصوت.');
+                    return;
+                }
+                if (isMainRecording) {
+                    mainRecognition.stop();
+                } else {
+                    isMainRecording = true;
+                    micBtn.innerHTML = '<i class="fas fa-circle fa-beat text-danger"></i>';
+                    mainRecognition.start();
+                }
+            };
+        }
     }
 });
 
@@ -1416,6 +1737,11 @@ async function handleChat() {
 
     const text = userInput.value.trim();
     if (!text) return;
+
+    // Stop recording if active
+    if (isMainRecording && mainRecognition) {
+        mainRecognition.stop();
+    }
     
     const lang = getCurrentLang();
     
@@ -1448,13 +1774,109 @@ async function handleChat() {
         return;
     }
 
+    // Ensure Appwrite databases is initialized
+    if (!databases) {
+        initAppwrite();
+    }
+
+    let dbContext = '';
+    if (databases && Query) {
+        try {
+            const collectionsToSearch = [
+                { id: AppwriteConfig.collections.tourism, fields: ['name-ar', 'name-en'] },
+                { id: AppwriteConfig.collections.art, fields: ['name-ar', 'name-en'] },
+                { id: AppwriteConfig.collections.science, fields: ['name-ar', 'name-en'] },
+                { id: AppwriteConfig.collections.geology, fields: ['title-ar', 'title-en'] },
+                { id: AppwriteConfig.collections.zoology, fields: ['name-ar', 'name-en'] }
+            ];
+
+            let searchQuery = extractSearchQuery(text);
+
+            const searchPromises = collectionsToSearch.map(async (col) => {
+                if (!col.id) return [];
+                try {
+                    let response = await databases.listDocuments(
+                        AppwriteConfig.databaseId,
+                        col.id,
+                        [
+                            Query.or([
+                                Query.contains(col.fields[0], searchQuery),
+                                Query.contains(col.fields[1], searchQuery)
+                            ]),
+                            Query.limit(5)
+                        ]
+                    );
+
+                    // If no matches, try searching with the longest keyword
+                    if (response.documents.length === 0 && searchQuery.includes(' ')) {
+                        const words = searchQuery.split(' ').sort((a, b) => b.length - a.length);
+                        if (words.length > 0 && words[0].length > 2) {
+                            response = await databases.listDocuments(
+                                AppwriteConfig.databaseId,
+                                col.id,
+                                [
+                                    Query.or([
+                                        Query.contains(col.fields[0], words[0]),
+                                        Query.contains(col.fields[1], words[0])
+                                    ]),
+                                    Query.limit(5)
+                                ]
+                            );
+                        }
+                    }
+
+                    return response.documents.map(doc => {
+                        const nameAr = doc['name-ar'] || doc['name_ar'] || doc['title-ar'] || doc['title_ar'] || '';
+                        const nameEn = doc['name-en'] || doc['name_en'] || doc['title-en'] || doc['title_en'] || '';
+                        const descAr = doc['description-ar'] || doc['description_ar'] || doc['overview-ar'] || doc['overview_ar'] || doc['overview-Ar'] || '';
+                        return {
+                            id: doc.$id,
+                            nameAr,
+                            nameEn,
+                            collection: col.id,
+                            descriptionAr: descAr
+                        };
+                    });
+                } catch (err) {
+                    console.warn(`Search failed on collection ${col.id}:`, err);
+                    return [];
+                }
+            });
+
+            const results = await Promise.all(searchPromises);
+            const flatResults = results.flat();
+            if (flatResults.length > 0) {
+                dbContext = "\n\n[معلومات حية من قاعدة بيانات المتحف عن القطع ذات الصلة بسؤال المستخدم:\n";
+                flatResults.forEach(art => {
+                    dbContext += `- القطعة: ${art.nameAr} (${art.nameEn})\n` +
+                                 `  المعرف (ID): ${art.id}\n` +
+                                 `  المجموعة (Collection): ${art.collection}\n` +
+                                 `  الوصف: ${art.descriptionAr}\n`;
+                });
+                dbContext += "استخدم هذه البيانات كلياً للإجابة بدقة وبنفس اللغة المطلوبة. ولا تخترع معلومات غير موجودة.]";
+            }
+        } catch (dbErr) {
+            console.error('Database search error in handleChat:', dbErr);
+        }
+    }
+
     const SYSTEM_PROMPT = lang === 'en' 
-        ? "You are Ego Pro, a smart assistant expert in Minia University Museums. Answer professionally, concisely, and in detail in English."
+        ? "You are Ego Pro, a smart and highly interactive assistant expert in Minia University Museums. Guidelines:\n" +
+          "1. Answer professionally, concisely, and in detail in English.\n" +
+          "2. NEVER output raw database document IDs (like '69f82d...') or collection names to the user. If you need to refer to an identifier, refer to it as the 'registered QR code' or 'QR code'.\n" +
+          "3. If a question is within the museum context but no live database context is provided or found, respond politely with: 'No data is available about this.' or 'Sorry, no details are available in the database currently.' do not hallucinate details."
         : (lang === 'fr'
-            ? "Vous êtes Ego Pro, un assistant intelligent expert des musées de l'Université de Minia. Répondez de manière professionnelle, concise et détaillée en français."
-            : "أنت Ego Pro، مساعد ذكي خبير في متاحف جامعة المنيا. أجب باحترافية وبشكل مفصل باللغة العربية.");
+            ? "Vous êtes Ego Pro, un assistant intelligent et hautement interactif expert des musées de l'Université de Minia. Directives:\n" +
+              "1. Répondez de manière professionnelle, concise et détaillée en français.\n" +
+              "2. N'affichez JAMAIS d'identifiants de documents bruts (comme '69f82d...') ou de noms de collections à l'utilisateur. Si vous devez faire référence à un identifiant, appelez-le 'code QR enregistré'.\n" +
+              "3. Si la question concerne les musées mais qu'aucune information n'est disponible dans la base de données, répondez poliment par: 'Aucune donnée n'est disponible à ce sujet.' ou 'Désolé, aucune donnée n'est disponible dans la base de données actuellement.' n'inventez pas de détails."
+            : "أنت Ego Pro، مساعد ذكي وتفاعلي للغاية خبير في متاحف جامعة المنيا. شروط هامة:\n" +
+              "1. أجب باحترافية وبشكل مبسط وودود باللغة العربية.\n" +
+              "2. يمنع منعاً باتاً عرض أي معلومات تقنية سرية من قاعدة البيانات للمستخدم؛ مثل معرّفات المستندات البرمجية (مثل '69f82d...' أو 'docId') أو أسماء المجموعات (مثل 'tourism_artifacts'). إذا أردت الإشارة لمعرّف القطعة، أبلغه أن معرف القطعة هو \"كود QR المسجل\" أو \"رمز QR المسجل\".\n" +
+              "3. عندما يسألك المستخدم سؤالاً في نطاق متاحف جامعة المنيا والقطع الأثرية، وتبين لك عدم وجود بيانات حية مرفقة في السياق الممرر لك من قاعدة البيانات، فلا تقل \"لا أعرف\"، بل قل بدقة: \"لا تتوفر لديك بيانات عن ذلك.\" أو \"عذراً، لا تتوفر بيانات عن هذا في قاعدة البيانات حالياً.\"");
 
     try {
+        const userPromptText = dbContext ? `${text}${dbContext}` : text;
         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${API_KEY}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1462,7 +1884,7 @@ async function handleChat() {
                 contents: [{ 
                     parts: [
                         { text: SYSTEM_PROMPT },
-                        { text: text }
+                        { text: userPromptText }
                     ] 
                 }] 
             })
@@ -1474,6 +1896,14 @@ async function handleChat() {
         if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts) {
             const responseText = data.candidates[0].content.parts[0].text;
             addMsg(responseText, 'system');
+            
+            // TTS Readback
+            if (isTtsActive) {
+                window.speechSynthesis.cancel(); // Cancel any current speech
+                const utterance = new SpeechSynthesisUtterance(responseText);
+                utterance.lang = lang === 'en' ? 'en-US' : (lang === 'fr' ? 'fr-FR' : 'ar-EG');
+                window.speechSynthesis.speak(utterance);
+            }
         } else {
             const processErrorText = lang === 'en' ? 'Sorry, I couldn\'t process your request at the moment.' : 
                                      (lang === 'fr' ? 'Désolé, je n\'ai pas pu traiter votre demande pour le moment.' : 'عذراً، لم أستطع معالجة طلبك حالياً.');
@@ -1567,9 +1997,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 "feat_ar": "Augmented Reality (AR)",
                 "feat_ar_desc": "View 3D models of artifacts and scientific specimens in your own environment.",
                 "soon": "Soon",
-                "ai_status": "Ego Pro is Online",
-                "ai_desc": "Chat with our smart assistant powered by OpenAI for precise information.",
-                "ai_active": "Active AI System",
+                "ai_status": "Ego Pro",
+                "ai_desc": "Powered by AI",
+                "ai_active": "Online",
                 "ai_welcome": "Welcome! I am Ego Pro, your smart guide. How can I help you today?",
                 "ai_placeholder": "Ask me about any artifact...",
                 "download_title": "Carry the Museums in your Pocket",
@@ -1653,9 +2083,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 "feat_ar": "واقع معزز (AR)",
                 "feat_ar_desc": "مشاهدة ثلاثية الأبعاد للقطع الأثرية والعينات العلمية في بيئتك الخاصة.",
                 "soon": "قريباً",
-                "ai_status": "إيجو برو متصل الآن",
-                "ai_desc": "تحدث مع مساعدنا الذكي المدعوم من OpenAI للحصول على معلومات دقيقة.",
-                "ai_active": "نظام ذكاء اصطناعي نشط",
+                "ai_status": "ايجو برو",
+                "ai_desc": "مدعوم بالذكاء الاصطناعي",
+                "ai_active": "متصل الآن",
                 "ai_welcome": "مرحباً بك! أنا Ego Pro مرشدك الذكي. كيف يمكنني مساعدتك اليوم؟",
                 "ai_placeholder": "اسألني عن أي قطعة أثرية...",
                 "download_title": "احمل المتاحف في جيبك",
@@ -1739,9 +2169,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 "feat_ar": "Réalité Augmentée (RA)",
                 "feat_ar_desc": "Visualisez des modèles 3D d'artefacts et de spécimens dans votre propre environnement.",
                 "soon": "Bientôt",
-                "ai_status": "Ego Pro est En Ligne",
-                "ai_desc": "Discutez avec notre assistant intelligent propulsé par OpenAI pour des informations précises.",
-                "ai_active": "Système IA Actif",
+                "ai_status": "Ego Pro",
+                "ai_desc": "Propulsé par l'IA",
+                "ai_active": "En ligne",
                 "ai_welcome": "Bienvenue ! Je suis Ego Pro, votre guide intelligent. Comment puis-je vous aider aujourd'hui ?",
                 "ai_placeholder": "Interrogez-moi sur n'importe quel artefact...",
                 "download_title": "Transportez les Musées dans votre Poche",
@@ -1936,5 +2366,235 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    scheduleBackgroundPreload();
+    // Highlights / Stories Logic
+    const STORY_COLLECTIONS = [
+        { id: 'minya_university_story', name: { en: 'Minia Univ', ar: 'جامعة المنيا', fr: 'Univ de Minia' } },
+        { id: 'tourism_university_story', name: { en: 'Tourism', ar: 'السياحة', fr: 'Tourisme' } },
+        { id: 'art_university_story', name: { en: 'Arts', ar: 'الفنون', fr: 'Arts' } },
+        { id: 'zoology_story', name: { en: 'Zoology', ar: 'علم الحيوان', fr: 'Zoologie' } },
+        { id: 'geo_story', name: { en: 'Geology', ar: 'الجيولوجيا', fr: 'Géologie' } },
+        { id: 'store_story', name: { en: 'Store', ar: 'المتجر', fr: 'Boutique' } },
+        { id: 'map_story', name: { en: 'Map', ar: 'الخريطة', fr: 'Carte' } }
+    ];
+    const STORY_IMG_BUCKET = '69f897e70035d17ec988';
+    const STORY_VID_BUCKET = '69f8980600284abc5d0d';
+    const STORY_DURATION_MS = 30 * 60 * 1000; // 30 minutes
+
+    let highlightsData = [];
+    let currentHighlightIndex = -1;
+    let currentSlideIndex = 0;
+    let storyTimeout = null;
+    let progressInterval = null;
+    let currentStartTime = 0;
+
+    async function loadHighlights() {
+        if (!databases) initAppwrite();
+        const container = document.getElementById('highlights-container');
+        if (!container) return;
+
+        highlightsData = [];
+        
+        for (const coll of STORY_COLLECTIONS) {
+            try {
+                const res = await databases.listDocuments(AppwriteConfig.databaseId, coll.id);
+                if (!res.documents || res.documents.length === 0) continue;
+
+                let slides = [];
+                let coverUrl = null;
+
+                for (const doc of res.documents) {
+                    const isCover = doc['is_cover'];
+                    if (!coverUrl && isCover) {
+                        coverUrl = `https://cloud.appwrite.io/v1/storage/buckets/${STORY_IMG_BUCKET}/files/${isCover}/preview?project=${AppwriteConfig.projectId}`;
+                    }
+
+                    const imgAr = doc['image-ar'] || doc['image'] || doc['image_ar'];
+                    if (imgAr && imgAr.length > 5) {
+                        slides.push({
+                            url: `https://cloud.appwrite.io/v1/storage/buckets/${STORY_IMG_BUCKET}/files/${imgAr}/view?project=${AppwriteConfig.projectId}`,
+                            isVideo: false
+                        });
+                    }
+
+                    const fullVidCandidates = ['video', 'vedio', 'video-id', 'videoId', 'video_url', 'video-url', 'videoFile', 'video_file', 'file', 'files', 'video_ar', 'video-en'];
+                    let fullVidId = null;
+                    for (let key of fullVidCandidates) {
+                        let v = doc[key];
+                        if (typeof v === 'string' && v.length > 5) { fullVidId = v; break; }
+                        if (Array.isArray(v) && v.length > 0 && typeof v[0] === 'string' && v[0].length > 5) { fullVidId = v[0]; break; }
+                    }
+
+                    if (fullVidId && fullVidId.length > 5) {
+                        slides.push({
+                            url: `https://cloud.appwrite.io/v1/storage/buckets/${STORY_VID_BUCKET}/files/${fullVidId}/view?project=${AppwriteConfig.projectId}`,
+                            isVideo: true
+                        });
+                    }
+                }
+
+                if (!coverUrl && slides.length > 0) {
+                    const firstImg = slides.find(s => !s.isVideo);
+                    coverUrl = firstImg ? firstImg.url : 'assets/Cover.png';
+                }
+
+                if (slides.length > 0) {
+                    highlightsData.push({
+                        title: coll.name,
+                        coverUrl: coverUrl,
+                        slides: slides,
+                        viewed: false
+                    });
+                }
+            } catch (e) {
+                console.log('Error fetching story:', coll.id);
+            }
+        }
+
+        if (highlightsData.length > 0) {
+            document.getElementById('highlights-section').style.display = 'block';
+            renderHighlights(container);
+        }
+    }
+
+    function renderHighlights(container) {
+        container.innerHTML = '';
+        const lang = sessionStorage.getItem('lang') || 'ar';
+        highlightsData.forEach((story, idx) => {
+            const el = document.createElement('div');
+            el.className = 'highlight-item';
+            el.innerHTML = `
+                <div class="highlight-ring ${story.viewed ? 'viewed' : ''}" id="ring-${idx}">
+                    <img src="${story.coverUrl}" alt="${story.title[lang]}">
+                </div>
+                <div class="highlight-title">${story.title[lang]}</div>
+            `;
+            el.addEventListener('click', () => openStory(idx));
+            container.appendChild(el);
+        });
+    }
+
+    function openStory(index) {
+        if (index < 0 || index >= highlightsData.length) return closeStory();
+        currentHighlightIndex = index;
+        currentSlideIndex = 0;
+        const story = highlightsData[currentHighlightIndex];
+        story.viewed = true;
+        
+        const ring = document.getElementById(`ring-${index}`);
+        if (ring) ring.classList.add('viewed');
+
+        const modal = document.getElementById('story-modal');
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+
+        const lang = sessionStorage.getItem('lang') || 'ar';
+        document.getElementById('story-title').innerText = story.title[lang];
+        document.getElementById('story-avatar').src = story.coverUrl;
+
+        setupProgressBars(story.slides.length);
+        renderSlide();
+    }
+
+    function setupProgressBars(count) {
+        const container = document.getElementById('story-progress-container');
+        container.innerHTML = '';
+        for (let i = 0; i < count; i++) {
+            const seg = document.createElement('div');
+            seg.className = 'story-progress-segment';
+            seg.innerHTML = `<div class="story-progress-fill" id="progress-fill-${i}"></div>`;
+            container.appendChild(seg);
+        }
+    }
+
+    function renderSlide() {
+        const story = highlightsData[currentHighlightIndex];
+        const slide = story.slides[currentSlideIndex];
+        const contentArea = document.getElementById('story-content');
+        contentArea.innerHTML = '';
+
+        // Reset all progress bars up to current
+        for (let i = 0; i < story.slides.length; i++) {
+            const fill = document.getElementById(`progress-fill-${i}`);
+            if (i < currentSlideIndex) fill.style.width = '100%';
+            else if (i > currentSlideIndex) fill.style.width = '0%';
+            else fill.style.width = '0%';
+        }
+
+        clearTimeout(storyTimeout);
+        clearInterval(progressInterval);
+
+        if (slide.isVideo) {
+            const video = document.createElement('video');
+            video.src = slide.url;
+            video.autoplay = true;
+            video.loop = true;
+            video.muted = false;
+            video.playsInline = true;
+            contentArea.appendChild(video);
+        } else {
+            const img = document.createElement('img');
+            img.src = slide.url;
+            contentArea.appendChild(img);
+        }
+
+        currentStartTime = Date.now();
+        progressInterval = setInterval(() => {
+            const elapsed = Date.now() - currentStartTime;
+            let pct = (elapsed / STORY_DURATION_MS) * 100;
+            if (pct > 100) pct = 100;
+            const fill = document.getElementById(`progress-fill-${currentSlideIndex}`);
+            if (fill) fill.style.width = pct + '%';
+        }, 100);
+
+        storyTimeout = setTimeout(() => {
+            nextSlide();
+        }, STORY_DURATION_MS);
+    }
+
+    function nextSlide() {
+        const story = highlightsData[currentHighlightIndex];
+        if (currentSlideIndex < story.slides.length - 1) {
+            currentSlideIndex++;
+            renderSlide();
+        } else {
+            openStory(currentHighlightIndex + 1); // Go to next story
+        }
+    }
+
+    function prevSlide() {
+        if (currentSlideIndex > 0) {
+            currentSlideIndex--;
+            renderSlide();
+        } else {
+            if (currentHighlightIndex > 0) {
+                openStory(currentHighlightIndex - 1);
+                // Go to last slide of prev story
+                currentSlideIndex = highlightsData[currentHighlightIndex].slides.length - 1;
+                renderSlide();
+            } else {
+                currentSlideIndex = 0;
+                renderSlide();
+            }
+        }
+    }
+
+    function closeStory() {
+        clearTimeout(storyTimeout);
+        clearInterval(progressInterval);
+        const contentArea = document.getElementById('story-content');
+        contentArea.innerHTML = ''; // Stop video
+        document.getElementById('story-modal').classList.remove('active');
+        document.body.style.overflow = 'auto';
+    }
+
+    const nextZone = document.getElementById('story-next-zone');
+    const prevZone = document.getElementById('story-prev-zone');
+    const closeBtn = document.getElementById('story-close-btn');
+
+    if (nextZone) nextZone.addEventListener('click', nextSlide);
+    if (prevZone) prevZone.addEventListener('click', prevSlide);
+    if (closeBtn) closeBtn.addEventListener('click', closeStory);
+
+    // Call loadHighlights shortly after load
+    setTimeout(loadHighlights, 1000);
 });
