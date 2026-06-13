@@ -283,37 +283,53 @@ async function preloadGalleryCollection() {
 async function preloadAllMuseumAssets() {
     if (preloadAllStarted) return;
     preloadAllStarted = true;
-    if (!databases && !initAppwrite()) return;
+    if (!databases && !initAppwrite()) {
+        // Retry after SDK loads
+        let retries = 0;
+        const retryInterval = setInterval(() => {
+            retries++;
+            if (initAppwrite() || retries > 10) {
+                clearInterval(retryInterval);
+                if (databases) _runPreloadAll();
+            }
+        }, 300);
+        return;
+    }
+    _runPreloadAll();
+}
+
+async function _runPreloadAll() {
+    // Aggressively preload ALL museum collections in parallel
     await Promise.allSettled([
         preloadCollectionArtifacts(AppwriteConfig.collections.tourism, AppwriteConfig.buckets.tourism),
         preloadCollectionArtifacts(AppwriteConfig.collections.art, AppwriteConfig.buckets.artImages),
+        preloadCollectionArtifacts(AppwriteConfig.collections.art, AppwriteConfig.buckets.artImages2),
+        preloadCollectionArtifacts(AppwriteConfig.collections.art, AppwriteConfig.buckets.artImages3),
+        preloadCollectionArtifacts(AppwriteConfig.collections.art, AppwriteConfig.buckets.artImages4),
         preloadCollectionArtifacts(AppwriteConfig.collections.science, AppwriteConfig.buckets.scienceImages),
         preloadCollectionArtifacts(AppwriteConfig.collections.geology, AppwriteConfig.buckets.geoImages),
+        preloadCollectionArtifacts(AppwriteConfig.collections.zoology, AppwriteConfig.buckets.zoologyImages),
         preloadGalleryCollection()
     ]);
 }
 
 function scheduleBackgroundPreload() {
-    const run = () => {
-        [
-            'assets/tourism-museum.jpg',
-            'assets/artt-museum.jpg',
-            'assets/science-museum.png',
-            'assets/science-museum1.png',
-            'assets/متاحف كلية علوم.png',
-            'assets/Desktop  2.png',
-            'assets/Frame 1.png',
-            'assets/Frame 2.png',
-            'assets/Frame 3.png',
-            'assets/Frame 4.png'
-        ].forEach(preloadImageUrl);
-        preloadAllMuseumAssets();
-    };
-    if ('requestIdleCallback' in window) {
-        requestIdleCallback(run, { timeout: 1200 });
-    } else {
-        setTimeout(run, 50);
-    }
+    // Immediately preload static assets
+    [
+        'assets/tourism-museum.jpg',
+        'assets/artt-museum.jpg',
+        'assets/science-museum.png',
+        'assets/science-museum1.png',
+        'assets/متاحف كلية علوم.png',
+        'assets/Desktop  2.png',
+        'assets/Frame 1.png',
+        'assets/Frame 2.png',
+        'assets/Frame 3.png',
+        'assets/Frame 4.png'
+    ].forEach(preloadImageUrl);
+
+    // Start Appwrite artifact preloading immediately (no idle callback delay)
+    preloadAllMuseumAssets();
 }
 
 async function preloadGeologyCollection() {
@@ -2387,72 +2403,100 @@ document.addEventListener('DOMContentLoaded', () => {
     let progressInterval = null;
     let currentStartTime = 0;
 
+    // Show skeleton placeholders immediately for instant UX
+    function showHighlightSkeletons() {
+        const container = document.getElementById('highlights-container');
+        const section = document.getElementById('highlights-section');
+        if (!container || !section) return;
+        section.style.display = 'block';
+        container.innerHTML = STORY_COLLECTIONS.map(() => `
+            <div class="highlight-item">
+                <div class="highlight-ring skeleton-ring">
+                    <div class="highlight-skeleton-img"></div>
+                </div>
+                <div class="highlight-skeleton-title"></div>
+            </div>
+        `).join('');
+    }
+
+    // Process one story collection's documents into slides + cover
+    function processStoryDocs(docs) {
+        let slides = [];
+        let coverUrl = null;
+        for (const doc of docs) {
+            const isCover = doc['is_cover'];
+            if (!coverUrl && isCover && isCover.length > 5) {
+                coverUrl = `${AppwriteConfig.endpoint}/storage/buckets/${STORY_IMG_BUCKET}/files/${isCover}/preview?project=${AppwriteConfig.projectId}&width=200&height=200&gravity=center&quality=70`;
+            }
+            // Images
+            const imgId = doc['image-ar'] || doc['image'] || doc['image_ar'] || doc['image-en'];
+            if (imgId && imgId.length > 5) {
+                slides.push({ url: `${AppwriteConfig.endpoint}/storage/buckets/${STORY_IMG_BUCKET}/files/${imgId}/view?project=${AppwriteConfig.projectId}`, isVideo: false });
+            }
+            // Videos — check all known field names
+            const vidCandidates = ['video', 'vedio', 'video-id', 'videoId', 'video_url', 'video-url', 'videoFile', 'video_file', 'file', 'files', 'video_ar', 'video-en'];
+            for (const key of vidCandidates) {
+                let v = doc[key];
+                if (typeof v !== 'string') v = Array.isArray(v) && v.length > 0 ? v[0] : null;
+                if (v && typeof v === 'string' && v.length > 5) {
+                    slides.push({ url: `${AppwriteConfig.endpoint}/storage/buckets/${STORY_VID_BUCKET}/files/${v}/view?project=${AppwriteConfig.projectId}`, isVideo: true });
+                    break;
+                }
+            }
+        }
+        if (!coverUrl && slides.length > 0) {
+            const firstImg = slides.find(s => !s.isVideo);
+            coverUrl = firstImg ? firstImg.url : null;
+        }
+        return { slides, coverUrl };
+    }
+
     async function loadHighlights() {
-        if (!databases) initAppwrite();
+        // Ensure Appwrite is initialized
+        if (!databases) {
+            let waited = 0;
+            while (!databases && waited < 3000) {
+                await new Promise(r => setTimeout(r, 100));
+                if (!databases) initAppwrite();
+                waited += 100;
+            }
+            if (!databases) { console.warn('Highlights: Appwrite not ready'); return; }
+        }
+
         const container = document.getElementById('highlights-container');
         if (!container) return;
 
-        highlightsData = [];
-        
-        for (const coll of STORY_COLLECTIONS) {
-            try {
-                const res = await databases.listDocuments(AppwriteConfig.databaseId, coll.id);
-                if (!res.documents || res.documents.length === 0) continue;
+        // Show skeletons immediately for visual responsiveness
+        showHighlightSkeletons();
 
-                let slides = [];
-                let coverUrl = null;
+        // Fetch ALL story collections in PARALLEL (not sequential)
+        const results = await Promise.allSettled(
+            STORY_COLLECTIONS.map(coll =>
+                databases.listDocuments(AppwriteConfig.databaseId, coll.id)
+                    .then(res => ({ coll, docs: res.documents || [] }))
+                    .catch(() => ({ coll, docs: [] }))
+            )
+        );
 
-                for (const doc of res.documents) {
-                    const isCover = doc['is_cover'];
-                    if (!coverUrl && isCover) {
-                        coverUrl = `https://cloud.appwrite.io/v1/storage/buckets/${STORY_IMG_BUCKET}/files/${isCover}/preview?project=${AppwriteConfig.projectId}`;
-                    }
-
-                    const imgAr = doc['image-ar'] || doc['image'] || doc['image_ar'];
-                    if (imgAr && imgAr.length > 5) {
-                        slides.push({
-                            url: `https://cloud.appwrite.io/v1/storage/buckets/${STORY_IMG_BUCKET}/files/${imgAr}/view?project=${AppwriteConfig.projectId}`,
-                            isVideo: false
-                        });
-                    }
-
-                    const fullVidCandidates = ['video', 'vedio', 'video-id', 'videoId', 'video_url', 'video-url', 'videoFile', 'video_file', 'file', 'files', 'video_ar', 'video-en'];
-                    let fullVidId = null;
-                    for (let key of fullVidCandidates) {
-                        let v = doc[key];
-                        if (typeof v === 'string' && v.length > 5) { fullVidId = v; break; }
-                        if (Array.isArray(v) && v.length > 0 && typeof v[0] === 'string' && v[0].length > 5) { fullVidId = v[0]; break; }
-                    }
-
-                    if (fullVidId && fullVidId.length > 5) {
-                        slides.push({
-                            url: `https://cloud.appwrite.io/v1/storage/buckets/${STORY_VID_BUCKET}/files/${fullVidId}/view?project=${AppwriteConfig.projectId}`,
-                            isVideo: true
-                        });
-                    }
-                }
-
-                if (!coverUrl && slides.length > 0) {
-                    const firstImg = slides.find(s => !s.isVideo);
-                    coverUrl = firstImg ? firstImg.url : 'assets/Cover.png';
-                }
-
-                if (slides.length > 0) {
-                    highlightsData.push({
-                        title: coll.name,
-                        coverUrl: coverUrl,
-                        slides: slides,
-                        viewed: false
-                    });
-                }
-            } catch (e) {
-                console.log('Error fetching story:', coll.id);
+        // Process results preserving STORY_COLLECTIONS order
+        const newData = [];
+        for (const result of results) {
+            if (result.status !== 'fulfilled') continue;
+            const { coll, docs } = result.value;
+            if (!docs.length) continue;
+            const { slides, coverUrl } = processStoryDocs(docs);
+            if (slides.length > 0) {
+                newData.push({ title: coll.name, coverUrl, slides, viewed: false });
             }
         }
+
+        highlightsData = newData;
 
         if (highlightsData.length > 0) {
             document.getElementById('highlights-section').style.display = 'block';
             renderHighlights(container);
+        } else {
+            document.getElementById('highlights-section').style.display = 'none';
         }
     }
 
@@ -2595,6 +2639,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (prevZone) prevZone.addEventListener('click', prevSlide);
     if (closeBtn) closeBtn.addEventListener('click', closeStory);
 
-    // Call loadHighlights shortly after load
-    setTimeout(loadHighlights, 1000);
+    // Click outside (backdrop) closes story
+    const backdrop = document.getElementById('story-backdrop');
+    if (backdrop) backdrop.addEventListener('click', closeStory);
+
+    // Keyboard: ESC = close, ArrowLeft = prev, ArrowRight = next
+    document.addEventListener('keydown', (e) => {
+        const modal = document.getElementById('story-modal');
+        if (!modal || !modal.classList.contains('active')) return;
+        if (e.key === 'Escape')     closeStory();
+        if (e.key === 'ArrowLeft')  prevSlide();
+        if (e.key === 'ArrowRight') nextSlide();
+    });
+
+    // Load highlights IMMEDIATELY — no delay
+    loadHighlights();
 });

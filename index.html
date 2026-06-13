@@ -624,24 +624,30 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         });
     </script>
     <!-- Story Viewer Modal -->
-    <div id="story-modal" class="story-modal">
-        <div class="story-progress-container" id="story-progress-container">
-            <!-- Progress bars will be injected here -->
-        </div>
-        <div class="story-header">
-            <div class="story-avatar-container">
-                <img id="story-avatar" src="" alt="Story Avatar">
+    <div id="story-modal" class="story-modal" role="dialog" aria-label="Story Viewer">
+        <!-- Phone-like container (visible on desktop, full screen on mobile) -->
+        <div class="story-modal-inner-wrapper">
+            <div class="story-progress-container" id="story-progress-container">
+                <!-- Progress bars injected by JS -->
             </div>
-            <div class="story-title" id="story-title">Title</div>
-            <button class="story-close-btn" id="story-close-btn"><i class="fas fa-times"></i></button>
+            <div class="story-header">
+                <div class="story-avatar-container">
+                    <img id="story-avatar" src="" alt="Story Cover">
+                </div>
+                <div class="story-title" id="story-title"></div>
+                <button class="story-close-btn" id="story-close-btn" aria-label="Close story">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="story-content" id="story-content">
+                <!-- Media injected by JS -->
+            </div>
+            <!-- Navigation tap zones -->
+            <div class="story-nav left"  id="story-prev-zone" aria-label="Previous"></div>
+            <div class="story-nav right" id="story-next-zone" aria-label="Next"></div>
         </div>
-        <div class="story-content" id="story-content">
-            <!-- Image or Video injected here -->
-        </div>
-        
-        <!-- Navigation zones -->
-        <div class="story-nav left" id="story-prev-zone"></div>
-        <div class="story-nav right" id="story-next-zone"></div>
+        <!-- Click outside to close (desktop) -->
+        <div class="story-backdrop" id="story-backdrop"></div>
     </div>
 
 </body>

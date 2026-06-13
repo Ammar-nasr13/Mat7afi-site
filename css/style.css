@@ -2955,16 +2955,41 @@ img {
 .story-modal {
     display: none;
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
     background-color: #000;
     z-index: 9999;
     flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 .story-modal.active {
     display: flex;
+    animation: fadeInModal 0.2s ease;
+}
+@keyframes fadeInModal {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+/* Backdrop (click outside = close) */
+.story-backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: transparent;
+    cursor: pointer;
+}
+
+/* Inner wrapper — full screen on mobile, phone frame on desktop */
+.story-modal-inner-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    background: #000;
 }
 
 /* Progress Bars */
@@ -3060,33 +3085,142 @@ img {
 .story-nav.left { left: 0; }
 .story-nav.right { right: 0; }
 
+/* ==========================================================================
+   Skeleton Loading Shimmer for Highlights
+   ========================================================================== */
+@keyframes shimmer {
+    0%   { background-position: -400px 0; }
+    100% { background-position: 400px 0; }
+}
+.skeleton-ring {
+    background: #e8e8e8 !important;
+    animation: shimmer 1.4s infinite linear;
+    background-image: linear-gradient(to right, #e8e8e8 0%, #f5f5f5 40%, #e8e8e8 80%) !important;
+    background-size: 800px 100%;
+}
+.highlight-skeleton-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: transparent;
+}
+.highlight-skeleton-title {
+    width: 56px;
+    height: 10px;
+    border-radius: 6px;
+    background-image: linear-gradient(to right, #e8e8e8 0%, #f5f5f5 40%, #e8e8e8 80%);
+    background-size: 800px 100%;
+    animation: shimmer 1.4s infinite linear;
+    margin-top: 6px;
+}
+
+/* ==========================================================================
+   Story Modal — Desktop: Phone Frame Layout
+   ========================================================================== */
 @media (min-width: 768px) {
     .story-modal {
-        background-color: rgba(0,0,0,0.9);
-        justify-content: center;
-        align-items: center;
+        background-color: rgba(0, 0, 0, 0.88);
     }
-    .story-content, .story-header, .story-progress-container, .story-nav {
-        width: 100%;
-        max-width: 450px;
-    }
-    .story-content {
-        height: 80vh;
-        background: #000;
-        border-radius: 15px;
+
+    /* The wrapper becomes a phone-like frame */
+    .story-modal-inner-wrapper {
+        width: 390px;
+        height: 84vh;
+        max-height: 840px;
+        border-radius: 24px;
         overflow: hidden;
+        box-shadow:
+            0 40px 100px rgba(0, 0, 0, 0.9),
+            0 0 0 1px rgba(255, 255, 255, 0.08),
+            inset 0 0 0 1px rgba(255,255,255,0.04);
+        background: #000;
+        flex-shrink: 0;
     }
-    .story-progress-container {
-        top: 10vh;
-        border-radius: 15px 15px 0 0;
-    }
-    .story-header {
-        top: calc(10vh + 15px);
-    }
+
+    /* Nav zones positioned outside the phone frame */
     .story-nav {
-        height: 80vh;
-        top: 10vh;
+        position: fixed;
+        top: 50%;
+        transform: translateY(-50%);
+        height: 80px;
+        width: 80px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.08);
+        backdrop-filter: blur(8px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+    }
+    .story-nav.left  { left:  calc(50% - 195px - 56px); }
+    .story-nav.right { right: calc(50% - 195px - 56px); }
+
+    .story-nav.left::before {
+        content: '\f053';
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 900;
+        color: rgba(255,255,255,0.8);
+        font-size: 1.1rem;
+    }
+    .story-nav.right::before {
+        content: '\f054';
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 900;
+        color: rgba(255,255,255,0.8);
+        font-size: 1.1rem;
+    }
+    .story-nav:hover {
+        background: rgba(255,255,255,0.18);
     }
 }
+
+/* Video fill fix */
+.story-content video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.story-content img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Tap ripple on nav zones */
+.story-nav:active::after {
+    content: '';
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    animation: ripple 0.4s ease-out;
+    pointer-events: none;
+}
+@keyframes ripple {
+    from { opacity: 1; transform: translate(-50%, -50%) scale(0.5); }
+    to   { opacity: 0; transform: translate(-50%, -50%) scale(2); }
+}
+
+/* Progress bar pulse on active */
+.story-progress-fill {
+    transition: width 0.1s linear;
+}
+
+/* Highlight section title polish */
+#highlights-section h4 {
+    font-size: 1.1rem;
+    letter-spacing: 0.3px;
+    margin-bottom: 14px !important;
+}
+
+/* Highlight ring hover glow */
+.highlight-item:hover .highlight-ring:not(.viewed) {
+    box-shadow: 0 0 0 3px white, 0 0 12px rgba(220, 39, 67, 0.5);
+    transition: box-shadow 0.2s ease;
+}
+
 
 
