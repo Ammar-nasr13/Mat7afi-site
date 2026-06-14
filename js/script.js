@@ -2421,40 +2421,41 @@ document.addEventListener('DOMContentLoaded', () => {
         `).join('');
     }
 
-    // Video preload cache to avoid re-fetching
-    const videoPreloadCache = new Set();
+    // Keep reference to preloaded video elements so they buffer in background
+    const videoPreloadElements = new Map();
 
     // Preload a video URL using a hidden <video> element for browser buffering
     function preloadVideoUrl(url) {
-        if (!url || videoPreloadCache.has(url)) return;
-        videoPreloadCache.add(url);
+        if (!url || videoPreloadElements.has(url)) return;
         try {
             const v = document.createElement('video');
             v.preload = 'auto';
+            v.muted = true;
             v.src = url;
             v.load();
-            // Remove from DOM after metadata loaded to free resources
-            v.addEventListener('loadedmetadata', () => { v.src = ''; }, { once: true });
+            videoPreloadElements.set(url, v);
         } catch(e) {
             console.warn('Video preload failed:', url, e);
         }
     }
 
-    // Preload all media (images + videos) for a story
+    // Preload only the first slide of each story to save initial bandwidth, and preload covers
     function preloadStoryMedia(story) {
-        if (!story || !story.slides) return;
+        if (!story || !story.slides || story.slides.length === 0) return;
         const lang = sessionStorage.getItem('lang') || 'ar';
-        story.slides.forEach(slide => {
-            if (slide.isVideo) {
-                preloadVideoUrl(slide.url);
-            } else {
-                let imgUrl = slide.url;
-                if (lang === 'en' && slide.urlEn) imgUrl = slide.urlEn;
-                else if (lang === 'fr' && slide.urlFr) imgUrl = slide.urlFr;
-                preloadImageUrl(imgUrl);
-            }
-        });
+        
+        // Preload first slide only
+        const firstSlide = story.slides[0];
+        if (firstSlide.isVideo) {
+            preloadVideoUrl(firstSlide.url);
+        } else {
+            let imgUrl = firstSlide.url;
+            if (lang === 'en' && firstSlide.urlEn) imgUrl = firstSlide.urlEn;
+            else if (lang === 'fr' && firstSlide.urlFr) imgUrl = firstSlide.urlFr;
+            preloadImageUrl(imgUrl);
+        }
 
+        // Preload cover
         let cover = story.coverUrl;
         if (lang === 'en' && story.coverUrlEn) cover = story.coverUrlEn;
         else if (lang === 'fr' && story.coverUrlFr) cover = story.coverUrlFr;
@@ -2655,6 +2656,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const story = highlightsData[currentHighlightIndex];
         story.viewed = true;
         
+        // Preload ALL slides of the active story now that the user is viewing it
+        const lang = sessionStorage.getItem('lang') || 'ar';
+        story.slides.forEach(slide => {
+            if (slide.isVideo) {
+                preloadVideoUrl(slide.url);
+            } else {
+                let imgUrl = slide.url;
+                if (lang === 'en' && slide.urlEn) imgUrl = slide.urlEn;
+                else if (lang === 'fr' && slide.urlFr) imgUrl = slide.urlFr;
+                preloadImageUrl(imgUrl);
+            }
+        });
+
         const ring = document.getElementById(`ring-${index}`);
         if (ring) ring.classList.add('viewed');
 
@@ -2662,7 +2676,6 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
 
-        const lang = sessionStorage.getItem('lang') || 'ar';
         document.getElementById('story-title').innerText = story.title[lang];
 
         let currentCover = story.coverUrl;
@@ -2686,6 +2699,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderSlide() {
+        if (currentHighlightIndex === -1) return;
         const story = highlightsData[currentHighlightIndex];
         const slide = story.slides[currentSlideIndex];
         const contentArea = document.getElementById('story-content');
@@ -2816,6 +2830,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function nextSlide() {
+        if (currentHighlightIndex === -1) return;
         const story = highlightsData[currentHighlightIndex];
         if (currentSlideIndex < story.slides.length - 1) {
             currentSlideIndex++;
@@ -2826,6 +2841,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function prevSlide() {
+        if (currentHighlightIndex === -1) return;
         if (currentSlideIndex > 0) {
             currentSlideIndex--;
             renderSlide();
@@ -2845,9 +2861,28 @@ document.addEventListener('DOMContentLoaded', () => {
     function closeStory() {
         clearTimeout(storyTimeout);
         clearInterval(progressInterval);
+        
+        // Explicitly pause and stop any running videos to ensure they close completely
         const contentArea = document.getElementById('story-content');
-        contentArea.innerHTML = ''; // Stop video
-        document.getElementById('story-modal').classList.remove('active');
+        if (contentArea) {
+            const videos = contentArea.getElementsByTagName('video');
+            for (let video of videos) {
+                video.pause();
+                video.src = '';
+                try {
+                    video.load();
+                } catch(e) {}
+            }
+            contentArea.innerHTML = ''; // Stop video
+        }
+        
+        currentHighlightIndex = -1;
+        currentSlideIndex = 0;
+        
+        const modal = document.getElementById('story-modal');
+        if (modal) {
+            modal.classList.remove('active');
+        }
         document.body.style.overflow = 'auto';
     }
 
