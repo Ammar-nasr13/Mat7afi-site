@@ -82,6 +82,7 @@ function extractSearchQuery(text) {
 }
 
 let Query;
+let appwriteAccount; // Global reference for account sessions
 // Appwrite initialization helper (deferred to DOMContentLoaded to avoid race)
 function initAppwrite() {
     if (typeof Appwrite === 'undefined') {
@@ -89,13 +90,22 @@ function initAppwrite() {
         return false;
     }
 
-    const { Client, Databases, Query: AppwriteQuery } = Appwrite;
+    const { Client, Databases, Account, Query: AppwriteQuery } = Appwrite;
     const client = new Client();
     client
         .setEndpoint(AppwriteConfig.endpoint)
         .setProject(AppwriteConfig.projectId);
     databases = new Databases(client);
+    appwriteAccount = new Account(client);
     Query = AppwriteQuery;
+
+    // Trigger anonymous session creation in background (does not block)
+    appwriteAccount.getSession('current').catch(() => {
+        appwriteAccount.createAnonymousSession()
+            .then(() => console.log('Appwrite anonymous session created successfully.'))
+            .catch(err => console.error('Error creating Appwrite anonymous session:', err));
+    });
+
     return true;
 }
 
@@ -103,6 +113,30 @@ function initAppwrite() {
 let cachedGeminiConfig = null;
 window.getGeminiConfig = async () => {
     if (cachedGeminiConfig) return cachedGeminiConfig;
+    if (!databases) {
+        initAppwrite();
+    }
+    if (!databases) {
+        console.warn('Appwrite database client not initialized. Using fallback Gemini config.');
+        return {
+            apiKey: 'AQ.Ab8RN6KHomaf8JG_p8DCq0nmMt-Eebk7IKkqlPoLh3UBQOYVqw',
+            model: 'gemini-1.5-flash'
+        };
+    }
+    
+    // Ensure anonymous session is created before fetching config
+    if (appwriteAccount) {
+        try {
+            await appwriteAccount.getSession('current');
+        } catch (e) {
+            try {
+                await appwriteAccount.createAnonymousSession();
+            } catch (sessErr) {
+                console.error('Failed to establish anonymous session in getGeminiConfig:', sessErr);
+            }
+        }
+    }
+
     try {
         const response = await databases.listDocuments(
             AppwriteConfig.databaseId,
@@ -111,15 +145,18 @@ window.getGeminiConfig = async () => {
         if (response && response.documents && response.documents.length > 0) {
             const configDoc = response.documents[0];
             cachedGeminiConfig = {
-                apiKey: configDoc.gemini_api || configDoc.gemini_api_key,
-                model: configDoc.gemini_model || 'gemini-1.5-pro'
+                apiKey: configDoc.gemini_api || configDoc.gemini_api_key || configDoc.geminiApiKey || configDoc.apiKey || configDoc.key || configDoc['gemini-api-key'],
+                model: configDoc.gemini_model || configDoc.geminiModel || 'gemini-1.5-pro'
             };
             return cachedGeminiConfig;
         }
     } catch (e) {
-        console.error('Error fetching Gemini Config from appconfig', e);
+        console.error('Error fetching Gemini Config from appconfig, using fallback:', e);
     }
-    return null;
+    return {
+        apiKey: 'AQ.Ab8RN6KHomaf8JG_p8DCq0nmMt-Eebk7IKkqlPoLh3UBQOYVqw',
+        model: 'gemini-1.5-flash'
+    };
 };
 
 window.getGeminiApiKey = async () => {
@@ -2023,7 +2060,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 "feat_ar_desc": "View 3D models of artifacts and scientific specimens in your own environment.",
                 "soon": "Soon",
                 "ai_status": "Ego Pro",
-                "ai_desc": "Powered by AI",
+                "ai_desc": "",
                 "ai_active": "Online",
                 "ai_welcome": "Welcome! I am Ego Pro, your smart guide. How can I help you today?",
                 "ai_placeholder": "Ask me about any artifact...",
@@ -2113,7 +2150,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 "feat_ar_desc": "مشاهدة ثلاثية الأبعاد للقطع الأثرية والعينات العلمية في بيئتك الخاصة.",
                 "soon": "قريباً",
                 "ai_status": "ايجو برو",
-                "ai_desc": "مدعوم بالذكاء الاصطناعي",
+                "ai_desc": "",
                 "ai_active": "متصل الآن",
                 "ai_welcome": "مرحباً بك! أنا Ego Pro مرشدك الذكي. كيف يمكنني مساعدتك اليوم؟",
                 "ai_placeholder": "اسألني عن أي قطعة أثرية...",
@@ -2203,7 +2240,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 "feat_ar_desc": "Visualisez des modèles 3D d'artefacts et de spécimens dans votre propre environnement.",
                 "soon": "Bientôt",
                 "ai_status": "Ego Pro",
-                "ai_desc": "Propulsé par l'IA",
+                "ai_desc": "",
                 "ai_active": "En ligne",
                 "ai_welcome": "Bienvenue ! Je suis Ego Pro, votre guide intelligent. Comment puis-je vous aider aujourd'hui ?",
                 "ai_placeholder": "Interrogez-moi sur n'importe quel artefact...",
@@ -2439,27 +2476,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Preload only the first slide of each story to save initial bandwidth, and preload covers
+    // Preload all slides of each story to load them in advance for maximum speed
     function preloadStoryMedia(story) {
         if (!story || !story.slides || story.slides.length === 0) return;
         const lang = sessionStorage.getItem('lang') || 'ar';
         
-        // Preload first slide only
-        const firstSlide = story.slides[0];
-        if (firstSlide.isVideo) {
-            preloadVideoUrl(firstSlide.url);
-        } else {
-            let imgUrl = firstSlide.url;
-            if (lang === 'en' && firstSlide.urlEn) imgUrl = firstSlide.urlEn;
-            else if (lang === 'fr' && firstSlide.urlFr) imgUrl = firstSlide.urlFr;
-            preloadImageUrl(imgUrl);
-        }
-
         // Preload cover
         let cover = story.coverUrl;
         if (lang === 'en' && story.coverUrlEn) cover = story.coverUrlEn;
         else if (lang === 'fr' && story.coverUrlFr) cover = story.coverUrlFr;
         if (cover) preloadImageUrl(cover);
+
+        // Preload all slides
+        story.slides.forEach(slide => {
+            if (slide.isVideo) {
+                preloadVideoUrl(slide.url);
+            } else {
+                let imgUrl = slide.url;
+                if (lang === 'en' && slide.urlEn) imgUrl = slide.urlEn;
+                else if (lang === 'fr' && slide.urlFr) imgUrl = slide.urlFr;
+                preloadImageUrl(imgUrl);
+            }
+        });
     }
 
     // Process one story collection's documents into slides + cover
@@ -2836,7 +2874,7 @@ document.addEventListener('DOMContentLoaded', () => {
             currentSlideIndex++;
             renderSlide();
         } else {
-            openStory(currentHighlightIndex + 1); // Go to next story
+            closeStory(); // Close the story completely when slides finish, do not auto-advance to next highlight
         }
     }
 

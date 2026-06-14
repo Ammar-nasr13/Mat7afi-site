@@ -314,7 +314,9 @@
         auto-rotate
         camera-controls
         shadow-intensity="1"
-        exposure="1.2"
+        exposure="1.0"
+        environment-image="neutral"
+        tone-mapping="neutral"
         reveal="auto"
         loading="eager"
         min-camera-orbit="auto auto 3%"
@@ -445,7 +447,7 @@
                 }
             };
 
-            const tryLoadModel = () => {
+            const tryLoadModel = async () => {
                 if (urlIndex >= modelUrls.length) {
                     clearLoadTimeout();
                     clearInterval(progressInterval);
@@ -462,43 +464,56 @@
                     if (settled) return;
                     settled = true;
                     clearLoadTimeout();
-                    viewer.removeEventListener('load', onLoad);
-                    viewer.removeEventListener('error', onError);
-                    viewer.removeEventListener('progress', onProgress);
                     urlIndex += 1;
                     viewer.removeAttribute('src');
                     tryLoadModel();
                 };
 
-                const onLoad = () => {
-                    if (settled) return;
-                    settled = true;
-                    clearLoadTimeout();
-                    viewer.removeEventListener('error', onError);
-                    viewer.removeEventListener('progress', onProgress);
-                    onModelLoaded();
-                };
+                try {
+                    // Fetch model bytes
+                    const response = await fetch(currentUrl, { mode: 'cors', credentials: 'omit', cache: 'force-cache' });
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const blob = await response.blob();
+                    
+                    // Create a blob URL with explicit model/gltf-binary type
+                    const typedBlob = new Blob([blob], { type: 'model/gltf-binary' });
+                    const blobUrl = URL.createObjectURL(typedBlob) + '#model.glb';
+                    
+                    const onLoad = () => {
+                        if (settled) return;
+                        settled = true;
+                        clearLoadTimeout();
+                        onModelLoaded();
+                    };
 
-                const onError = () => advance();
+                    const onError = (e) => {
+                        console.error('Failed to parse loaded model blob:', e);
+                        advance();
+                    };
 
-                const onProgress = (e) => {
-                    if (!e.detail || !e.detail.totalProgress) return;
-                    const pct = Math.min(e.detail.totalProgress * 100, 95);
-                    bar.style.width = pct + '%';
-                };
+                    const onProgress = (e) => {
+                        if (!e.detail || !e.detail.totalProgress) return;
+                        const pct = Math.min(e.detail.totalProgress * 100, 95);
+                        bar.style.width = pct + '%';
+                    };
 
-                viewer.addEventListener('load', onLoad, { once: true });
-                viewer.addEventListener('error', onError, { once: true });
-                viewer.addEventListener('progress', onProgress);
+                    viewer.addEventListener('load', onLoad, { once: true });
+                    viewer.addEventListener('error', onError, { once: true });
+                    viewer.addEventListener('progress', onProgress);
 
-                loadTimeout = setTimeout(() => {
-                    console.warn('3D model load timeout, trying next URL:', currentUrl);
+                    loadTimeout = setTimeout(() => {
+                        console.warn('3D model load timeout, trying next URL:', currentUrl);
+                        advance();
+                    }, LOAD_TIMEOUT_MS);
+
+                    viewer.src = blobUrl;
+
+                } catch (err) {
+                    console.error('Fetch error loading 3D model:', err);
                     advance();
-                }, LOAD_TIMEOUT_MS);
-
-                // Direct URL first — matches mobile app reliability (no blob/CORS hang)
-                viewer.src = currentUrl;
-                fetch(currentUrl, { mode: 'cors', credentials: 'omit', cache: 'force-cache' }).catch(() => {});
+                }
             };
 
             tryLoadModel();
