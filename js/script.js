@@ -2682,7 +2682,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="highlight-title">${story.title[lang]}</div>
             `;
-            el.addEventListener('click', () => openStory(idx));
+            el.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                openStory(idx);
+            });
             container.appendChild(el);
         });
     }
@@ -2788,8 +2792,12 @@ document.addEventListener('DOMContentLoaded', () => {
             video.addEventListener('error', (e) => {
                 // Video failed: show error and advance to next slide
                 console.warn('Story video error, skipping slide:', slide.url, video.error);
+                clearTimeout(storyTimeout);
+                clearInterval(progressInterval);
+                const fill = document.getElementById(`progress-fill-${currentSlideIndex}`);
+                if (fill) fill.style.width = '100%';
                 contentArea.innerHTML = '<div class="story-video-error"><i class="fas fa-exclamation-triangle"></i><span>تعذّر تشغيل الفيديو</span></div>';
-                setTimeout(() => nextSlide(), 2000);
+                storyTimeout = setTimeout(() => nextSlide(), 2000);
             }, { once: true });
 
             // Listen to metadata to setup dynamic progress interval
@@ -2832,7 +2840,12 @@ document.addEventListener('DOMContentLoaded', () => {
             img.src = imgUrl;
             img.onerror = () => {
                 console.warn('Story image error, skipping slide:', imgUrl);
-                setTimeout(() => nextSlide(), 1000);
+                clearTimeout(storyTimeout);
+                clearInterval(progressInterval);
+                const fill = document.getElementById(`progress-fill-${currentSlideIndex}`);
+                if (fill) fill.style.width = '100%';
+                contentArea.innerHTML = '<div class="story-video-error"><i class="fas fa-exclamation-triangle"></i><span>تعذّر تحميل الصورة</span></div>';
+                storyTimeout = setTimeout(() => nextSlide(), 2000);
             };
             contentArea.appendChild(img);
 
