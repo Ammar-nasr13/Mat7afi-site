@@ -48,14 +48,27 @@ async function fetchGalleryData() {
             const databases = new Databases(client);
             
             try {
-                const response = await databases.listDocuments(
-                    AppwriteConfig.databaseId, 
-                    'museum_gallery',
-                    [Query.limit(100)]
-                );
+                let docs = null;
+                const cacheKey = 'gallery_items';
+                try {
+                    const cached = sessionStorage.getItem(cacheKey);
+                    if (cached) docs = JSON.parse(cached);
+                } catch (e) {}
+
+                if (!docs) {
+                    const response = await databases.listDocuments(
+                        AppwriteConfig.databaseId, 
+                        'museum_gallery',
+                        [Query.limit(100)]
+                    );
+                    docs = response.documents || [];
+                    try {
+                        sessionStorage.setItem(cacheKey, JSON.stringify(docs));
+                    } catch (e) {}
+                }
                 
-                if (response.documents.length > 0) {
-                    allGalleryItems = response.documents.map(doc => {
+                if (docs && docs.length > 0) {
+                    allGalleryItems = docs.map(doc => {
                         const coverImg = doc.coverImage;
                         const file = doc.fileUrl;
                         

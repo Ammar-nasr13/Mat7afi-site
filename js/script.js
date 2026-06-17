@@ -815,6 +815,9 @@ const renderArtifacts = (artifacts) => {
             } else {
                 audioFileId = artifact[`audio_guide_${lang}`] || artifact[`audio_guide-${lang}`] || 
                               artifact[`audio-${lang}`] || artifact[`audio_${lang}`] || '';
+                if (lang === 'en' && !audioFileId) {
+                    audioFileId = artifact['aduio-en'] || artifact['aduio_en'] || artifact['aduio_guide_en'] || artifact['aduio_guide-en'] || '';
+                }
             }
             if (audioFileId && audioFileId.trim().length > 5) {
                 const audioBucketId = AppwriteConfig.buckets.audio;
@@ -878,6 +881,9 @@ const renderZoologyGeologyList = (artifacts, isZoology) => {
             } else {
                 audioFileId = artifact[`audio_guide_${lang}`] || artifact[`audio_guide-${lang}`] || 
                               artifact[`audio-${lang}`] || artifact[`audio_${lang}`] || '';
+                if (lang === 'en' && !audioFileId) {
+                    audioFileId = artifact['aduio-en'] || artifact['aduio_en'] || artifact['aduio_guide_en'] || artifact['aduio_guide-en'] || '';
+                }
             }
             if (audioFileId && audioFileId.trim().length > 5) {
                 const audioBucketId = AppwriteConfig.buckets.audio;
@@ -956,8 +962,22 @@ window.initMuseumPage = async (collectionId, museumName, museumImg) => {
 
     try {
         const queries = Query ? [Query.limit(100)] : [];
-        const response = await databases.listDocuments(AppwriteConfig.databaseId, collectionId, queries);
-        museumArtifactsCache = response.documents || [];
+        const cacheKey = `museum_${collectionId}`;
+        let cachedDocs = null;
+        try {
+            const cached = sessionStorage.getItem(cacheKey);
+            if (cached) cachedDocs = JSON.parse(cached);
+        } catch (e) {}
+
+        if (cachedDocs) {
+            museumArtifactsCache = cachedDocs;
+        } else {
+            const response = await databases.listDocuments(AppwriteConfig.databaseId, collectionId, queries);
+            museumArtifactsCache = response.documents || [];
+            try {
+                sessionStorage.setItem(cacheKey, JSON.stringify(museumArtifactsCache));
+            } catch (e) {}
+        }
         
         preloadArtifactsFromCache(museumArtifactsCache, collectionId);
         
@@ -1129,39 +1149,59 @@ window.loadScienceSubMuseum = async (subMuseumId, subMuseumTitle) => {
 
     try {
         let docs = [];
+        const cacheKey = `science_${subMuseumId}`;
+        let cachedDocs = null;
+        try {
+            const cached = sessionStorage.getItem(cacheKey);
+            if (cached) cachedDocs = JSON.parse(cached);
+        } catch (e) {}
 
-        if (subMuseumId === 'geology') {
-            currentMuseumCollection = AppwriteConfig.collections.geology;
-            const queries = Query ? [Query.limit(100)] : [];
-            const response = await databases.listDocuments(
-                AppwriteConfig.databaseId,
-                AppwriteConfig.collections.geology,
-                queries
-            );
-            docs = response.documents || [];
-        } else if (subMuseumId === 'zoology') {
-            currentMuseumCollection = AppwriteConfig.collections.zoology;
-            const queries = Query ? [Query.limit(100)] : [];
-            const response = await databases.listDocuments(
-                AppwriteConfig.databaseId,
-                AppwriteConfig.collections.zoology,
-                queries
-            );
-            docs = response.documents || [];
-        } else {
-            currentMuseumCollection = AppwriteConfig.collections.science;
-            const queries = Query ? [Query.limit(100)] : [];
-            const response = await databases.listDocuments(
-                AppwriteConfig.databaseId,
-                AppwriteConfig.collections.science,
-                queries
-            );
-            docs = response.documents || [];
-
-            if (subMuseumId !== 'all') {
-                const filtered = docs.filter(d => matchesScienceSubMuseum(d, subMuseumId));
-                if (filtered.length > 0) docs = filtered;
+        if (cachedDocs) {
+            docs = cachedDocs;
+            if (subMuseumId === 'geology') {
+                currentMuseumCollection = AppwriteConfig.collections.geology;
+            } else if (subMuseumId === 'zoology') {
+                currentMuseumCollection = AppwriteConfig.collections.zoology;
+            } else {
+                currentMuseumCollection = AppwriteConfig.collections.science;
             }
+        } else {
+            if (subMuseumId === 'geology') {
+                currentMuseumCollection = AppwriteConfig.collections.geology;
+                const queries = Query ? [Query.limit(100)] : [];
+                const response = await databases.listDocuments(
+                    AppwriteConfig.databaseId,
+                    AppwriteConfig.collections.geology,
+                    queries
+                );
+                docs = response.documents || [];
+            } else if (subMuseumId === 'zoology') {
+                currentMuseumCollection = AppwriteConfig.collections.zoology;
+                const queries = Query ? [Query.limit(100)] : [];
+                const response = await databases.listDocuments(
+                    AppwriteConfig.databaseId,
+                    AppwriteConfig.collections.zoology,
+                    queries
+                );
+                docs = response.documents || [];
+            } else {
+                currentMuseumCollection = AppwriteConfig.collections.science;
+                const queries = Query ? [Query.limit(100)] : [];
+                const response = await databases.listDocuments(
+                    AppwriteConfig.databaseId,
+                    AppwriteConfig.collections.science,
+                    queries
+                );
+                docs = response.documents || [];
+
+                if (subMuseumId !== 'all') {
+                    const filtered = docs.filter(d => matchesScienceSubMuseum(d, subMuseumId));
+                    if (filtered.length > 0) docs = filtered;
+                }
+            }
+            try {
+                sessionStorage.setItem(cacheKey, JSON.stringify(docs));
+            } catch (e) {}
         }
 
         museumArtifactsCache = docs;
@@ -1281,7 +1321,19 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
     if (artifactContent) artifactContent.style.display = 'none';
 
     try {
-        let artifact = await databases.getDocument(AppwriteConfig.databaseId, collectionId, documentId);
+        const cacheKey = `artifact_${collectionId}_${documentId}`;
+        let artifact = null;
+        try {
+            const cached = sessionStorage.getItem(cacheKey);
+            if (cached) artifact = JSON.parse(cached);
+        } catch (e) {}
+
+        if (!artifact) {
+            artifact = await databases.getDocument(AppwriteConfig.databaseId, collectionId, documentId);
+            try {
+                sessionStorage.setItem(cacheKey, JSON.stringify(artifact));
+            } catch (e) {}
+        }
         const lang = getCurrentLang();
         
         let name = getArtifactTitle(artifact);
@@ -1537,6 +1589,9 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
         } else {
             audioFileId = artifact[`audio_guide_${lang}`] || artifact[`audio_guide-${lang}`] || 
                           artifact[`audio-${lang}`] || artifact[`audio_${lang}`] || '';
+            if (lang === 'en' && !audioFileId) {
+                audioFileId = artifact['aduio-en'] || artifact['aduio_en'] || artifact['aduio_guide_en'] || artifact['aduio_guide-en'] || '';
+            }
         }
 
         if (audioFileId && audioFileId.trim().length > 5 && audioSection && audioPlayer) {
@@ -2563,7 +2618,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 coverUrl = `${AppwriteConfig.endpoint}/storage/buckets/${STORY_IMG_BUCKET}/files/${isCover}/preview?project=${AppwriteConfig.projectId}&width=200&height=200&gravity=center&quality=70`;
                 
                 // Check if this cover has English/French versions in the document
-                const isCoverEn = doc['image-en'] || doc['Image-en'] || doc['image_en'] || doc['Image_en'];
+                const isCoverEn = doc['image-en'] || doc['Image-en'] || doc['image_en'] || doc['Image_en'] || 
+                                   doc['iamge-en'] || doc['iamge_en'] || doc['img-en'] || doc['img_en'] || 
+                                   doc['imaeg-en'] || doc['imaeg_en'];
                 if (isCoverEn && isCoverEn.length > 5) {
                     coverUrlEn = `${AppwriteConfig.endpoint}/storage/buckets/${STORY_IMG_BUCKET}/files/${isCoverEn}/preview?project=${AppwriteConfig.projectId}&width=200&height=200&gravity=center&quality=70`;
                 }
@@ -2575,7 +2632,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Slide Image
             const imgArId = doc['image-ar'] || doc['image'] || doc['image_ar'];
-            const imgEnId = doc['Image-en'] || doc['image-en'] || doc['image_en'] || doc['Image_en'];
+             const imgEnId = doc['Image-en'] || doc['image-en'] || doc['image_en'] || doc['Image_en'] || 
+                             doc['iamge-en'] || doc['iamge_en'] || doc['img-en'] || doc['img_en'] || 
+                             doc['imaeg-en'] || doc['imaeg_en'];
             const imgFrId = doc['image-fr'] || doc['image_fr'];
 
             if (imgArId && imgArId.length > 5) {
@@ -2662,6 +2721,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
+        const isFresh = sessionStorage.getItem('highlights_fresh') === 'true';
+        if (isFresh && highlightsData && highlightsData.length > 0) {
+            // Already loaded and fresh in this session! Skip database call.
+            return;
+        }
+
         if (highlightsData.length === 0) {
             showHighlightSkeletons();
         }
@@ -2696,6 +2761,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const dataString = JSON.stringify(newData);
+            sessionStorage.setItem('highlights_fresh', 'true');
             if (dataString !== JSON.stringify(highlightsData)) {
                 highlightsData = newData;
                 localStorage.setItem('cached_highlights_v1', dataString);
