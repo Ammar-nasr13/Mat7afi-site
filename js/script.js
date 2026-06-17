@@ -808,8 +808,14 @@ const renderArtifacts = (artifacts) => {
             if (glbFileId && glbFileId.trim().length > 5) {
                 preloadGlbModel(glbFileId, currentMuseumCollection);
             }
-            const audioFileId = artifact[`audio_guide_${lang}`] || artifact[`audio_guide-${lang}`] ||
-                artifact[`audio-${lang}`] || artifact[`audio_${lang}`] || artifact['audio-ar'] || artifact.audio_ar || '';
+            let audioFileId = '';
+            if (lang === 'ar') {
+                audioFileId = artifact['audio_guide_ar'] || artifact['audio_guide-ar'] || 
+                              artifact['audio-ar'] || artifact['audio_ar'] || artifact['audio'] || '';
+            } else {
+                audioFileId = artifact[`audio_guide_${lang}`] || artifact[`audio_guide-${lang}`] || 
+                              artifact[`audio-${lang}`] || artifact[`audio_${lang}`] || '';
+            }
             if (audioFileId && audioFileId.trim().length > 5) {
                 const audioBucketId = AppwriteConfig.buckets.audio;
                 const audioUrl = getAppwriteImageUrl(audioFileId, audioBucketId);
@@ -865,8 +871,14 @@ const renderZoologyGeologyList = (artifacts, isZoology) => {
             if (glbFileId && glbFileId.trim().length > 5) {
                 preloadGlbModel(glbFileId, colId);
             }
-            const audioFileId = artifact[`audio_guide_${lang}`] || artifact[`audio_guide-${lang}`] ||
-                artifact[`audio-${lang}`] || artifact[`audio_${lang}`] || artifact['audio-ar'] || artifact.audio_ar || '';
+            let audioFileId = '';
+            if (lang === 'ar') {
+                audioFileId = artifact['audio_guide_ar'] || artifact['audio_guide-ar'] || 
+                              artifact['audio-ar'] || artifact['audio_ar'] || artifact['audio'] || '';
+            } else {
+                audioFileId = artifact[`audio_guide_${lang}`] || artifact[`audio_guide-${lang}`] || 
+                              artifact[`audio-${lang}`] || artifact[`audio_${lang}`] || '';
+            }
             if (audioFileId && audioFileId.trim().length > 5) {
                 const audioBucketId = AppwriteConfig.buckets.audio;
                 const audioUrl = getAppwriteImageUrl(audioFileId, audioBucketId);
@@ -1518,9 +1530,16 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
         }
 
         // Audio Guide Logic
-        const audioFileId = artifact[`audio_guide_${lang}`] || artifact[`audio_guide-${lang}`] ||
-            artifact[`audio-${lang}`] || artifact[`audio_${lang}`] || artifact['audio-ar'] || artifact.audio_ar || '';
-        if (audioFileId && audioSection && audioPlayer) {
+        let audioFileId = '';
+        if (lang === 'ar') {
+            audioFileId = artifact['audio_guide_ar'] || artifact['audio_guide-ar'] || 
+                          artifact['audio-ar'] || artifact['audio_ar'] || artifact['audio'] || '';
+        } else {
+            audioFileId = artifact[`audio_guide_${lang}`] || artifact[`audio_guide-${lang}`] || 
+                          artifact[`audio-${lang}`] || artifact[`audio_${lang}`] || '';
+        }
+
+        if (audioFileId && audioFileId.trim().length > 5 && audioSection && audioPlayer) {
             const audioBucketId = AppwriteConfig.buckets.audio;
             const audioUrl = getAppwriteImageUrl(audioFileId, audioBucketId);
             
@@ -1630,6 +1649,12 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
                 window.addEventListener('touchend', () => {
                     isDragging = false;
                 });
+            }
+        } else {
+            if (audioSection) audioSection.style.display = 'none';
+            if (audioPlayer) {
+                audioPlayer.pause();
+                audioPlayer.src = '';
             }
         }
 
@@ -2098,7 +2123,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 "filter_cards": "Artifact Cards",
                 "filter_files": "Files",
                 "gallery_search_placeholder": "Search for artifact, file, or museum...",
-                "museum_search_placeholder": "Search inside this museum's collections..."
+                "museum_search_placeholder": "Search inside this museum's collections...",
+                "back_to_gallery": "Back to Gallery"
             },
             ar: {
                 "nav_home": "الرئيسية",
@@ -2188,7 +2214,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 "filter_cards": "البطاقات الأثرية",
                 "filter_files": "الملفات",
                 "gallery_search_placeholder": "ابحث عن أثر، ملف، أو متحف...",
-                "museum_search_placeholder": "ابحث داخل مقتنيات هذا المتحف..."
+                "museum_search_placeholder": "ابحث داخل مقتنيات هذا المتحف...",
+                "back_to_gallery": "العودة للمعرض"
             },
             fr: {
                 "nav_home": "Accueil",
@@ -2278,7 +2305,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 "filter_cards": "Cartes",
                 "filter_files": "Fichiers",
                 "gallery_search_placeholder": "Rechercher un artefact, fichier, ou musée...",
-                "museum_search_placeholder": "Rechercher dans les collections de ce musée..."
+                "museum_search_placeholder": "Rechercher dans les collections de ce musée...",
+                "back_to_gallery": "Retour à la Galerie"
             }
         };
         window.translations = translations;
@@ -2347,6 +2375,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
             
+            // Update back buttons arrow directions and titles dynamically
+            const backArrows = document.querySelectorAll('.back-nav-item i, .museum-back-btn i, .btn-premium-back i, .back-nav i, #back-icon');
+            backArrows.forEach(arrow => {
+                if (arrow.classList.contains('fa-arrow-right') || arrow.classList.contains('fa-arrow-left')) {
+                    if (lang === 'ar') {
+                        arrow.classList.remove('fa-arrow-left');
+                        arrow.classList.add('fa-arrow-right');
+                    } else {
+                        arrow.classList.remove('fa-arrow-right');
+                        arrow.classList.add('fa-arrow-left');
+                    }
+                }
+            });
+            const backButtons = document.querySelectorAll('.museum-back-btn, .btn-premium-back, .btn-back');
+            backButtons.forEach(btn => {
+                btn.title = lang === 'ar' ? 'عودة' : (lang === 'fr' ? 'Retour' : 'Back');
+            });
+
             // Apply translations
             const elements = document.querySelectorAll('[data-i18n]');
             elements.forEach(el => {
@@ -2406,10 +2452,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (typeof window.renderFavorites === 'function') {
                         window.renderFavorites();
                     }
-                    if (typeof window.renderItemDetails === 'function') {
+                    if (typeof window.initArtifactPage === 'function') {
                         const urlParams = new URLSearchParams(window.location.search);
-                        const itemId = urlParams.get('id');
-                        if (itemId) window.renderItemDetails(itemId);
+                        const id = urlParams.get('id');
+                        const collection = urlParams.get('collection');
+                        const museum = urlParams.get('museum');
+                        if (id && collection) {
+                            window.initArtifactPage(id, collection, museum);
+                        }
                     }
                 }
             });
