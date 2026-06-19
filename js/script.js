@@ -29,6 +29,7 @@ let currentScienceSubMuseumId = null;
 let isTtsActive = true;
 let isMainRecording = false;
 let mainRecognition = null;
+let mainChatHistory = [];
 
 function toggleWebTTS() {
     isTtsActive = !isTtsActive;
@@ -1871,6 +1872,45 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+// Helper to select model based on query text
+function selectAppropriateModel(text, configuredModel) {
+    const cleanText = text.toLowerCase().trim();
+    
+    // Check if the query is a simple greeting or very short
+    const isGreeting = cleanText.length < 15 || 
+                       /^(مرحبا|اهلاً|اهلا|السلام عليكم|صباح الخير|مساء الخير|hi|hello|hey|howdy|greetings|welcome)/.test(cleanText);
+                       
+    if (isGreeting) {
+        return 'gemini-1.5-flash';
+    }
+    return configuredModel || 'gemini-1.5-pro';
+}
+
+// Helper to query Gemini generateContent API with system instructions
+async function queryGeminiAPI(apiKey, model, systemPrompt, contentsPayload) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            systemInstruction: { parts: [{ text: systemPrompt }] },
+            contents: contentsPayload
+        })
+    });
+    
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    if (!data.candidates || data.candidates.length === 0 || !data.candidates[0].content) {
+        const errMsg = data.error?.message || 'Invalid response structure';
+        throw new Error(errMsg);
+    }
+    
+    return data;
+}
+
 async function handleChat() {
     const userInput = document.getElementById('user-input');
     const chatMessages = document.getElementById('chat-messages');
@@ -1905,7 +1945,6 @@ async function handleChat() {
 
     const geminiConfig = await window.getGeminiConfig();
     const API_KEY = geminiConfig ? geminiConfig.apiKey : null;
-    const GEMINI_MODEL = geminiConfig ? geminiConfig.model : 'gemini-1.5-pro';
 
     if (!API_KEY) {
         thinking.remove();
@@ -2016,26 +2055,73 @@ async function handleChat() {
               "2. يمنع منعاً باتاً عرض أي معلومات تقنية سرية من قاعدة البيانات للمستخدم؛ مثل معرّفات المستندات البرمجية (مثل '69f82d...' أو 'docId') أو أسماء المجموعات (مثل 'tourism_artifacts'). إذا أردت الإشارة لمعرّف القطعة، أبلغه أن معرف القطعة هو \"كود QR المسجل\" أو \"رمز QR المسجل\".\n" +
               "3. عندما يسألك المستخدم سؤالاً في نطاق متاحف جامعة المنيا والقطع الأثرية، وتبين لك عدم وجود بيانات حية مرفقة في السياق الممرر لك من قاعدة البيانات، فلا تقل \"لا أعرف\"، بل قل بدقة: \"لا تتوفر لديك بيانات عن ذلك.\" أو \"عذراً، لا تتوفر بيانات عن هذا في قاعدة البيانات حالياً.\"");
 
+    // Add current user query to chat history
+    mainChatHistory.push({ role: 'user', content: text });
+    if (mainChatHistory.length > 20) {
+        mainChatHistory.shift();
+    }
+
+    // Build the contents payload for Gemini API
+    const contentsPayload = mainChatHistory.map((m, index) => {
+        const isLastItem = index === mainChatHistory.length - 1;
+        const role = m.role === 'assistant' ? 'model' : 'user';
+        let textVal = m.content;
+        
+        // Append context to the last user message
+        if (isLastItem && role === 'user' && dbContext) {
+            textVal = `${m.content}${dbContext}`;
+        }
+        
+        return {
+            role: role,
+            parts: [{ text: textVal }]
+        };
+    });
+
+    const configuredModel = geminiConfig ? geminiConfig.model : 'gemini-1.5-pro';
+    const initialModel = selectAppropriateModel(text, configuredModel);
+    
+    // Candidates model fallback list
+    const modelCandidates = [
+        initialModel,
+        'gemini-1.5-flash',
+        'gemini-2.0-flash',
+        'gemini-1.5-pro'
+    ];
+    const uniqueCandidates = [...new Set(modelCandidates)];
+
+    let responseData = null;
+    let successfulModel = null;
+    let lastError = null;
+
     try {
-        const userPromptText = dbContext ? `${text}${dbContext}` : text;
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${API_KEY}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                contents: [{ 
-                    parts: [
-                        { text: SYSTEM_PROMPT },
-                        { text: userPromptText }
-                    ] 
-                }] 
-            })
-        });
-        
-        const data = await res.json();
+        // Try candidate models sequentially
+        for (const modelCandidate of uniqueCandidates) {
+            try {
+                responseData = await queryGeminiAPI(API_KEY, modelCandidate, SYSTEM_PROMPT, contentsPayload);
+                successfulModel = modelCandidate;
+                break; // Break on first successful API response
+            } catch (err) {
+                console.warn(`Gemini model ${modelCandidate} failed:`, err);
+                lastError = err;
+            }
+        }
+
+        if (!responseData) {
+            throw lastError || new Error('All model attempts failed');
+        }
+
         thinking.remove();
-        
-        if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts) {
-            const responseText = data.candidates[0].content.parts[0].text;
+
+        if (responseData.candidates && responseData.candidates[0].content && responseData.candidates[0].content.parts) {
+            const responseText = responseData.candidates[0].content.parts[0].text;
+            
+            // Save assistant reply to history
+            mainChatHistory.push({ role: 'assistant', content: responseText });
+            if (mainChatHistory.length > 20) {
+                mainChatHistory.shift();
+            }
+
             addMsg(responseText, 'system');
             
             // TTS Readback
@@ -2563,44 +2649,83 @@ document.addEventListener('DOMContentLoaded', () => {
         `).join('');
     }
 
-    // Keep reference to preloaded video elements so they buffer in background
-    const videoPreloadElements = new Map();
+    // Keep reference to preloaded video blob URLs
+    const videoPreloadBlobs = new Map();
+    const videoPreloadActiveFetches = new Set();
+    const videoPreloadQueue = [];
+    let isPreloadingVideos = false;
 
-    // Preload a video URL using a hidden <video> element for browser buffering
-    function preloadVideoUrl(url) {
-        if (!url || videoPreloadElements.has(url)) return;
-        try {
-            const v = document.createElement('video');
-            v.preload = 'auto';
-            v.muted = true;
-            v.src = url;
-            v.load();
-            videoPreloadElements.set(url, v);
-        } catch(e) {
-            console.warn('Video preload failed:', url, e);
+    // Preload a video URL by fetching it as a Blob and creating an Object URL
+    async function preloadVideoUrl(url, priority = false) {
+        if (!url || videoPreloadBlobs.has(url)) return;
+        
+        if (priority) {
+            if (videoPreloadActiveFetches.has(url)) return;
+            videoPreloadActiveFetches.add(url);
+            try {
+                const response = await fetch(url, { mode: 'cors', credentials: 'omit', cache: 'force-cache' });
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const blobUrl = URL.createObjectURL(blob);
+                    videoPreloadBlobs.set(url, blobUrl);
+                }
+            } catch (e) {
+                console.warn('Priority video preload failed:', url, e);
+            } finally {
+                videoPreloadActiveFetches.delete(url);
+            }
+        } else {
+            if (videoPreloadActiveFetches.has(url) || videoPreloadQueue.includes(url)) return;
+            videoPreloadQueue.push(url);
+            processVideoPreloadQueue();
         }
     }
 
-    // Preload all slides of each story to load them in advance for maximum speed
-    function preloadStoryMedia(story) {
-        if (!story || !story.slides || story.slides.length === 0) return;
-        const lang = sessionStorage.getItem('lang') || 'ar';
+    async function processVideoPreloadQueue() {
+        if (isPreloadingVideos || videoPreloadQueue.length === 0) return;
+        isPreloadingVideos = true;
         
-        // Preload cover
-        let cover = story.coverUrl;
-        if (lang === 'en' && story.coverUrlEn) cover = story.coverUrlEn;
-        else if (lang === 'fr' && story.coverUrlFr) cover = story.coverUrlFr;
-        if (cover) preloadImageUrl(cover);
+        while (videoPreloadQueue.length > 0) {
+            const url = videoPreloadQueue.shift();
+            if (videoPreloadBlobs.has(url) || videoPreloadActiveFetches.has(url)) continue;
+            
+            videoPreloadActiveFetches.add(url);
+            try {
+                const response = await fetch(url, { mode: 'cors', credentials: 'omit', cache: 'force-cache' });
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const blobUrl = URL.createObjectURL(blob);
+                    videoPreloadBlobs.set(url, blobUrl);
+                }
+            } catch (e) {
+                console.warn('Queue video preload failed:', url, e);
+            } finally {
+                videoPreloadActiveFetches.delete(url);
+            }
+            
+            // Brief pause between background downloads to keep network free
+            await new Promise(r => setTimeout(r, 200));
+        }
+        isPreloadingVideos = false;
+    }
+
+    // Preload all slides of each story to load them in advance for maximum speed
+    function preloadStoryMedia(story, priority = false) {
+        if (!story || !story.slides || story.slides.length === 0) return;
+        
+        // Preload all cover variations
+        if (story.coverUrl) preloadImageUrl(story.coverUrl);
+        if (story.coverUrlEn) preloadImageUrl(story.coverUrlEn);
+        if (story.coverUrlFr) preloadImageUrl(story.coverUrlFr);
 
         // Preload all slides
         story.slides.forEach(slide => {
             if (slide.isVideo) {
-                preloadVideoUrl(slide.url);
+                preloadVideoUrl(slide.url, priority);
             } else {
-                let imgUrl = slide.url;
-                if (lang === 'en' && slide.urlEn) imgUrl = slide.urlEn;
-                else if (lang === 'fr' && slide.urlFr) imgUrl = slide.urlFr;
-                preloadImageUrl(imgUrl);
+                if (slide.url) preloadImageUrl(slide.url);
+                if (slide.urlEn) preloadImageUrl(slide.urlEn);
+                if (slide.urlFr) preloadImageUrl(slide.urlFr);
             }
         });
     }
@@ -2815,17 +2940,7 @@ document.addEventListener('DOMContentLoaded', () => {
         story.viewed = true;
         
         // Preload ALL slides of the active story now that the user is viewing it
-        const lang = sessionStorage.getItem('lang') || 'ar';
-        story.slides.forEach(slide => {
-            if (slide.isVideo) {
-                preloadVideoUrl(slide.url);
-            } else {
-                let imgUrl = slide.url;
-                if (lang === 'en' && slide.urlEn) imgUrl = slide.urlEn;
-                else if (lang === 'fr' && slide.urlFr) imgUrl = slide.urlFr;
-                preloadImageUrl(imgUrl);
-            }
-        });
+        preloadStoryMedia(story, true);
 
         const ring = document.getElementById(`ring-${index}`);
         if (ring) ring.classList.add('viewed');
@@ -2944,7 +3059,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 nextSlide();
             });
             
-            video.src = slide.url;
+            // Use preloaded Blob URL if available to prevent network lag/stutter
+            video.src = videoPreloadBlobs.get(slide.url) || slide.url;
             video.load();
         } else {
             // Get lang-specific image URL

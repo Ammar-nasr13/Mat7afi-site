@@ -871,7 +871,6 @@ h1, h2, h3, h4, h5, .en-name {
     width: 45px;
     height: 45px;
     background: rgba(255, 255, 255, 0.05);
-    color: var(--cream);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -880,12 +879,53 @@ h1, h2, h3, h4, h5, .en-name {
     transition: var(--transition);
     border: 1px solid rgba(255, 253, 208, 0.1);
     text-decoration: none;
+    font-size: 1.15rem;
 }
 
-.social-icons a:hover {
-    background: var(--accent);
-    color: var(--navy);
+/* Facebook Specific Style */
+.social-icons a.facebook,
+.social-icons a[aria-label="Facebook"] {
+    color: #1877F2;
+    border-color: rgba(24, 119, 242, 0.25);
+}
+.social-icons a.facebook:hover,
+.social-icons a[aria-label="Facebook"]:hover {
+    background: #1877F2;
+    color: #fff;
+    border-color: #1877F2;
     transform: translateY(-5px);
+    box-shadow: 0 0 15px rgba(24, 119, 242, 0.5);
+}
+
+/* TikTok Specific Style */
+.social-icons a.tiktok,
+.social-icons a[aria-label="TikTok"] {
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.2);
+    text-shadow: -1px -1px 0 #25F4EE, 1px 1px 0 #FE2C55;
+}
+.social-icons a.tiktok:hover,
+.social-icons a[aria-label="TikTok"]:hover {
+    background: #010101;
+    color: #fff;
+    border-color: #fff;
+    transform: translateY(-5px);
+    box-shadow: 0 0 15px rgba(37, 244, 238, 0.4), 0 0 15px rgba(254, 44, 85, 0.4);
+}
+
+/* Instagram Specific Style */
+.social-icons a.instagram,
+.social-icons a[aria-label="Instagram"] {
+    color: #E1306C;
+    border-color: rgba(225, 48, 108, 0.25);
+}
+.social-icons a.instagram:hover,
+.social-icons a[aria-label="Instagram"]:hover {
+    background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+    color: #fff;
+    border-color: transparent;
+    transform: translateY(-5px);
+    box-shadow: 0 0 15px rgba(225, 48, 108, 0.5);
 }
 
 /* Museums Section */

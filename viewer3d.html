@@ -314,9 +314,9 @@
         auto-rotate
         camera-controls
         shadow-intensity="1"
-        exposure="1.0"
+        exposure="0.8"
         environment-image="neutral"
-        tone-mapping="neutral"
+        tone-mapping="commerce"
         reveal="auto"
         loading="eager"
         min-camera-orbit="auto auto 3%"
@@ -447,7 +447,7 @@
                 }
             };
 
-            const tryLoadModel = async () => {
+            const tryLoadModel = () => {
                 if (urlIndex >= modelUrls.length) {
                     clearLoadTimeout();
                     clearInterval(progressInterval);
@@ -460,60 +460,46 @@
                 const currentUrl = modelUrls[urlIndex];
                 let settled = false;
 
-                const advance = () => {
+                const onLoad = () => {
                     if (settled) return;
                     settled = true;
                     clearLoadTimeout();
+                    onModelLoaded();
+                };
+
+                const onError = (e) => {
+                    console.error('Failed to load model from URL:', currentUrl, e);
+                    if (settled) return;
+                    settled = true;
+                    clearLoadTimeout();
+                    
+                    // Cleanup event listeners to avoid duplicates on retry
+                    viewer.removeEventListener('load', onLoad);
+                    viewer.removeEventListener('error', onError);
+                    
                     urlIndex += 1;
                     viewer.removeAttribute('src');
                     tryLoadModel();
                 };
 
-                try {
-                    // Fetch model bytes
-                    const response = await fetch(currentUrl, { mode: 'cors', credentials: 'omit', cache: 'force-cache' });
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    const blob = await response.blob();
-                    
-                    // Create a blob URL with explicit model/gltf-binary type
-                    const typedBlob = new Blob([blob], { type: 'model/gltf-binary' });
-                    const blobUrl = URL.createObjectURL(typedBlob) + '#model.glb';
-                    
-                    const onLoad = () => {
-                        if (settled) return;
-                        settled = true;
-                        clearLoadTimeout();
-                        onModelLoaded();
-                    };
+                const onProgress = (e) => {
+                    if (!e.detail || !e.detail.totalProgress) return;
+                    const pct = Math.min(e.detail.totalProgress * 100, 95);
+                    bar.style.width = pct + '%';
+                };
 
-                    const onError = (e) => {
-                        console.error('Failed to parse loaded model blob:', e);
-                        advance();
-                    };
+                viewer.addEventListener('load', onLoad, { once: true });
+                viewer.addEventListener('error', onError, { once: true });
+                viewer.addEventListener('progress', onProgress);
 
-                    const onProgress = (e) => {
-                        if (!e.detail || !e.detail.totalProgress) return;
-                        const pct = Math.min(e.detail.totalProgress * 100, 95);
-                        bar.style.width = pct + '%';
-                    };
+                loadTimeout = setTimeout(() => {
+                    console.warn('3D model load timeout, trying next URL:', currentUrl);
+                    viewer.removeEventListener('load', onLoad);
+                    viewer.removeEventListener('error', onError);
+                    onError(new Error('Timeout'));
+                }, LOAD_TIMEOUT_MS);
 
-                    viewer.addEventListener('load', onLoad, { once: true });
-                    viewer.addEventListener('error', onError, { once: true });
-                    viewer.addEventListener('progress', onProgress);
-
-                    loadTimeout = setTimeout(() => {
-                        console.warn('3D model load timeout, trying next URL:', currentUrl);
-                        advance();
-                    }, LOAD_TIMEOUT_MS);
-
-                    viewer.src = blobUrl;
-
-                } catch (err) {
-                    console.error('Fetch error loading 3D model:', err);
-                    advance();
-                }
+                viewer.src = currentUrl;
             };
 
             tryLoadModel();
