@@ -248,13 +248,39 @@ function preloadImageUrl(url) {
     img.src = url;
 }
 
+const glbPreloadQueue = [];
+let isPreloadingGlbs = false;
+
 function preloadGlbModel(fileId, collectionId) {
     if (!fileId || glbPreloadCache.has(fileId)) return;
     glbPreloadCache.add(fileId);
+    
     const urls = resolveGlbModelUrls(fileId, collectionId);
-    urls.slice(0, 2).forEach(url => {
-        fetch(url, { mode: 'cors', credentials: 'omit', cache: 'force-cache' }).catch(() => {});
-    });
+    if (urls && urls.length > 0) {
+        glbPreloadQueue.push(urls[0]);
+        processGlbPreloadQueue();
+    }
+}
+
+async function processGlbPreloadQueue() {
+    if (isPreloadingGlbs || glbPreloadQueue.length === 0) return;
+    isPreloadingGlbs = true;
+    
+    // Brief delay on startup before preloading heavy GLB files
+    await new Promise(r => setTimeout(r, 2500));
+    
+    while (glbPreloadQueue.length > 0) {
+        const url = glbPreloadQueue.shift();
+        try {
+            await fetch(url, { mode: 'cors', credentials: 'omit', cache: 'force-cache' });
+        } catch (e) {
+            console.warn('Background GLB preload failed:', url, e);
+        }
+        
+        // Wait 1.5 seconds between downloads to keep network free
+        await new Promise(r => setTimeout(r, 1500));
+    }
+    isPreloadingGlbs = false;
 }
 
 function getArtifactGalleryUrls(artifact, bucketId, collectionId) {
@@ -282,7 +308,7 @@ function preloadArtifactMedia(artifact, collectionId, bucketId, includeGlb = fal
 function preloadArtifactsFromCache(artifacts, collectionId) {
     if (!artifacts?.length) return;
     const bucketId = getBucketByType(collectionId);
-    artifacts.forEach(artifact => preloadArtifactMedia(artifact, collectionId, bucketId));
+    artifacts.forEach(artifact => preloadArtifactMedia(artifact, collectionId, bucketId, true));
 }
 
 async function preloadCollectionArtifacts(collectionId, bucketId) {
@@ -290,7 +316,7 @@ async function preloadCollectionArtifacts(collectionId, bucketId) {
     try {
         const queries = Query ? [Query.limit(100)] : [];
         const response = await databases.listDocuments(AppwriteConfig.databaseId, collectionId, queries);
-        (response.documents || []).forEach(artifact => preloadArtifactMedia(artifact, collectionId, bucketId));
+        (response.documents || []).forEach(artifact => preloadArtifactMedia(artifact, collectionId, bucketId, true));
     } catch (e) {
         console.warn(`Preload skipped for ${collectionId}:`, e);
     }

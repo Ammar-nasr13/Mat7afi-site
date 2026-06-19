@@ -499,7 +499,8 @@
                     onError(new Error('Timeout'));
                 }, LOAD_TIMEOUT_MS);
 
-                viewer.src = currentUrl;
+                // Append hash fragment so model-viewer knows it's a GLB file and renders textures correctly
+                viewer.src = currentUrl + '#model.glb';
             };
 
             tryLoadModel();
