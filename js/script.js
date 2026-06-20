@@ -10,7 +10,7 @@ window.loadMuseumArtifacts = (collectionId, museumName, museumImg) => {
 };
 
 // Protected Configuration (Obfuscated to prevent automated GitHub key scraping)
-const _aw_key = "eyJlbmRwb2ludCI6Imh0dHBzOi8vYXBwd3JpdGUuZXRpaGFkYWxtZGluYS5jb20vdjEiLCJwcm9qZWN0SWQiOiI2OWYyMWM3MzAwMDYyMTkzOTQyMiIsImRhdGFiYXNlSWQiOiI2OWY2OTk0ODAwMTBlMmZlZWE4YSIsImNvbGxlY3Rpb25zIjp7InRvdXJpc20iOiJ0b3VyaXNtX2FydGlmYWN0cyIsInNjaWVuY2UiOiJzY2llbmNlX2F0aWZhY3RzIiwiYXJ0IjoiYXJ0X2F0aWZhY3RzIiwiZ2VvbG9neSI6InNjZWllbmNlX211c2V1bV9nZW8iLCJhY3RpdmF0aW9uIjoiYWN0aXZhdGlvbl9jb2RlcyJ9LCJidWNrZXRzIjp7InRvdXJpc20iOiI2OWY3ZDY4YzAwMzgyMTk5N2QwZCIsImFydGlmYWN0cyI6IjY5ZjY4NmU5MDAyZjkxN2VjMmEyIiwiYXVkaW8iOiI2OWY4NzBjMDAwMGViMzk2OTI2MCIsImFydEltYWdlcyI6IjY5ZmRmYTY2MDAyZDFhOTEwNmY3Iiwic2NpZW5jZUltYWdlcyI6IjY5ZmRmYTgwMDAyZjBkYjgzYzY3IiwiYXJNb2RlbHMiOiI2YTEzY2YzNzAwMTdkNGZmNzAwNiIsImdlb0ltYWdlcyI6IjZhMjc1NjE3MDAwYzg3NjMyMDExIn19";
+const _aw_key = "eyJlbmRwb2ludCI6Imh0dHBzOi8vYXBwd3JpdGUuZXRpaGFkYWxtZGluYS5jb20vdjEiLCJwcm9qZWN0SWQiOiI2OWYyMWM3MzAwMDYyMTkzOTQyMiIsImRhdGFiYXNlSWQiOiI2OWY2OTk0ODAwMTBlMmZlZWVhOGEiLCJjb2xsZWN0aW9ucyI6eyJ0b3VyaXNtIjoidG91cmlzbV9hcnRpZmFjdHMiLCJzY2llbmNlIjoic2NpZW5jZV9hcnRpZmFjdHMiLCJhcnQiOiJhcnRfYXJ0aWZhY3RzIiwiZ2VvbG9neSI6InNjZWllbmNlX211c2V1bV9nZW8iLCJhY3RpdmF0aW9uIjoiYWN0aXZhdGlvbl9jb2RlcyJ9LCJidWNrZXRzIjp7InRvdXJpc20iOiI2OWY3ZDY4YzAwMzgyMTk5N2QwZCIsImFydGlmYWN0cyI6IjY5ZjY4NmU5MDAyZjkxN2VjMmEyIiwiYXVkaW8iOiI2OWY4NzBjMDAwMGViMzk2OTI2MCIsImFydEltYWdlcyI6IjY5ZmRmYTY2MDAyZDFhOTEwNmY3Iiwic2NpZW5jZUltYWdlcyI6IjY5ZmRmYTgwMDAyZjBkYjgzYzY3IiwiYXJ0TW9kZWxzIjoiNmExM2NmMzcwMDE3ZDRmZjcwMDYiLCJnZW9JbWFnZXMiOiI2YTI3NTYxNzAwMGM4NzYzMjAxMSJ9fQ==";
 const AppwriteConfig = JSON.parse(atob(_aw_key));
 // Appwrite collection ID uses legacy typo: art_atifacts (not art_artifacts)
 AppwriteConfig.collections.art = 'art_atifacts';
@@ -1767,7 +1767,7 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
                 const modelUrls = resolveGlbModelUrls(glbFileId, collectionId);
                 const primary = modelUrls[0] || getAppwriteStorageUrl(glbFileId, AppwriteConfig.buckets.arModels, 'view');
                 const fallbacks = modelUrls.slice(1).join('|');
-                let viewerUrl = `viewer3d.html?url=${encodeURIComponent(primary)}&title=${encodeURIComponent(name)}&collection=${encodeURIComponent(collectionId)}`;
+                let viewerUrl = `viewer3d.html?v=9&url=${encodeURIComponent(primary)}&title=${encodeURIComponent(name)}&collection=${encodeURIComponent(collectionId)}`;
                 if (fallbacks) viewerUrl += `&fallbacks=${encodeURIComponent(fallbacks)}`;
                 window.location.href = viewerUrl;
             };
