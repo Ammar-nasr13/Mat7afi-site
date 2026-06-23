@@ -261,7 +261,7 @@
         #error-overlay {
             position: fixed;
             inset: 0;
-            background: var(--navy-dark);
+            background: radial-gradient(circle at center, #10223b 0%, #030812 100%);
             display: none;
             flex-direction: column;
             align-items: center;
@@ -269,11 +269,127 @@
             z-index: 50;
             color: var(--text-primary);
             text-align: center;
-            padding: 30px;
+            padding: 24px;
         }
-        #error-overlay i { font-size: 3rem; color: #ef4444; margin-bottom: 20px; }
-        #error-overlay h3 { font-size: 1.25rem; margin-bottom: 10px; font-weight: 700; }
-        #error-overlay p { color: var(--text-muted); font-size: 0.9rem; }
+        .error-card {
+            background: rgba(10, 25, 47, 0.65);
+            border: 1px solid rgba(217, 119, 6, 0.15);
+            border-radius: 28px;
+            padding: 50px 35px;
+            max-width: 480px;
+            width: 100%;
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.55), inset 0 0 30px rgba(255, 255, 255, 0.02);
+            transform: translateY(30px);
+            opacity: 0;
+            animation: errFadeInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+        @keyframes errFadeInUp {
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        /* Premium Illustration Styles */
+        .illustration-container {
+            width: 160px;
+            height: 160px;
+            margin: 0 auto 28px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .error-illustration {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 0 15px rgba(217, 119, 6, 0.25));
+        }
+        
+        /* CSS Animations for Hologram */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-6px) rotate(1deg); }
+        }
+        .floating-hologram {
+            animation: float 4s ease-in-out infinite;
+            transform-origin: center;
+        }
+        
+        @keyframes rotate-slow {
+            to { transform: rotate(360deg); }
+        }
+        .orbiting-circle {
+            animation: rotate-slow 25s linear infinite;
+            transform-origin: 100px 100px;
+        }
+        
+        .hologram-text {
+            text-shadow: 0 0 10px rgba(217, 119, 6, 0.6), 0 0 20px rgba(217, 119, 6, 0.3);
+            animation: pulse-glow 2s ease-in-out infinite alternate;
+        }
+        @keyframes pulse-glow {
+            from { opacity: 0.8; filter: drop-shadow(0 0 2px var(--accent)); }
+            to { opacity: 1; filter: drop-shadow(0 0 8px var(--accent)); }
+        }
+        
+        #error-title {
+            font-size: 1.45rem;
+            margin-bottom: 14px;
+            font-weight: 900;
+            color: white;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            letter-spacing: 0.5px;
+        }
+        #error-msg {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.7;
+            margin-bottom: 8px;
+            padding: 0 10px;
+        }
+        .error-actions {
+            margin-top: 32px;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            width: 100%;
+        }
+        .btn-error {
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.92rem;
+            text-decoration: none;
+            border: none;
+            min-width: 150px;
+        }
+        .btn-error-primary {
+            background: linear-gradient(135deg, var(--accent-light) 0%, var(--accent) 100%);
+            color: var(--navy-dark);
+            box-shadow: 0 4px 15px rgba(217, 119, 6, 0.35);
+        }
+        .btn-error-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(217, 119, 6, 0.5);
+            background: linear-gradient(135deg, #fbbf24 0%, var(--accent-light) 100%);
+        }
+        .btn-error-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        .btn-error-secondary:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
     </style>
 </head>
 <body>
@@ -288,12 +404,65 @@
 
     <!-- Error Overlay -->
     <div id="error-overlay">
-        <i class="fas fa-exclamation-triangle"></i>
-        <h3 id="error-title">تعذّر تحميل النموذج</h3>
-        <p id="error-msg">تأكد من اتصالك بالإنترنت وحاول مجدداً.</p>
-        <button onclick="history.back()" style="margin-top:24px; background:var(--accent); border:none; color:#000; padding:10px 24px; border-radius:20px; font-family:Cairo,sans-serif; font-weight:700; cursor:pointer;">
-            <i class="fas fa-arrow-right me-1"></i> عودة
-        </button>
+        <div class="error-card">
+            <div class="illustration-container">
+                <svg class="error-illustration" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Outer glowing circle -->
+                    <circle cx="100" cy="100" r="80" stroke="url(#goldGradient)" stroke-width="1.5" stroke-dasharray="4 4" class="orbiting-circle" id="illustration-orbit" />
+                    
+                    <!-- Pedestal Base -->
+                    <path d="M60 140 L140 140 L150 155 L50 155 Z" fill="url(#pedestalGradient)" opacity="0.8" />
+                    <path d="M70 140 L130 140 L130 115 L70 115 Z" fill="url(#pedestalBodyGradient)" opacity="0.6" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+                    
+                    <!-- Floating Wireframe Cube / Hologram (Missing Model) -->
+                    <g class="floating-hologram" id="illustration-hologram">
+                        <!-- Cube outlines -->
+                        <path d="M100 50 L135 70 L100 90 L65 70 Z" class="hologram-cube-line" stroke="rgba(217, 119, 6, 0.4)" stroke-width="1.5" stroke-dasharray="3 3" />
+                        <path d="M65 70 L65 105 L100 125 L100 90 Z" class="hologram-cube-line" stroke="rgba(217, 119, 6, 0.3)" stroke-width="1.5" stroke-dasharray="3 3" />
+                        <path d="M135 70 L135 105 L100 125 L100 90 Z" class="hologram-cube-line" stroke="rgba(217, 119, 6, 0.3)" stroke-width="1.5" stroke-dasharray="3 3" />
+                        
+                        <!-- Center character (will be changed programmatically) -->
+                        <text x="100" y="98" font-family="'Cairo', sans-serif" font-size="32" font-weight="900" fill="url(#goldGradient)" text-anchor="middle" class="hologram-text" id="illustration-text">؟</text>
+                    </g>
+                    
+                    <!-- Holographic Scanner Line -->
+                    <line x1="45" y1="85" x2="155" y2="85" stroke="var(--accent)" stroke-width="1.5" class="scanner-line" id="illustration-scanner">
+                        <animate attributeName="y1" values="65;125;65" dur="3s" repeatCount="indefinite" />
+                        <animate attributeName="y2" values="65;125;65" dur="3s" repeatCount="indefinite" />
+                    </line>
+                    
+                    <!-- Definitions -->
+                    <defs>
+                        <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#f59e0b" />
+                            <stop offset="100%" stop-color="#d97706" />
+                        </linearGradient>
+                        <linearGradient id="redGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#f87171" />
+                            <stop offset="100%" stop-color="#ef4444" />
+                        </linearGradient>
+                        <linearGradient id="pedestalGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="rgba(217, 119, 6, 0.3)" id="pedestal-grad-start" />
+                            <stop offset="100%" stop-color="rgba(10, 25, 47, 0.8)" />
+                        </linearGradient>
+                        <linearGradient id="pedestalBodyGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="rgba(255, 255, 255, 0.05)" />
+                            <stop offset="100%" stop-color="rgba(255, 255, 255, 0.02)" />
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+            <h3 id="error-title">تعذّر تحميل النموذج</h3>
+            <p id="error-msg">تأكد من اتصالك بالإنترنت وحاول مجدداً.</p>
+            <div class="error-actions">
+                <button id="btn-error-back" onclick="history.back()" class="btn-error btn-error-secondary">
+                    <i class="fas fa-arrow-right"></i> <span>عودة للمتحف</span>
+                </button>
+                <button id="btn-error-action" class="btn-error btn-error-primary">
+                    <i class="fas fa-redo"></i> <span>إعادة المحاولة</span>
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Top Header -->
@@ -386,8 +555,6 @@
             const loadingTitle = document.getElementById('loading-title');
             if (lang === 'en') {
                 loadingTitle.textContent = 'Loading 3D Model...';
-                document.getElementById('error-title').textContent  = 'Failed to Load Model';
-                document.getElementById('error-msg').textContent    = 'Check your internet and try again.';
                 document.getElementById('rotate-label').textContent = 'Stop Rotation';
                 document.getElementById('fs-label').textContent     = 'Fullscreen';
             } else if (lang === 'fr') {
@@ -405,9 +572,83 @@
             const errDiv  = document.getElementById('error-overlay');
             const bar     = document.getElementById('loading-bar');
 
-            if (!modelUrls.length) {
+            const showError = (type) => {
                 overlay.style.display = 'none';
                 errDiv.style.display  = 'flex';
+                
+                const errorTitle  = document.getElementById('error-title');
+                const errorMsg    = document.getElementById('error-msg');
+                const backBtn     = document.getElementById('btn-error-back');
+                const actionBtn   = document.getElementById('btn-error-action');
+                
+                // SVG elements to customize
+                const illText     = document.getElementById('illustration-text');
+                const illScanner  = document.getElementById('illustration-scanner');
+                const illOrbit    = document.getElementById('illustration-orbit');
+                const pedGradStart = document.getElementById('pedestal-grad-start');
+                const cubeLines   = document.querySelectorAll('.hologram-cube-line');
+                
+                if (type === 'no_model') {
+                    // Customize illustration for no model (Gold theme, question mark)
+                    illText.textContent = (lang === 'en' || lang === 'fr') ? '?' : '؟';
+                    illText.setAttribute('fill', 'url(#goldGradient)');
+                    illScanner.setAttribute('stroke', 'var(--accent)');
+                    illOrbit.setAttribute('stroke', 'url(#goldGradient)');
+                    pedGradStart.setAttribute('stop-color', 'rgba(217, 119, 6, 0.3)');
+                    cubeLines.forEach(line => line.setAttribute('stroke', 'rgba(217, 119, 6, 0.35)'));
+                    
+                    if (lang === 'en') {
+                        errorTitle.textContent = '3D Model Unavailable';
+                        errorMsg.textContent = 'This museum artifact does not have an interactive 3D model in our records yet.';
+                        backBtn.innerHTML = '<i class="fas fa-arrow-left"></i> <span>Back</span>';
+                        actionBtn.innerHTML = '<i class="fas fa-images"></i> <span>Browse Gallery</span>';
+                        actionBtn.onclick = () => window.location.href = 'gallery.html';
+                    } else if (lang === 'fr') {
+                        errorTitle.textContent = 'Modèle 3D Non Disponible';
+                        errorMsg.textContent = 'Cet artefact ne dispose pas encore d\'une modélisation 3D interactive dans nos dossiers.';
+                        backBtn.innerHTML = '<i class="fas fa-arrow-left"></i> <span>Retour</span>';
+                        actionBtn.innerHTML = '<i class="fas fa-images"></i> <span>Galerie</span>';
+                        actionBtn.onclick = () => window.location.href = 'gallery.html';
+                    } else {
+                        errorTitle.textContent = 'العرض ثلاثي الأبعاد غير متوفر';
+                        errorMsg.textContent = 'هذه القطعة الأثرية لا تحتوي على مجسم ثلاثي أبعاد مسجل في قاعدة البيانات حالياً.';
+                        backBtn.innerHTML = '<i class="fas fa-arrow-right"></i> <span>عودة للمتحف</span>';
+                        actionBtn.innerHTML = '<i class="fas fa-images"></i> <span>تصفح المعرض</span>';
+                        actionBtn.onclick = () => window.location.href = 'gallery.html';
+                    }
+                } else {
+                    // Customize illustration for load failed (Red theme, exclamation mark)
+                    illText.textContent = '!';
+                    illText.setAttribute('fill', 'url(#redGradient)');
+                    illScanner.setAttribute('stroke', '#ef4444');
+                    illOrbit.setAttribute('stroke', 'url(#redGradient)');
+                    pedGradStart.setAttribute('stop-color', 'rgba(239, 68, 68, 0.3)');
+                    cubeLines.forEach(line => line.setAttribute('stroke', 'rgba(239, 68, 68, 0.35)'));
+                    
+                    if (lang === 'en') {
+                        errorTitle.textContent = 'Failed to Load Model';
+                        errorMsg.textContent = 'We couldn\'t load the 3D model files. Please check your connection and try again.';
+                        backBtn.innerHTML = '<i class="fas fa-arrow-left"></i> <span>Back</span>';
+                        actionBtn.innerHTML = '<i class="fas fa-redo"></i> <span>Retry Loading</span>';
+                        actionBtn.onclick = () => window.location.reload();
+                    } else if (lang === 'fr') {
+                        errorTitle.textContent = 'Erreur de Chargement';
+                        errorMsg.textContent = 'Impossible de charger le modèle 3D. Veuillez vérifier votre connexion Internet et réessayer.';
+                        backBtn.innerHTML = '<i class="fas fa-arrow-left"></i> <span>Retour</span>';
+                        actionBtn.innerHTML = '<i class="fas fa-redo"></i> <span>Réessayer</span>';
+                        actionBtn.onclick = () => window.location.reload();
+                    } else {
+                        errorTitle.textContent = 'عذراً، تعذّر تحميل النموذج';
+                        errorMsg.textContent = 'فشل تحميل ملفات المجسم ثلاثي الأبعاد. تأكد من استقرار الإنترنت وحاول مجدداً.';
+                        backBtn.innerHTML = '<i class="fas fa-arrow-right"></i> <span>عودة للمتحف</span>';
+                        actionBtn.innerHTML = '<i class="fas fa-redo"></i> <span>إعادة المحاولة</span>';
+                        actionBtn.onclick = () => window.location.reload();
+                    }
+                }
+            };
+
+            if (!modelUrls.length) {
+                showError('no_model');
                 return;
             }
 
@@ -451,8 +692,7 @@
                 if (urlIndex >= modelUrls.length) {
                     clearLoadTimeout();
                     clearInterval(progressInterval);
-                    overlay.style.display = 'none';
-                    errDiv.style.display  = 'flex';
+                    showError('load_failed');
                     return;
                 }
 
