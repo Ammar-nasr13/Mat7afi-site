@@ -11,7 +11,11 @@ const server = http.createServer((req, res) => {
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', '*');
 
-    let filePath = '.' + req.url;
+    let cleanUrl = req.url.split('?')[0];
+    try {
+        cleanUrl = decodeURIComponent(cleanUrl);
+    } catch (e) {}
+    let filePath = '.' + cleanUrl;
 
     if (filePath === './') {
         filePath = './index.html';

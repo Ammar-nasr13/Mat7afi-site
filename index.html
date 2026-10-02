@@ -13,7 +13,7 @@
     <link rel="canonical" href="https://mat7afi.site/">
     
     <!-- Security Headers -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com https://www.googletagmanager.com https://cdn-cookieyes.com 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https://apppwrite.ammar-nasr13.cloud https://upload.wikimedia.org https://www.googletagmanager.com; media-src 'self' https://apppwrite.ammar-nasr13.cloud; connect-src 'self' https://apppwrite.ammar-nasr13.cloud https://api.openai.com https://www.google-analytics.com https://generativelanguage.googleapis.com;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob:; script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com https://www.googletagmanager.com https://cdn-cookieyes.com 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: blob: https://apppwrite.ammar-nasr13.cloud https://upload.wikimedia.org https://www.googletagmanager.com; media-src 'self' data: blob: https://apppwrite.ammar-nasr13.cloud; connect-src 'self' http://localhost:3001 https://apppwrite.ammar-nasr13.cloud https://api.openai.com https://www.google-analytics.com https://generativelanguage.googleapis.com;">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     
     <!-- Open Graph / Facebook -->
@@ -100,7 +100,7 @@
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript><link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet"></noscript>
-    <link rel="stylesheet" href="css/style.css?v=6">
+    <link rel="stylesheet" href="css/style.css?v=8">
 
 
     <!-- Critical CSS -->
@@ -495,17 +495,17 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                         <a href="assets/Minya_Museum_x86_64.apk"
                            class="btn-outline-premium btn-sm apk-btn"
                            download>
-                            <i class="fab fa-android me-2"></i><span data-i18n="apk_universal">تحميل Universal APK (~55 ميجا)</span>
+                            <i class="fab fa-android me-2"></i><span data-i18n="apk_universal">تحميل x86_64 APK للمحاكيات (~47 ميجا)</span>
                         </a>
                         <a href="assets/Minya_Museum_arm64.apk"
                            class="btn-outline-premium btn-sm apk-btn"
                            download>
-                            <i class="fab fa-android me-2"></i><span data-i18n="apk_arm64">تحميل ARM64-v8a APK</span>
+                            <i class="fab fa-android me-2"></i><span data-i18n="apk_arm64">تحميل ARM64-v8a APK (~45 ميجا)</span>
                         </a>
                         <a href="assets/Minya_Museum_arm32.apk"
                            class="btn-outline-premium btn-sm apk-btn"
                            download>
-                            <i class="fab fa-android me-2"></i><span data-i18n="apk_armv7">تحميل ARMv7 APK</span>
+                            <i class="fab fa-android me-2"></i><span data-i18n="apk_armv7">تحميل ARMv7 APK (~39 ميجا)</span>
                         </a>
                     </div>
                     <p class="mt-3 text-white-50 small" data-i18n="download_direct_desc">يمكنك تحميل الملف المناسب لنوع جهازك وتثبيته مباشرة.</p>
@@ -513,55 +513,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             </div>
         </div>
     </section>
-
-
-    <!-- AI Features Modals -->
-    <!-- AI Camera Modal -->
-    <div class="modal fade" id="cameraModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content bg-navy border-accent shadow-2xl rounded-5 overflow-hidden">
-                <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title text-cream fw-bold">الدليل المرئي الذكي</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body text-center p-4">
-                    <div class="camera-wrapper position-relative mb-4">
-                        <video id="webcam" autoplay playsinline class="rounded-4 w-100 shadow-lg border border-white border-opacity-10"></video>
-                        <canvas id="camera-canvas" style="display:none;"></canvas>
-                        <div class="scan-line-animate"></div>
-                    </div>
-                    <div id="ai-result" class="ai-analysis-box mb-4">
-                        <p class="text-white-50 small mb-0">وجه الكاميرا نحو القطعة الأثرية واضغط على الزر لبدء التحليل</p>
-                    </div>
-                    <button id="capture-btn" class="btn-premium w-100 justify-content-center py-3">
-                        <i class="fas fa-search-location me-2"></i> بدء الفحص الذكي
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- AI Voice Modal -->
-    <div class="modal fade" id="voiceModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content bg-navy border-accent rounded-5 shadow-2xl">
-                <div class="modal-body text-center py-5">
-                    <div class="voice-wave-container mb-4">
-                        <div class="wave"></div>
-                        <div class="wave"></div>
-                        <div class="wave"></div>
-                        <i class="fas fa-microphone-alt fa-3x text-accent position-relative"></i>
-                    </div>
-                    <h3 class="text-cream mb-2" id="voice-status">أنا أسمعك...</h3>
-                    <p class="text-white-50" id="voice-transcript">اسألني عن تاريخ أي قطعة أثرية</p>
-                    <div id="voice-response-box" class="mt-4 p-3 bg-white bg-opacity-5 rounded-4 d-none">
-                        <p id="voice-response" class="text-accent mb-0 fw-bold"></p>
-                    </div>
-                    <button type="button" class="btn btn-outline-premium mt-4 border-0" data-bs-dismiss="modal">إنهاء المحادثة</button>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- Footer -->
     <footer class="footer py-5 bg-navy-dark text-white border-top border-secondary">
@@ -614,7 +565,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     <script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.0" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js" defer></script>
-    <script src="js/script.js?v=9" defer></script>
+    <script src="js/script.js?v=12" defer></script>
     <script>
         window.loadMuseumArtifacts = (collectionId, museumName, museumImg) => {
             window.location.href =

@@ -5,10 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>حوار مع القطعة | Mat7afi</title>
     <meta name="robots" content="noindex, follow">
+    <link rel="preconnect" href="https://apppwrite.ammar-nasr13.cloud" crossorigin>
+    <link rel="dns-prefetch" href="https://apppwrite.ammar-nasr13.cloud">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob: 'unsafe-inline' 'unsafe-eval'; img-src 'self' https: data: blob:; connect-src 'self' https://apppwrite.ammar-nasr13.cloud https://generativelanguage.googleapis.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com;">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=8">
     <style>
         body { background-color: #0D1B2A; color: white; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         .chat-header { background: #0D1B2A; padding: 15px; border-bottom: 1px solid rgba(212, 175, 55, 0.2); display: flex; align-items: center; gap: 15px; }
@@ -28,7 +31,7 @@
 <body class="artifact-chat-page">
     <header class="chat-header">
         <a href="javascript:history.back()" class="btn-top-action"><i class="fas fa-chevron-right"></i></a>
-        <img id="artifact-avatar" src="assets/placeholder.png" alt="Artifact" class="artifact-avatar">
+        <img id="artifact-avatar" src="assets/placeholder.png" alt="Artifact" class="artifact-avatar" onerror="this.src='assets/placeholder.png'">
         <div class="flex-grow-1">
             <h1 class="h6 mb-0 fw-bold" id="artifact-name">جاري التحميل...</h1>
             <small class="text-accent" id="artifact-status">القطعة الأثرية</small>
@@ -52,17 +55,25 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.0"></script>
-    <script src="js/script.js?v=9"></script>
+    <script src="js/script.js?v=12"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             const urlParams = new URLSearchParams(window.location.search);
             const artifactId = urlParams.get('id');
-            const collectionId = urlParams.get('collection');
+            const rawCollectionId = urlParams.get('collection');
 
-            if (!artifactId || !collectionId) {
+            if (!artifactId || !rawCollectionId) {
                 window.location.href = 'index.html';
                 return;
             }
+
+            if (typeof initAppwrite === 'function' && !databases) {
+                initAppwrite();
+            }
+
+            const resolvedCollectionId = typeof resolveCollectionId === 'function'
+                ? resolveCollectionId(rawCollectionId)
+                : rawCollectionId;
 
             const chatContainer = document.getElementById('chat-container');
             const inputField = document.getElementById('chat-input-field');
@@ -78,24 +89,30 @@
             try {
                 artifactData = await databases.getDocument(
                     AppwriteConfig.databaseId,
-                    collectionId,
+                    resolvedCollectionId,
                     artifactId
                 );
 
-                const nameAr = artifactData['name-ar'] || artifactData.name || 'قطعة أثرية';
+                const nameAr = (typeof getArtifactTitle === 'function' ? getArtifactTitle(artifactData) : null)
+                    || artifactData['name-ar']
+                    || artifactData.name
+                    || 'قطعة أثرية';
                 artifactNameEl.innerText = nameAr;
+
+                const defaultBucket = typeof getBucketByType === 'function'
+                    ? getBucketByType(resolvedCollectionId)
+                    : AppwriteConfig.buckets.tourism;
+                const bucketId = typeof resolveArtifactImageBucket === 'function'
+                    ? resolveArtifactImageBucket(artifactData, defaultBucket)
+                    : defaultBucket;
                 
-                function getBucket(cId) {
-                    if (cId.includes('zoology')) return AppwriteConfig.buckets.zoologyImages;
-                    if (cId.includes('geo') || cId.includes('sceience')) return AppwriteConfig.buckets.geoImages;
-                    if (cId.includes('science')) return AppwriteConfig.buckets.scienceImages;
-                    if (cId.includes('art')) return AppwriteConfig.buckets.artImages;
-                    return AppwriteConfig.buckets.tourism;
-                }
-                
-                const imgId = artifactData.image || artifactData.image_url;
+                const imgId = typeof getArtifactImageId === 'function'
+                    ? getArtifactImageId(artifactData)
+                    : (artifactData.image || artifactData.image_url);
                 if (imgId) {
-                    artifactAvatar.src = `${AppwriteConfig.endpoint}/storage/buckets/${getBucket(collectionId)}/files/${imgId}/preview?project=${AppwriteConfig.projectId}`;
+                    artifactAvatar.src = typeof getAppwriteImageUrl === 'function'
+                        ? getAppwriteImageUrl(imgId, bucketId)
+                        : `${AppwriteConfig.endpoint}/storage/buckets/${bucketId}/files/${imgId}/view?project=${AppwriteConfig.projectId}`;
                 }
 
                 // Initial Greeting
@@ -128,8 +145,8 @@
                 typingIndicator.style.display = 'block';
 
                 try {
-                    const name = artifactData['name-ar'] || artifactData.name;
-                    const desc = artifactData['description-ar'] || artifactData.description;
+                    const name = (artifactData && (typeof getArtifactTitle === 'function' ? getArtifactTitle(artifactData) : (artifactData['name-ar'] || artifactData.name))) || 'قطعة أثرية';
+                    const desc = (artifactData && (typeof getArtifactDescription === 'function' ? getArtifactDescription(artifactData) : (artifactData['description-ar'] || artifactData.description))) || '';
                     
                     const systemPrompt = `أنت تمثل القطعة الأثرية الحقيقية الموجودة في المتحف. تقمص شخصية هذه القطعة وتحدث بضمير المتكلم (أنا).
 اسمك: ${name}

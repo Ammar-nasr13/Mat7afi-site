@@ -255,7 +255,8 @@ h1, h2, h3, h4, h5, .en-name {
 .brand-text {
     display: flex;
     flex-direction: column;
-    line-height: 1;
+    line-height: 1.1;
+    white-space: nowrap;
 }
 
 .en-name {
@@ -263,21 +264,35 @@ h1, h2, h3, h4, h5, .en-name {
     font-weight: 800;
     color: var(--cream);
     letter-spacing: 1px;
+    white-space: nowrap;
 }
 
 .ar-name {
     font-size: 0.85rem;
     color: var(--accent);
     font-weight: 600;
+    white-space: nowrap;
 }
 
 .nav-link {
     color: var(--cream) !important;
     font-weight: 600;
-    margin: 0 15px;
+    margin: 0 10px;
     position: relative;
-    opacity: 0.8;
+    opacity: 0.85;
     transition: var(--transition);
+    white-space: nowrap;
+}
+
+@media (min-width: 992px) and (max-width: 1199px) {
+    .nav-link {
+        margin: 0 6px;
+        font-size: 0.92rem;
+    }
+    .btn-download {
+        padding: 8px 18px !important;
+        font-size: 0.9rem;
+    }
 }
 
 .nav-link::after {
@@ -300,12 +315,17 @@ h1, h2, h3, h4, h5, .en-name {
 }
 
 .btn-download {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
     background: var(--brown);
     color: var(--white) !important;
-    padding: 10px 25px;
+    padding: 10px 24px;
     border-radius: 50px;
     text-decoration: none;
     font-weight: 700;
+    line-height: 1.2;
     transition: var(--transition);
     border: 1px solid transparent;
 }

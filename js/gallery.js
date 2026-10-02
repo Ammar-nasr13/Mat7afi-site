@@ -25,10 +25,16 @@ const categoryBadges = {
 
 let allGalleryItems = [];
 let filteredItems = [];
+let _resolveGalleryReady;
+window.galleryDataReady = new Promise(resolve => { _resolveGalleryReady = resolve; });
 
 // Initialize Gallery
 document.addEventListener('DOMContentLoaded', async () => {
-    await fetchGalleryData();
+    try {
+        await fetchGalleryData();
+    } finally {
+        if (_resolveGalleryReady) _resolveGalleryReady(allGalleryItems);
+    }
     setupFilters();
     setupSearch();
     setupFavoritesSystem();
@@ -52,7 +58,10 @@ async function fetchGalleryData() {
                 const cacheKey = 'gallery_items';
                 try {
                     const cached = sessionStorage.getItem(cacheKey);
-                    if (cached) docs = JSON.parse(cached);
+                    if (cached) {
+                        const parsed = JSON.parse(cached);
+                        if (Array.isArray(parsed) && parsed.length > 0) docs = parsed;
+                    }
                 } catch (e) {}
 
                 if (!docs) {
@@ -62,9 +71,11 @@ async function fetchGalleryData() {
                         [Query.limit(100)]
                     );
                     docs = response.documents || [];
-                    try {
-                        sessionStorage.setItem(cacheKey, JSON.stringify(docs));
-                    } catch (e) {}
+                    if (docs.length > 0) {
+                        try {
+                            sessionStorage.setItem(cacheKey, JSON.stringify(docs));
+                        } catch (e) {}
+                    }
                 }
                 
                 if (docs && docs.length > 0) {
@@ -119,19 +130,24 @@ async function fetchGalleryData() {
 
 function renderGrid() {
     const grid = document.getElementById('gallery-grid');
+    if (!grid) return;
     const emptyState = document.getElementById('gallery-empty');
     
     // Clear existing
     grid.innerHTML = '';
     
     if (filteredItems.length === 0) {
-        emptyState.classList.remove('d-none');
+        if (emptyState) emptyState.classList.remove('d-none');
         return;
     }
     
-    emptyState.classList.add('d-none');
+    if (emptyState) emptyState.classList.add('d-none');
     
     const lang = sessionStorage.getItem('lang') || 'ar';
+    const viewFileTxt = lang === 'en' ? 'View File' : (lang === 'fr' ? 'Voir le fichier' : 'معاينة الملف');
+    const detailsTxt = lang === 'en' ? 'Details' : (lang === 'fr' ? 'Détails' : 'التفاصيل');
+    const previewTxt = lang === 'en' ? 'Preview' : (lang === 'fr' ? 'Aperçu' : 'معاينة');
+    const downloadTxt = lang === 'en' ? 'Download' : (lang === 'fr' ? 'Télécharger' : 'تحميل');
     
     filteredItems.forEach((item, index) => {
         const badgeInfo = categoryBadges[item.category] || categoryBadges['image'];
@@ -146,29 +162,30 @@ function renderGrid() {
         if (lang === 'en' && item.shortDescriptionEn) desc = item.shortDescriptionEn;
         if (lang === 'fr' && item.shortDescriptionFr) desc = item.shortDescriptionFr;
         
+        const safeTitle = String(title).replace(/'/g, "\\'");
         let actionsHtml = '';
         if (item.category === 'file') {
             const fileLink = item.fileUrl || item.actualImageUrl;
             actionsHtml = `
-                <a href="${fileLink}" target="_blank" class="item-btn btn-primary" title="معاينة الملف">
-                    معاينة الملف <i class="fas fa-external-link-alt ms-1"></i>
+                <a href="${fileLink}" target="_blank" class="item-btn btn-primary" title="${viewFileTxt}">
+                    ${viewFileTxt} <i class="fas fa-external-link-alt ms-1"></i>
                 </a>
             `;
         } else if (item.category === 'artifact_card') {
             actionsHtml = `
-                <a href="item.html?id=${item.$id}" class="item-btn btn-primary" title="عرض التفاصيل">
-                    التفاصيل <i class="fas fa-info-circle ms-1"></i>
+                <a href="item.html?id=${item.$id}" class="item-btn btn-primary" title="${detailsTxt}">
+                    ${detailsTxt} <i class="fas fa-info-circle ms-1"></i>
                 </a>
-                <button onclick="downloadItem('${item.actualImageUrl}', '${title}')" class="item-btn" title="تحميل">
+                <button onclick="downloadItem('${item.actualImageUrl}', '${safeTitle}')" class="item-btn" title="${downloadTxt}">
                     <i class="fas fa-download"></i>
                 </button>
             `;
         } else if (item.category === 'image' || !item.category) {
             actionsHtml = `
-                <button onclick="previewImage('${item.actualImageUrl}', '${title.replace(/'/g, "\\'")}')" class="item-btn btn-primary" title="معاينة">
-                    معاينة <i class="fas fa-eye ms-1"></i>
+                <button onclick="previewImage('${item.actualImageUrl}', '${safeTitle}')" class="item-btn btn-primary" title="${previewTxt}">
+                    ${previewTxt} <i class="fas fa-eye ms-1"></i>
                 </button>
-                <button onclick="downloadItem('${item.actualImageUrl}', '${title.replace(/'/g, "\\'")}')" class="item-btn" title="تحميل">
+                <button onclick="downloadItem('${item.actualImageUrl}', '${safeTitle}')" class="item-btn" title="${downloadTxt}">
                     <i class="fas fa-download"></i>
                 </button>
             `;
@@ -191,7 +208,7 @@ function renderGrid() {
                     
                     <div class="item-actions">
                         ${actionsHtml}
-                        <button onclick="shareItem('${item.$id}', '${title.replace(/'/g, "\\'")}')" class="item-btn" title="${lang === 'en' ? 'Share' : (lang === 'fr' ? 'Partager' : 'مشاركة')}">
+                        <button onclick="shareItem('${item.$id}', '${safeTitle}')" class="item-btn" title="${lang === 'en' ? 'Share' : (lang === 'fr' ? 'Partager' : 'مشاركة')}">
                             <i class="fas fa-share-nodes"></i>
                         </button>
                         <button onclick="toggleFavorite('${item.$id}', this)" class="item-btn favorite-btn ${isFav ? 'active' : ''}" title="${lang === 'en' ? 'Add to Favorites' : (lang === 'fr' ? 'Ajouter aux favoris' : 'إضافة للمفضلة')}">
@@ -252,7 +269,7 @@ function applyFilters() {
         
         // Search
         if (currentSearchQuery) {
-            const searchStr = normalizeArabic(`${item.titleAr || ''} ${item.titleEn || ''} ${museumNames[item.museum] || ''} ${item.shortDescriptionAr || ''}`.toLowerCase());
+            const searchStr = normalizeArabic(`${item.titleAr || ''} ${item.titleEn || ''} ${item.titleFr || ''} ${museumNames[item.museum] || ''} ${item.shortDescriptionAr || ''} ${item.shortDescriptionEn || ''} ${item.shortDescriptionFr || ''} ${item.description || ''}`.toLowerCase());
             if (!searchStr.includes(normalizeArabic(currentSearchQuery))) return false;
         }
         
@@ -337,17 +354,26 @@ window.closePreviewModal = function() {
 };
 
 function shareItem(id, title) {
-    const url = window.location.origin + window.location.pathname.replace('gallery.html', '') + 'item.html?id=' + id;
+    const lang = sessionStorage.getItem('lang') || 'ar';
+    const basePath = window.location.pathname.replace(/(gallery|favorites|item)\.html$/, '');
+    const url = window.location.origin + basePath + 'item.html?id=' + id;
+    const shareText = lang === 'en'
+        ? 'Discover this amazing content on Minia University Museums website.'
+        : (lang === 'fr'
+            ? 'Découvrez ce contenu exceptionnel sur le site des musées de l\'Université de Minia.'
+            : 'اكتشف هذا المحتوى الرائع على موقع متاحف جامعة المنيا.');
+    const copiedMsg = lang === 'en'
+        ? 'Share link copied!'
+        : (lang === 'fr' ? 'Lien de partage copié !' : 'تم نسخ رابط المشاركة!');
     if (navigator.share) {
         navigator.share({
             title: title,
-            text: 'اكتشف هذا المحتوى الرائع على موقع متاحف جامعة المنيا.',
+            text: shareText,
             url: url,
         }).catch((error) => console.log('Error sharing', error));
     } else {
-        // Fallback
         navigator.clipboard.writeText(url).then(() => {
-            alert('تم نسخ رابط المشاركة!');
+            alert(copiedMsg);
         });
     }
 }

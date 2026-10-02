@@ -1,6 +1,23 @@
 // Mat7afi - AI Chatbot & UI Logic
 // All functions are global to avoid DOMContentLoaded race conditions
 
+// Normalize local development origins so Appwrite CORS (registered for 'localhost') always succeeds
+(function normalizeLocalOrigin() {
+    try {
+        if (window.location.hostname === '127.0.0.1') {
+            window.location.replace(window.location.href.replace('127.0.0.1', 'localhost'));
+            return;
+        }
+        if (window.location.protocol === 'file:') {
+            const pageName = window.location.pathname.split('/').pop() || 'index.html';
+            const targetUrl = `http://localhost:3001/${pageName}${window.location.search}${window.location.hash}`;
+            fetch('http://localhost:3001/robots.txt', { mode: 'no-cors', cache: 'no-store' })
+                .then(() => window.location.replace(targetUrl))
+                .catch(() => {});
+        }
+    } catch (e) {}
+})();
+
 window.loadMuseumArtifacts = (collectionId, museumName, museumImg) => {
     let url = `museum.html?id=${collectionId}&name=${encodeURIComponent(museumName)}`;
     if (museumImg && museumImg !== 'null' && museumImg !== 'undefined') {
@@ -20,11 +37,23 @@ AppwriteConfig.buckets.artImages2 = '6a2cc2830001aa980e0a';
 AppwriteConfig.buckets.artImages3 = '6a2cc3b7001e1b2b7197';
 AppwriteConfig.buckets.artImages4 = '6a2cc3de001cf973b559';
 
+// Purge any stale cached URLs or session tokens from the old endpoint
+try {
+    const EP_VER = 'aw_v3_ammar_cloud';
+    if (localStorage.getItem('mat7afi_ep_ver') !== EP_VER) {
+        localStorage.removeItem('cached_highlights_v1');
+        localStorage.removeItem('cookieFallback');
+        sessionStorage.clear();
+        localStorage.setItem('mat7afi_ep_ver', EP_VER);
+    }
+} catch (e) {}
+
 let databases;
 let museumArtifactsCache = [];
 let currentMuseumCollection = '';
 let currentMuseumName = '';
 let currentScienceSubMuseumId = null;
+let currentArtHallId = null;
 
 let isTtsActive = true;
 let isMainRecording = false;
@@ -308,7 +337,7 @@ function preloadArtifactMedia(artifact, collectionId, bucketId, includeGlb = fal
 function preloadArtifactsFromCache(artifacts, collectionId) {
     if (!artifacts?.length) return;
     const bucketId = getBucketByType(collectionId);
-    artifacts.forEach(artifact => preloadArtifactMedia(artifact, collectionId, bucketId, true));
+    artifacts.forEach(artifact => preloadArtifactMedia(artifact, collectionId, bucketId, false));
 }
 
 async function preloadCollectionArtifacts(collectionId, bucketId) {
@@ -316,7 +345,16 @@ async function preloadCollectionArtifacts(collectionId, bucketId) {
     try {
         const queries = Query ? [Query.limit(100)] : [];
         const response = await databases.listDocuments(AppwriteConfig.databaseId, collectionId, queries);
-        (response.documents || []).forEach(artifact => preloadArtifactMedia(artifact, collectionId, bucketId, true));
+        const docs = response.documents || [];
+        if (docs.length > 0) {
+            try {
+                const cacheKey = `museum_${collectionId}`;
+                if (!sessionStorage.getItem(cacheKey)) {
+                    sessionStorage.setItem(cacheKey, JSON.stringify(docs));
+                }
+            } catch (e) {}
+            docs.forEach(artifact => preloadArtifactMedia(artifact, collectionId, bucketId, false));
+        }
     } catch (e) {
         console.warn(`Preload skipped for ${collectionId}:`, e);
     }
@@ -364,14 +402,10 @@ async function preloadAllMuseumAssets() {
 }
 
 async function _runPreloadAll() {
-    // Aggressively preload ALL museum collections in parallel
+    // Preload museum collections in parallel without duplicate or invalid collection requests
     await Promise.allSettled([
         preloadCollectionArtifacts(AppwriteConfig.collections.tourism, AppwriteConfig.buckets.tourism),
         preloadCollectionArtifacts(AppwriteConfig.collections.art, AppwriteConfig.buckets.artImages),
-        preloadCollectionArtifacts(AppwriteConfig.collections.art, AppwriteConfig.buckets.artImages2),
-        preloadCollectionArtifacts(AppwriteConfig.collections.art, AppwriteConfig.buckets.artImages3),
-        preloadCollectionArtifacts(AppwriteConfig.collections.art, AppwriteConfig.buckets.artImages4),
-        preloadCollectionArtifacts(AppwriteConfig.collections.science, AppwriteConfig.buckets.scienceImages),
         preloadCollectionArtifacts(AppwriteConfig.collections.geology, AppwriteConfig.buckets.geoImages),
         preloadCollectionArtifacts(AppwriteConfig.collections.zoology, AppwriteConfig.buckets.zoologyImages),
         preloadGalleryCollection()
@@ -480,12 +514,14 @@ function renderGeologyExtraSections(artifact, lang) {
         block.className = 'geology-detail-block';
 
         if (section.isGallery) {
+            const prevIcon = lang === 'ar' ? 'fa-chevron-right' : 'fa-chevron-left';
+            const nextIcon = lang === 'ar' ? 'fa-chevron-left' : 'fa-chevron-right';
             block.innerHTML = `
                 <h3 class="section-title">${section.title}</h3>
                 <div class="geology-gallery" id="${section.galleryId}">
-                    <button type="button" class="gallery-nav gallery-prev" aria-label="Previous"><i class="fas fa-chevron-right"></i></button>
+                    <button type="button" class="gallery-nav gallery-prev" aria-label="Previous"><i class="fas ${prevIcon}"></i></button>
                     <div class="gallery-track-wrap"><img class="gallery-track-img" src="${section.urls[0]}" alt=""></div>
-                    <button type="button" class="gallery-nav gallery-next" aria-label="Next"><i class="fas fa-chevron-left"></i></button>
+                    <button type="button" class="gallery-nav gallery-next" aria-label="Next"><i class="fas ${nextIcon}"></i></button>
                 </div>
                 <div class="gallery-dots"></div>
             `;
@@ -993,7 +1029,10 @@ window.initMuseumPage = async (collectionId, museumName, museumImg) => {
         let cachedDocs = null;
         try {
             const cached = sessionStorage.getItem(cacheKey);
-            if (cached) cachedDocs = JSON.parse(cached);
+            if (cached) {
+                const parsed = JSON.parse(cached);
+                if (Array.isArray(parsed) && parsed.length > 0) cachedDocs = parsed;
+            }
         } catch (e) {}
 
         if (cachedDocs) {
@@ -1001,9 +1040,11 @@ window.initMuseumPage = async (collectionId, museumName, museumImg) => {
         } else {
             const response = await databases.listDocuments(AppwriteConfig.databaseId, collectionId, queries);
             museumArtifactsCache = response.documents || [];
-            try {
-                sessionStorage.setItem(cacheKey, JSON.stringify(museumArtifactsCache));
-            } catch (e) {}
+            if (museumArtifactsCache.length > 0) {
+                try {
+                    sessionStorage.setItem(cacheKey, JSON.stringify(museumArtifactsCache));
+                } catch (e) {}
+            }
         }
         
         preloadArtifactsFromCache(museumArtifactsCache, collectionId);
@@ -1039,6 +1080,7 @@ window.initMuseumPage = async (collectionId, museumName, museumImg) => {
 };
 
 window.renderArtHalls = () => {
+    currentArtHallId = null;
     const artifactsGrid = document.getElementById('artifacts-grid');
     const backToHallsBtn = document.getElementById('back-to-halls-btn');
     if (!artifactsGrid) return;
@@ -1271,6 +1313,7 @@ window.showScienceComingSoon = (museumTitle) => {
 };
 
 window.filterArtByHall = (hallId, hallTitle) => {
+    currentArtHallId = hallId;
     const lang = getCurrentLang();
     const filtered = museumArtifactsCache.filter(a => {
         const artIdVal = a['art-id'] || a.art_id || a.artId;
@@ -1436,6 +1479,7 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
         // Populate Info Grid
         if (infoGrid) {
             infoGrid.innerHTML = '';
+            document.querySelectorAll('.zoology-classification-block').forEach(el => el.remove());
             
             if (isZoologyCollection(collectionId)) {
                 infoGrid.style.display = 'block'; // Clear grid layout for custom cards
@@ -1471,6 +1515,7 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
                 const classificationTitleText = lang === 'en' ? 'Scientific Classification' : (lang === 'fr' ? 'Classification scientifique' : 'التصنيف العلمي');
                 
                 let classCardHtml = `
+                    <div class="zoology-classification-block">
                     <h3 class="section-title">${classificationTitleText}</h3>
                     <div class="zoology-detail-card">
                 `;
@@ -1512,7 +1557,7 @@ window.initArtifactPage = async (documentId, collectionId, museumName) => {
                         addedAnyClassField = true;
                     }
                 });
-                classCardHtml += `</div>`;
+                classCardHtml += `</div></div>`;
 
                 if (addedAnyClassField) {
                     infoGrid.insertAdjacentHTML('afterend', classCardHtml);
@@ -1821,10 +1866,52 @@ document.addEventListener('DOMContentLoaded', () => {
     const artifactSearchInput = document.getElementById('artifact-search');
     if (artifactSearchInput) {
         artifactSearchInput.oninput = () => {
-            const q = normalizeArabic(artifactSearchInput.value.toLowerCase());
-            renderArtifacts(museumArtifactsCache.filter(a => {
-                const title = normalizeArabic(getArtifactTitle(a).toLowerCase());
-                return title.includes(q);
+            const q = normalizeArabic(artifactSearchInput.value.trim().toLowerCase());
+            if (!q) {
+                if (currentMuseumCollection && currentMuseumCollection.includes('art_')) {
+                    if (currentArtHallId) {
+                        const hallNames = {
+                            1: { ar: 'القاعة الأولى', en: 'First Hall', fr: 'Première Salle' },
+                            2: { ar: 'القاعة الثانية', en: 'Second Hall', fr: 'Deuxième Salle' },
+                            3: { ar: 'القاعة الثالثة', en: 'Third Hall', fr: 'Troisième Salle' },
+                            4: { ar: 'القاعة الرابعة', en: 'Fourth Hall', fr: 'Quatrième Salle' }
+                        };
+                        const lang = getCurrentLang();
+                        const hTitle = hallNames[currentArtHallId]?.[lang] || hallNames[currentArtHallId]?.ar || '';
+                        filterArtByHall(currentArtHallId, hTitle);
+                    } else {
+                        renderArtHalls();
+                    }
+                    return;
+                }
+                if (currentMuseumCollection && currentMuseumCollection.includes('science') && !currentScienceSubMuseumId) {
+                    renderScienceMuseums();
+                    return;
+                }
+                renderArtifacts(museumArtifactsCache);
+                return;
+            }
+
+            let sourceList = museumArtifactsCache;
+            if (currentMuseumCollection && currentMuseumCollection.includes('art_') && currentArtHallId) {
+                sourceList = museumArtifactsCache.filter(a => {
+                    const artIdVal = a['art-id'] || a.art_id || a.artId;
+                    return String(artIdVal) === String(currentArtHallId);
+                });
+            }
+
+            renderArtifacts(sourceList.filter(a => {
+                const searchable = [
+                    getArtifactTitle(a),
+                    a['name-ar'], a['name-en'], a['name-fr'], a.name,
+                    a['title-ar'], a['title-en'], a['title-fr'], a.title,
+                    a['author-ar'], a['author-en'], a['author-fr'], a.author,
+                    a.serial_number, a.serialNumber,
+                    a['scientific-name'], a.scientific_name,
+                    a['era-ar'], a['era-en'], a.era,
+                    getArtifactDescription(a)
+                ].filter(Boolean).join(' ').toLowerCase();
+                return normalizeArabic(searchable).includes(q);
             }));
         };
     }
@@ -2593,7 +2680,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Re-render museum page elements if we are on museum.html
                     if (document.getElementById('artifacts-grid')) {
                         if (typeof currentMuseumCollection !== 'undefined' && currentMuseumCollection) {
-                            if (currentMuseumCollection.includes('science')) {
+                            if (currentMuseumCollection.includes('science') || isGeologyCollection(currentMuseumCollection) || isZoologyCollection(currentMuseumCollection)) {
                                 if (typeof currentScienceSubMuseumId !== 'undefined' && currentScienceSubMuseumId) {
                                     const subNames = {
                                         geology: { ar: 'المتحف الجيولوجي', en: 'Geological Museum', fr: 'Musée Géologique' },
@@ -2604,6 +2691,19 @@ document.addEventListener('DOMContentLoaded', () => {
                                 } else {
                                     renderScienceMuseums();
                                 }
+                            } else if (currentMuseumCollection.includes('art_')) {
+                                if (currentArtHallId) {
+                                    const hallNames = {
+                                        1: { ar: 'القاعة الأولى', en: 'First Hall', fr: 'Première Salle' },
+                                        2: { ar: 'القاعة الثانية', en: 'Second Hall', fr: 'Deuxième Salle' },
+                                        3: { ar: 'القاعة الثالثة', en: 'Third Hall', fr: 'Troisième Salle' },
+                                        4: { ar: 'القاعة الرابعة', en: 'Fourth Hall', fr: 'Quatrième Salle' }
+                                    };
+                                    const hTitle = hallNames[currentArtHallId]?.[lang] || hallNames[currentArtHallId]?.ar || '';
+                                    filterArtByHall(currentArtHallId, hTitle);
+                                } else {
+                                    renderArtHalls();
+                                }
                             } else {
                                 if (typeof museumArtifactsCache !== 'undefined' && museumArtifactsCache && museumArtifactsCache.length > 0) {
                                     renderArtifacts(museumArtifactsCache);
@@ -2613,13 +2713,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     // Refresh dynamic elements on other pages if they exist
-                    if (typeof window.renderGalleryGrid === 'function') {
+                    if (typeof window.renderGalleryGrid === 'function' && document.getElementById('gallery-grid')) {
                         window.renderGalleryGrid();
                     }
-                    if (typeof window.renderFavorites === 'function') {
+                    if (typeof window.renderFavorites === 'function' && document.getElementById('favorites-grid')) {
                         window.renderFavorites();
                     }
-                    if (typeof window.initArtifactPage === 'function') {
+                    if (typeof window.renderItemDetailsPage === 'function' && document.getElementById('item-content')) {
+                        window.renderItemDetailsPage();
+                    }
+                    if (typeof window.initArtifactPage === 'function' && document.getElementById('artifact-content')) {
                         const urlParams = new URLSearchParams(window.location.search);
                         const id = urlParams.get('id');
                         const collection = urlParams.get('collection');
@@ -2645,8 +2748,7 @@ document.addEventListener('DOMContentLoaded', () => {
             { id: 'art_university_story', name: { en: 'Arts', ar: 'الفنون', fr: 'Arts' } },
             { id: 'zoology_story', name: { en: 'Zoology', ar: 'علم الحيوان', fr: 'Zoologie' } },
             { id: 'geo_story', name: { en: 'Geology', ar: 'الجيولوجيا', fr: 'Géologie' } },
-            { id: 'store_story', name: { en: 'Store', ar: 'المتجر', fr: 'Boutique' } },
-            { id: 'map_story', name: { en: 'Map', ar: 'الخريطة', fr: 'Carte' } }
+            { id: 'store_story', name: { en: 'Store', ar: 'المتجر', fr: 'Boutique' } }
         ];
         const STORY_IMG_BUCKET = '69f897e70035d17ec988';
         const STORY_VID_BUCKET = '69f8980600284abc5d0d';
@@ -2735,7 +2837,7 @@ document.addEventListener('DOMContentLoaded', () => {
         isPreloadingVideos = false;
     }
 
-    // Preload all slides of each story to load them in advance for maximum speed
+    // Preload story covers and slide images; only preload heavy video blobs when story is opened (priority = true)
     function preloadStoryMedia(story, priority = false) {
         if (!story || !story.slides || story.slides.length === 0) return;
         
@@ -2744,10 +2846,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (story.coverUrlEn) preloadImageUrl(story.coverUrlEn);
         if (story.coverUrlFr) preloadImageUrl(story.coverUrlFr);
 
-        // Preload all slides
+        // Preload slides (videos only on demand when priority is true)
         story.slides.forEach(slide => {
             if (slide.isVideo) {
-                preloadVideoUrl(slide.url, priority);
+                if (priority) preloadVideoUrl(slide.url, true);
             } else {
                 if (slide.url) preloadImageUrl(slide.url);
                 if (slide.urlEn) preloadImageUrl(slide.urlEn);
@@ -2854,15 +2956,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = document.getElementById('highlights-container');
         if (!container) return;
 
-        // Try load from Cache
-        const cachedHighlights = localStorage.getItem('cached_highlights_v1');
-        if (cachedHighlights) {
+        // Try load from Cache (only if URLs match current Appwrite endpoint)
+        const cachedHighlights = localStorage.getItem('cached_highlights_v2');
+        if (cachedHighlights && cachedHighlights.includes(AppwriteConfig.endpoint)) {
             try {
                 highlightsData = JSON.parse(cachedHighlights);
                 if (highlightsData && highlightsData.length > 0) {
                     document.getElementById('highlights-section').style.display = 'block';
                     renderHighlights(container);
-                    // Background preload cached media in background
                     setTimeout(() => {
                         highlightsData.forEach(story => preloadStoryMedia(story));
                     }, 200);
@@ -2874,7 +2975,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const isFresh = sessionStorage.getItem('highlights_fresh') === 'true';
         if (isFresh && highlightsData && highlightsData.length > 0) {
-            // Already loaded and fresh in this session! Skip database call.
             return;
         }
 
@@ -2911,22 +3011,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            const dataString = JSON.stringify(newData);
-            sessionStorage.setItem('highlights_fresh', 'true');
-            if (dataString !== JSON.stringify(highlightsData)) {
+            if (newData.length > 0) {
+                const dataString = JSON.stringify(newData);
+                sessionStorage.setItem('highlights_fresh', 'true');
                 highlightsData = newData;
-                localStorage.setItem('cached_highlights_v1', dataString);
-
-                if (highlightsData.length > 0) {
-                    document.getElementById('highlights-section').style.display = 'block';
-                    renderHighlights(container);
-                    // Background preload story media (images + videos) after render
-                    setTimeout(() => {
-                        highlightsData.forEach(story => preloadStoryMedia(story));
-                    }, 500);
-                } else {
-                    document.getElementById('highlights-section').style.display = 'none';
-                }
+                localStorage.setItem('cached_highlights_v2', dataString);
+                document.getElementById('highlights-section').style.display = 'block';
+                renderHighlights(container);
+                setTimeout(() => {
+                    highlightsData.forEach(story => preloadStoryMedia(story));
+                }, 500);
+            } else if (!highlightsData.length) {
+                document.getElementById('highlights-section').style.display = 'none';
             }
         } catch (err) {
             console.error('Highlights Appwrite load failed:', err);
@@ -2962,6 +3058,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (index < 0 || index >= highlightsData.length) return closeStory();
         currentHighlightIndex = index;
         currentSlideIndex = 0;
+        const lang = sessionStorage.getItem('lang') || 'ar';
         const story = highlightsData[currentHighlightIndex];
         story.viewed = true;
         
@@ -2975,7 +3072,7 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
 
-        document.getElementById('story-title').innerText = story.title[lang];
+        document.getElementById('story-title').innerText = story.title[lang] || story.title.ar;
 
         let currentCover = story.coverUrl;
         if (lang === 'en' && story.coverUrlEn) currentCover = story.coverUrlEn;
