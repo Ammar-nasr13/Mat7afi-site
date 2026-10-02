@@ -1,7 +1,7 @@
 // Appwrite Configuration
 const { Client, Account } = Appwrite;
 const client = new Client()
-    .setEndpoint('https://appwrite.etihadalmdina.com/v1')
+    .setEndpoint('https://apppwrite.ammar-nasr13.cloud/v1')
     .setProject('69f21c73000621939422');
 
 const account = new Account(client);
